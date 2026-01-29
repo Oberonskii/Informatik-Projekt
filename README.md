@@ -105,32 +105,33 @@ learnhub/
 
 ***
 
-Modul: Authentifizierung
+Ah, jetzt verstehe ich! Du möchtest die Struktur und die Zuständigkeiten der Module in Java übernehmen, basierend auf einer Webanwendung, aber die Schnittstellen und Funktionalitäten in einer Java-Backend-Struktur umsetzen.
 
-Zweck: Benutzerverwaltung, Login/Logout, Session-Handling
-Verantwortlich: [Name1]
-Dateien:
+Hier ist eine angepasste Version für eine Java-Anwendung, die den gleichen Zweck wie die JavaScript-Module verfolgt, aber unter Verwendung von Java-Klassen und -Methoden:
 
-src/main/java/com/learnhub/controller/AuthController.java
+---
 
-src/main/java/com/learnhub/service/AuthService.java
+### Modul: **Authentifizierung**
 
-src/main/java/com/learnhub/model/User.java
+**Zweck:** Benutzerverwaltung, Login/Logout, Session-Handling
+**Verantwortlich:** [Name1]
+**Dateien:**
 
-Schnittstellen (öffentliche Funktionen):
+* `src/main/java/com/learnhub/controller/AuthController.java`
+* `src/main/java/com/learnhub/service/AuthService.java`
+* `src/main/java/com/learnhub/model/User.java`
 
-login(username, password) → boolean (Login prüfen/speichern)
+**Schnittstellen (öffentliche Funktionen):**
 
-register(userData) → boolean (Neuen User anlegen)
+* `login(username, password) → boolean` (Login prüfen/speichern)
+* `register(userData) → boolean` (Neuen User anlegen)
+* `getCurrentUser() → User|null` (Aktueller Benutzer)
+* `logout() → void` (Session löschen)
+* `isAdmin(user) → boolean` (Admin-Rechte prüfen)
 
-getCurrentUser() → User|null (Aktueller Benutzer)
+**Beispiel-Implementierung**:
 
-logout() → void (Session löschen)
-
-isAdmin(user) → boolean (Admin-Rechte prüfen)
-
-Beispiel-Implementierung:
-
+```java
 @Service
 public class AuthService {
 
@@ -162,29 +163,29 @@ public class AuthService {
         // Prüft, ob der Benutzer Admin-Rechte hat
     }
 }
+```
 
-Modul: Dashboard
+---
 
-Zweck: Hauptübersicht mit Widgets (Stundenplan, To-Dos, Fortschritt)
-Verantwortlich: [Name2]
-Dateien:
+### Modul: **Dashboard**
 
-src/main/java/com/learnhub/controller/DashboardController.java
+**Zweck:** Hauptübersicht mit Widgets (Stundenplan, To-Dos, Fortschritt)
+**Verantwortlich:** [Name2]
+**Dateien:**
 
-src/main/java/com/learnhub/service/DashboardService.java
+* `src/main/java/com/learnhub/controller/DashboardController.java`
+* `src/main/java/com/learnhub/service/DashboardService.java`
+* `src/main/resources/templates/dashboard.html`
 
-src/main/resources/templates/dashboard.html
+**Schnittstellen:**
 
-Schnittstellen:
+* `loadDashboard() → void` (Alle Widgets laden)
+* `updateProgress(subjectId) → void` (Fortschrittsbalken aktualisieren)
+* `getNextTodos(count) → List<Todo>` (Nächste Aufgaben abrufen)
 
-loadDashboard() → void (Alle Widgets laden)
+**Beispiel-Implementierung**:
 
-updateProgress(subjectId) → void (Fortschrittsbalken aktualisieren)
-
-getNextTodos(count) → List<Todo> (Nächste Aufgaben abrufen)
-
-Beispiel-Implementierung:
-
+```java
 @Controller
 public class DashboardController {
 
@@ -210,31 +211,30 @@ public class DashboardController {
         return dashboardService.getNextTodos(count);
     }
 }
+```
 
-Modul: Karteikarten
+---
 
-Zweck: Erstellen, Lernen, Statistiken von Karteikarten-Sets
-Verantwortlich: [Name3]
-Dateien:
+### Modul: **Karteikarten**
 
-src/main/java/com/learnhub/controller/FlashcardsController.java
+**Zweck:** Erstellen, Lernen, Statistiken von Karteikarten-Sets
+**Verantwortlich:** [Name3]
+**Dateien:**
 
-src/main/java/com/learnhub/service/FlashcardsService.java
+* `src/main/java/com/learnhub/controller/FlashcardsController.java`
+* `src/main/java/com/learnhub/service/FlashcardsService.java`
+* `src/main/java/com/learnhub/model/Flashcard.java`
 
-src/main/java/com/learnhub/model/Flashcard.java
+**Schnittstellen:**
 
-Schnittstellen:
+* `createCard(front, back, subjectId) → String` (Karten-ID erstellen)
+* `startLearning(setId, mode) → void` (Lernsession starten)
+* `getStats(setId) → FlashcardStats` (Statistiken abfragen)
+* `markPublic(setId, isPublic) → void` (Set öffentlich machen)
 
-createCard(front, back, subjectId) → String (Karten-ID erstellen)
+**Beispiel-Implementierung**:
 
-startLearning(setId, mode) → void (Lernsession starten)
-
-getStats(setId) → FlashcardStats (Statistiken abfragen)
-
-markPublic(setId, isPublic) → void (Set öffentlich machen)
-
-Beispiel-Implementierung:
-
+```java
 @Service
 public class FlashcardsService {
 
@@ -260,29 +260,29 @@ public class FlashcardsService {
         // Karteikarten-Set öffentlich oder privat setzen
     }
 }
+```
 
-Modul: Noten
+---
 
-Zweck: Noteneingabe, Durchschnittsberechnung, Trends
-Verantwortlich: [Name1]
-Dateien:
+### Modul: **Noten**
 
-src/main/java/com/learnhub/controller/GradesController.java
+**Zweck:** Noteneingabe, Durchschnittsberechnung, Trends
+**Verantwortlich:** [Name1]
+**Dateien:**
 
-src/main/java/com/learnhub/service/GradesService.java
+* `src/main/java/com/learnhub/controller/GradesController.java`
+* `src/main/java/com/learnhub/service/GradesService.java`
+* `src/main/java/com/learnhub/model/Grade.java`
 
-src/main/java/com/learnhub/model/Grade.java
+**Schnittstellen:**
 
-Schnittstellen:
+* `addGrade(subjectId, value, type) → void` (Note hinzufügen)
+* `getAverage(subjectId) → double` (Durchschnitt berechnen)
+* `getAllGrades(subjectId) → List<Grade>` (Alle Noten abrufen)
 
-addGrade(subjectId, value, type) → void (Note hinzufügen)
+**Beispiel-Implementierung**:
 
-getAverage(subjectId) → double (Durchschnitt berechnen)
-
-getAllGrades(subjectId) → List<Grade> (Alle Noten abrufen)
-
-Beispiel-Implementierung:
-
+```java
 @Service
 public class GradesService {
 
@@ -304,29 +304,29 @@ public class GradesService {
         // Alle Noten für ein Fach abrufen
     }
 }
+```
 
-Modul: Stundenplan
+---
 
-Zweck: Anzeige und Verwaltung des Wochen-/Monatsplans
-Verantwortlich: [Name2]
-Dateien:
+### Modul: **Stundenplan**
 
-src/main/java/com/learnhub/controller/TimetableController.java
+**Zweck:** Anzeige und Verwaltung des Wochen-/Monatsplans
+**Verantwortlich:** [Name2]
+**Dateien:**
 
-src/main/java/com/learnhub/service/TimetableService.java
+* `src/main/java/com/learnhub/controller/TimetableController.java`
+* `src/main/java/com/learnhub/service/TimetableService.java`
+* `src/main/java/com/learnhub/model/TimetableEntry.java`
 
-src/main/java/com/learnhub/model/TimetableEntry.java
+**Schnittstellen:**
 
-Schnittstellen:
+* `setSchedule(day, slot, subject) → void` (Eintrag setzen)
+* `getTodaySchedule() → List<TimetableEntry>` (Heutige Kurse abrufen)
+* `getWeekSchedule() → List<TimetableEntry>` (Stundenplan der Woche abrufen)
 
-setSchedule(day, slot, subject) → void (Eintrag setzen)
+**Beispiel-Implementierung**:
 
-getTodaySchedule() → List<TimetableEntry> (Heutige Kurse abrufen)
-
-getWeekSchedule() → List<TimetableEntry> (Stundenplan der Woche abrufen)
-
-Beispiel-Implementierung:
-
+```java
 @Service
 public class TimetableService {
 
@@ -348,29 +348,29 @@ public class TimetableService {
         // Stundenplan für die gesamte Woche abrufen
     }
 }
+```
 
-Modul: Dateien
+---
 
-Zweck: Upload, Organisation und Suche von Lernmaterial
-Verantwortlich: [Name3]
-Dateien:
+### Modul: **Dateien**
 
-src/main/java/com/learnhub/controller/FilesController.java
+**Zweck:** Upload, Organisation und Suche von Lernmaterial
+**Verantwortlich:** [Name3]
+**Dateien:**
 
-src/main/java/com/learnhub/service/FilesService.java
+* `src/main/java/com/learnhub/controller/FilesController.java`
+* `src/main/java/com/learnhub/service/FilesService.java`
+* `src/main/java/com/learnhub/model/File.java`
 
-src/main/java/com/learnhub/model/File.java
+**Schnittstellen:**
 
-Schnittstellen:
+* `uploadFile(file, subjectId, tags) → String` (Datei hochladen)
+* `getFiles(subjectId) → List<File>` (Dateien für ein Fach abrufen)
+* `searchFiles(query) → List<File>` (Dateien suchen)
 
-uploadFile(file, subjectId, tags) → String (Datei hochladen)
+**Beispiel-Implementierung**:
 
-getFiles(subjectId) → List<File> (Dateien für ein Fach abrufen)
-
-searchFiles(query) → List<File> (Dateien suchen)
-
-Beispiel-Implementierung:
-
+```java
 @Service
 public class FilesService {
 
@@ -392,26 +392,25 @@ public class FilesService {
         // Suche nach Dateien durchführen
     }
 }
+```
 
-Modul: Admin
+---
 
-Zweck: Nutzer- und Abo-Verwaltung für Administratoren
-Verantwortlich: [Name1]
-Dateien:
+### Modul: **Admin**
 
-src/main/java/com/learnhub/controller/AdminController.java
+**Zweck:** Nutzer- und Abo-Verwaltung für Administratoren
+**Verantwortlich:** [Name1]
+**Dateien:**
 
-src/main/java/com/learnhub/service/AdminService.java
+* `src/main/java/com/learnhub/controller/AdminController.java`
+* `src/main/java/com/learnhub/service/AdminService.java`
+* `src/main/java/com/learnhub/model/UserRole.java`
 
-src/main/java/com/learnhub/model/UserRole.java
+**Schnittstellen:**
 
-Schnittstellen:
-
-getAllUsers() → List<User> (Alle Nutzer abrufen)
-
-setRole(userId, role) → void (Rolle ändern)
-
-`getUserStats
+* `getAllUsers() → List<User>` (Alle Nutzer abrufen)
+* `setRole(userId, role) → void` (Rolle ändern)
+* `getUserStats
 
 ***
 
