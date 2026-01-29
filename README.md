@@ -51,27 +51,56 @@ Das Endergebnis ist eine **responsive Web-App** mit Login, Admin-Bereich und Pre
 ## 3. Projektstruktur
 ```
 learnhub/
-├── index.html          # Einstiegspunkt
-├── css/
-│   ├── main.css       # Global Styles
-│   ├── dashboard.css  # Widget-Layout
-│   └── components.css # Buttons, Cards, etc.
-├── js/
-│   ├── main.js        # App-Initialisierung + Routing
-│   ├── auth.js        # Login/Registrierung
-│   ├── dashboard.js   # Widgets + Layout
-│   ├── flashcards.js  # Karteikarten-Logik
-│   ├── grades.js      # Notenverwaltung
-│   ├── timetable.js   # Stundenplan
-│   ├── files.js       # Datei-Upload/Verwaltung
-│   ├── todos.js       # To-Do-Liste
-│   ├── admin.js       # Admin-Funktionen
-│   └── storage.js     # localStorage Helper
-├── data/              # Demo-Daten (JSON)
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/
+│   │   │       └── learnhub/
+│   │   │           ├── controller/
+│   │   │           │   ├── AuthController.java        # Login/Registrierung
+│   │   │           │   ├── DashboardController.java   # Dashboard-Widgets
+│   │   │           │   ├── FlashcardsController.java  # Karteikarten-Logik
+│   │   │           │   ├── GradesController.java      # Notenverwaltung
+│   │   │           │   ├── TimetableController.java   # Stundenplan
+│   │   │           │   ├── FilesController.java       # Datei-Upload/Verwaltung
+│   │   │           │   ├── TodosController.java       # To-Do-Liste
+│   │   │           │   ├── AdminController.java       # Admin-Funktionen
+│   │   │           │   └── StorageController.java     # localStorage Helper
+│   │   │           ├── service/
+│   │   │           │   ├── AuthService.java           # Authentifizierungslogik
+│   │   │           │   ├── FlashcardsService.java     # Logik für Karteikarten
+│   │   │           │   ├── GradesService.java         # Notenlogik
+│   │   │           │   ├── TimetableService.java      # Stundenplanlogik
+│   │   │           │   └── FilesService.java          # Datei-Upload-Logik
+│   │   │           └── model/
+│   │   │               ├── User.java                  # Benutzer-Datenmodell
+│   │   │               ├── Subject.java               # Fach-Datenmodell
+│   │   │               ├── Flashcard.java             # Karteikarten-Datenmodell
+│   │   │               └── Grade.java                 # Noten-Datenmodell
+│   │   ├── resources/
+│   │   │   ├── static/
+│   │   │   │   ├── css/
+│   │   │   │   │   ├── main.css                      # Global Styles
+│   │   │   │   │   ├── dashboard.css                 # Widget-Layout
+│   │   │   │   │   └── components.css                # Buttons, Cards, etc.
+│   │   │   │   ├── js/
+│   │   │   │   │   └── app.js                        # App-Initialisierung + Routing
+│   │   │   │   └── images/
+│   │   │   ├── templates/
+│   │   │   │   └── index.html                        # Einstiegspunkt
+│   │   │   └── application.properties                # Spring Boot Konfiguration
+│   └── test/
+│       ├── java/
+│       │   └── com/
+│       │       └── learnhub/
+│       │           ├── controller/
+│       │           ├── service/
+│       │           └── model/
+├── data/                                              # Demo-Daten (JSON oder DB)
 │   ├── users.json
 │   └── subjects.json
-├── assets/            # Icons, Bilder
-└── README.md          # Diese Datei
+├── assets/                                            # Icons, Bilder
+└── README.md                                          # Diese Datei
 ```
 
 ***
