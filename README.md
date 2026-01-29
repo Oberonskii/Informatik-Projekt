@@ -105,8 +105,6 @@ learnhub/
 
 ***
 
-## 4. Module & Zuständigkeiten
-
 Modul: Authentifizierung
 
 Zweck: Benutzerverwaltung, Login/Logout, Session-Handling
@@ -125,11 +123,11 @@ login(username, password) → boolean (Login prüfen/speichern)
 
 register(userData) → boolean (Neuen User anlegen)
 
-getCurrentUser() → User|null (Aktuellen Benutzer abrufen)
+getCurrentUser() → User|null (Aktueller Benutzer)
 
 logout() → void (Session löschen)
 
-isAdmin() → boolean (Admin-Rechte prüfen)
+isAdmin(user) → boolean (Admin-Rechte prüfen)
 
 Beispiel-Implementierung:
 
@@ -137,25 +135,27 @@ Beispiel-Implementierung:
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final SessionService sessionService;
 
-    public AuthService(UserRepository userRepository) {
+    public AuthService(UserRepository userRepository, SessionService sessionService) {
         this.userRepository = userRepository;
+        this.sessionService = sessionService;
     }
 
     public boolean login(String username, String password) {
-        // Authentifizierungslogik
+        // Prüft Login-Daten und speichert die Session
     }
 
     public boolean register(User userData) {
-        // Benutzerregistrierung
+        // Neuen Benutzer anlegen
     }
 
     public User getCurrentUser() {
-        // Gibt den aktuell eingeloggten Benutzer zurück
+        // Gibt den aktuellen Benutzer aus der Session zurück
     }
 
     public void logout() {
-        // Löscht die Session
+        // Löscht die Session des Benutzers
     }
 
     public boolean isAdmin(User user) {
@@ -245,19 +245,19 @@ public class FlashcardsService {
     }
 
     public String createCard(String front, String back, Long subjectId) {
-        // Logik zum Erstellen einer Karteikarte
+        // Karteikarte erstellen und ID zurückgeben
     }
 
     public void startLearning(Long setId, String mode) {
-        // Logik zum Starten einer Lernsession
+        // Lernsession starten
     }
 
     public FlashcardStats getStats(Long setId) {
-        // Statistiken für ein Karten-Set abrufen
+        // Erfolgsquote und Lernzeit abrufen
     }
 
     public void markPublic(Long setId, boolean isPublic) {
-        // Logik, um das Set öffentlich oder privat zu machen
+        // Karteikarten-Set öffentlich oder privat setzen
     }
 }
 
@@ -279,7 +279,7 @@ addGrade(subjectId, value, type) → void (Note hinzufügen)
 
 getAverage(subjectId) → double (Durchschnitt berechnen)
 
-getAllGrades(subjectId) → List<Grade> (Alle Noten anzeigen)
+getAllGrades(subjectId) → List<Grade> (Alle Noten abrufen)
 
 Beispiel-Implementierung:
 
@@ -301,7 +301,7 @@ public class GradesService {
     }
 
     public List<Grade> getAllGrades(Long subjectId) {
-        // Alle Noten für ein Fach abfragen
+        // Alle Noten für ein Fach abrufen
     }
 }
 
@@ -337,15 +337,15 @@ public class TimetableService {
     }
 
     public void setSchedule(String day, String slot, String subject) {
-        // Stundenplaneintrag setzen
+        // Stundenplan für einen Tag setzen
     }
 
     public List<TimetableEntry> getTodaySchedule() {
-        // Abfrage des heutigen Stundenplans
+        // Heutigen Stundenplan abrufen
     }
 
     public List<TimetableEntry> getWeekSchedule() {
-        // Abfrage des Wochenplans
+        // Stundenplan für die gesamte Woche abrufen
     }
 }
 
@@ -365,9 +365,9 @@ Schnittstellen:
 
 uploadFile(file, subjectId, tags) → String (Datei hochladen)
 
-getFiles(subjectId) → List<File> (Dateien eines Fachs abrufen)
+getFiles(subjectId) → List<File> (Dateien für ein Fach abrufen)
 
-searchFiles(query) → List<File> (Suche nach Dateien)
+searchFiles(query) → List<File> (Dateien suchen)
 
 Beispiel-Implementierung:
 
@@ -385,11 +385,11 @@ public class FilesService {
     }
 
     public List<File> getFiles(Long subjectId) {
-        // Abrufen der Dateien für ein bestimmtes Fach
+        // Dateien für ein Fach abrufen
     }
 
     public List<File> searchFiles(String query) {
-        // Suche nach Dateien
+        // Suche nach Dateien durchführen
     }
 }
 
@@ -411,7 +411,7 @@ getAllUsers() → List<User> (Alle Nutzer abrufen)
 
 setRole(userId, role) → void (Rolle ändern)
 
-getUserStats() → AdminStats (Admin-D
+`getUserStats
 
 ***
 
