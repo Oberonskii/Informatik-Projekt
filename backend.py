@@ -170,6 +170,11 @@ class FlashcardCreate(BaseModel):
     front: str
     back: str
     public: bool = False
+    
+class TimetableCreate(BaseModel):
+    day: str       # monday, tuesday, ...
+    time: str      # "08:00 - 09:30"
+    subject: str
 
 
 # =========================================
@@ -199,11 +204,29 @@ def register(user: UserRegister):
     return {"message": "Registrierung erfolgreich"}
 
 
+
 # =========================================
-# FILE UPLOAD ROUTES
+# Timetable routes
 # =========================================
 
+@app.get("/timetable/{user_id}")
+def get_timetable(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
 
+    cursor.execute("""
+    SELECT id, day, time, subject
+    FROM timetable
+    WHERE user_id=?
+    ORDER BY day, time
+    """, (user_id,))
+
+    return cursor.fetchall()
+
+
+# =========================================
+# Timetable routes
+# =========================================
 
 @app.delete("/files/{user_id}/{file_id}")
 def delete_file(user_id: str, file_id: str):
@@ -228,6 +251,73 @@ def delete_file(user_id: str, file_id: str):
 
     return {"message": "Datei gelöscht"}
 
+@app.post("/timetable/{user_id}")
+def add_timetable_entry(user_id: str, entry: TimetableCreate):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    INSERT INTO timetable VALUES (?, ?, ?, ?, ?)
+    """, (
+        generate_id(),
+        user_id,
+        entry.day,
+        entry.time,
+        entry.subject
+    ))
+
+    db.commit()
+    return {"message": "Stunde hinzugefügt"}
+
+
+@app.put("/timetable/{user_id}/{entry_id}")
+def update_timetable_entry(
+    user_id: str,
+    entry_id: str,
+    entry: TimetableCreate
+):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    UPDATE timetable
+    SET day=?, time=?, subject=?
+    WHERE id=? AND user_id=?
+    """, (
+        entry.day,
+        entry.time,
+        entry.subject,
+        entry_id,
+        user_id
+    ))
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Eintrag nicht gefunden")
+
+    db.commit()
+    return {"message": "Stunde aktualisiert"}
+
+
+@app.delete("/timetable/{user_id}/{entry_id}")
+def delete_timetable_entry(user_id: str, entry_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    DELETE FROM timetable
+    WHERE id=? AND user_id=?
+    """, (entry_id, user_id))
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Eintrag nicht gefunden")
+
+    db.commit()
+    return {"message": "Stunde gelöscht"}
+
+
+# =========================================
+# FILE UPLOAD ROUTES
+# =========================================
 
 @app.get("/files/download/{user_id}/{file_id}")
 def download_file(user_id: str, file_id: str):
@@ -355,6 +445,23 @@ def get_todos(user_id: str):
 
     cursor.execute("SELECT * FROM todos WHERE user_id=?", (user_id,))
     return cursor.fetchall()
+
+@app.delete("/todos/{user_id}/{todo_id}")
+def delete_todo(user_id: str, todo_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    DELETE FROM todos
+    WHERE id=? AND user_id=?
+    """, (todo_id, user_id))
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="To-Do nicht gefunden")
+
+    db.commit()
+    return {"message": "To-Do gelöscht"}
+
 
 
 # =========================================
