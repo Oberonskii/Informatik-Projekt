@@ -1,0 +1,322 @@
+# =========================================
+# LearnHub Backend
+# Autor: Backend-Team
+# Technologie: FastAPI + SQLite
+# =========================================
+
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import datetime
+import sqlite3
+import uuid
+import hashlib
+
+# =========================================
+# APP INITIALISIERUNG
+# =========================================
+
+app = FastAPI(
+    title="LearnHub API",
+    description="Backend für die LearnHub Lernplattform",
+    version="1.0.0"
+)
+
+DB_NAME = "learnhub.db"
+
+
+# =========================================
+# DATABASE SETUP
+# =========================================
+
+def get_db():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db():
+    db = get_db()
+    cursor = db.cursor()
+
+    # USERS
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE,
+        email TEXT,
+        password TEXT,
+        role TEXT,
+        created_at TEXT
+    )
+    """)
+
+    # TODOS
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS todos (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        title TEXT,
+        subject TEXT,
+        due_date TEXT,
+        priority TEXT,
+        done INTEGER
+    )
+    """)
+
+    # GRADES
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS grades (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        subject TEXT,
+        value REAL,
+        description TEXT,
+        date TEXT
+    )
+    """)
+
+    # TIMETABLE
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS timetable (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        day TEXT,
+        time TEXT,
+        subject TEXT
+    )
+    """)
+
+    # FLASHCARDS
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS flashcards (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        subject TEXT,
+        front TEXT,
+        back TEXT,
+        public INTEGER
+    )
+    """)
+
+    db.commit()
+    db.close()
+
+
+init_db()
+
+# =========================================
+# HILFSFUNKTIONEN
+# =========================================
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def generate_id() -> str:
+    return str(uuid.uuid4())
+
+
+# =========================================
+# Pydantic MODELS (Request / Response)
+# =========================================
+
+class UserRegister(BaseModel):
+    username: str
+    email: str
+    password: str
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+class TodoCreate(BaseModel):
+    title: str
+    subject: str
+    due_date: str
+    priority: str
+
+
+class GradeCreate(BaseModel):
+    subject: str
+    value: float
+    description: Optional[str] = ""
+
+
+class FlashcardCreate(BaseModel):
+    subject: str
+    front: str
+    back: str
+    public: bool = False
+
+
+# =========================================
+# AUTH ROUTES
+# =========================================
+
+@app.post("/auth/register")
+def register(user: UserRegister):
+    db = get_db()
+    cursor = db.cursor()
+
+    try:
+        cursor.execute("""
+        INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            generate_id(),
+            user.username,
+            user.email,
+            hash_password(user.password),
+            "user",
+            datetime.utcnow().isoformat()
+        ))
+        db.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Username existiert bereits")
+
+    return {"message": "Registrierung erfolgreich"}
+
+
+@app.post("/auth/login")
+def login(data: UserLogin):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT * FROM users WHERE username=? AND password=?
+    """, (data.username, hash_password(data.password)))
+
+    user = cursor.fetchone()
+    if not user:
+        raise HTTPException(status_code=401, detail="Login fehlgeschlagen")
+
+    return {
+        "user_id": user["id"],
+        "username": user["username"],
+        "role": user["role"]
+    }
+
+
+# =========================================
+# TODO ROUTES
+# =========================================
+
+@app.post("/todos/{user_id}")
+def create_todo(user_id: str, todo: TodoCreate):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    INSERT INTO todos VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        generate_id(),
+        user_id,
+        todo.title,
+        todo.subject,
+        todo.due_date,
+        todo.priority,
+        0
+    ))
+
+    db.commit()
+    return {"message": "To-Do erstellt"}
+
+
+@app.get("/todos/{user_id}")
+def get_todos(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT * FROM todos WHERE user_id=?", (user_id,))
+    return cursor.fetchall()
+
+
+# =========================================
+# GRADES ROUTES
+# =========================================
+
+@app.post("/grades/{user_id}")
+def add_grade(user_id: str, grade: GradeCreate):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    INSERT INTO grades VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        generate_id(),
+        user_id,
+        grade.subject,
+        grade.value,
+        grade.description,
+        datetime.utcnow().isoformat()
+    ))
+
+    db.commit()
+    return {"message": "Note gespeichert"}
+
+
+@app.get("/grades/{user_id}")
+def get_grades(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT * FROM grades WHERE user_id=?", (user_id,))
+    return cursor.fetchall()
+
+
+# =========================================
+# FLASHCARDS ROUTES
+# =========================================
+
+@app.post("/flashcards/{user_id}")
+def create_flashcard(user_id: str, card: FlashcardCreate):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    INSERT INTO flashcards VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        generate_id(),
+        user_id,
+        card.subject,
+        card.front,
+        card.back,
+        int(card.public)
+    ))
+
+    db.commit()
+    return {"message": "Karteikarte erstellt"}
+
+
+@app.get("/flashcards/{user_id}")
+def get_flashcards(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT * FROM flashcards WHERE user_id=? OR public=1
+    """, (user_id,))
+    return cursor.fetchall()
+
+
+# =========================================
+# ADMIN ROUTES
+# =========================================
+
+@app.get("/admin/stats")
+def admin_stats():
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM users")
+    users = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM flashcards")
+    cards = cursor.fetchone()[0]
+
+    return {
+        "total_users": users,
+        "total_flashcards": cards
+    }
