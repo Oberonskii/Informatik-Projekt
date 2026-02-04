@@ -11,6 +11,13 @@ from datetime import datetime
 import sqlite3
 import uuid
 import hashlib
+import os
+from fastapi import UploadFile, File
+from fastapi.responses import FileResponse
+
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
 
 # =========================================
 # APP INITIALISIERUNG
@@ -39,6 +46,19 @@ def init_db():
     db = get_db()
     cursor = db.cursor()
 
+    # FILES
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS files (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        filename TEXT,
+        original_name TEXT,
+        subject TEXT,
+        uploaded_at TEXT
+    )
+    """)
+
+    
     # USERS
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
@@ -177,6 +197,110 @@ def register(user: UserRegister):
         raise HTTPException(status_code=400, detail="Username existiert bereits")
 
     return {"message": "Registrierung erfolgreich"}
+
+
+# =========================================
+# FILE UPLOAD ROUTES
+# =========================================
+
+
+
+@app.delete("/files/{user_id}/{file_id}")
+def delete_file(user_id: str, file_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT filename FROM files WHERE id=? AND user_id=?
+    """, (file_id, user_id))
+
+    file = cursor.fetchone()
+    if not file:
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+
+    file_path = os.path.join(UPLOAD_DIR, user_id, file["filename"])
+
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    cursor.execute("DELETE FROM files WHERE id=?", (file_id,))
+    db.commit()
+
+    return {"message": "Datei gelöscht"}
+
+
+@app.get("/files/download/{user_id}/{file_id}")
+def download_file(user_id: str, file_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT filename, original_name
+    FROM files WHERE id=? AND user_id=?
+    """, (file_id, user_id))
+
+    file = cursor.fetchone()
+    if not file:
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+
+    file_path = os.path.join(UPLOAD_DIR, user_id, file["filename"])
+
+    return FileResponse(
+        path=file_path,
+        filename=file["original_name"]
+    )
+
+
+@app.get("/files/{user_id}")
+def get_user_files(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT id, original_name, subject, uploaded_at
+    FROM files WHERE user_id=?
+    """, (user_id,))
+
+    return cursor.fetchall()
+
+
+@app.post("/files/upload/{user_id}")
+def upload_file(
+    user_id: str,
+    subject: str,
+    file: UploadFile = File(...)
+):
+    db = get_db()
+    cursor = db.cursor()
+
+    file_id = generate_id()
+    user_dir = os.path.join(UPLOAD_DIR, user_id)
+    os.makedirs(user_dir, exist_ok=True)
+
+    file_ext = file.filename.split(".")[-1]
+    stored_filename = f"{file_id}.{file_ext}"
+    file_path = os.path.join(user_dir, stored_filename)
+
+    # Datei speichern
+    with open(file_path, "wb") as f:
+        f.write(file.file.read())
+
+    # Metadaten speichern
+    cursor.execute("""
+    INSERT INTO files VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        file_id,
+        user_id,
+        stored_filename,
+        file.filename,
+        subject,
+        datetime.utcnow().isoformat()
+    ))
+
+    db.commit()
+
+    return {"message": "Datei erfolgreich hochgeladen"}
+
 
 
 @app.post("/auth/login")
@@ -320,3 +444,12 @@ def admin_stats():
         "total_users": users,
         "total_flashcards": cards
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "backend:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=True
+    )
