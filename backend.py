@@ -456,23 +456,20 @@ def upload_file(
     return {"message": "Datei erfolgreich hochgeladen"}
 
 @app.post("/auth/login")
-def login(data: UserLogin):
+def login(user: UserLogin):
     db = get_db()
     cursor = db.cursor()
 
     cursor.execute("""
-    SELECT * FROM users WHERE username=? AND password=?
-    """, (data.username, hash_password(data.password)))
+    SELECT * FROM users WHERE username = ?
+    """, (user.username,))
+    user_db = cursor.fetchone()
 
-    user = cursor.fetchone()
-    if not user:
-        raise HTTPException(status_code=401, detail="Login fehlgeschlagen")
+    if user_db is None or user_db['password'] != hash_password(user.password):
+        raise HTTPException(status_code=401, detail="Ungültiger Benutzername oder Passwort")
 
-    return {
-        "user_id": user["id"],
-        "username": user["username"],
-        "role": user["role"]
-    }
+    return {"message": "Login erfolgreich"}
+
 
 
 # =========================================
