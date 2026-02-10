@@ -1,0 +1,1381 @@
+-Layout für LeanHub verbessert bzw ausgebaut und verstanden. 
+Auf Basis darauf ein backend erstellt, welches mit python läuft und alle bisher überlegten Funktionen grob abdeckt. 
+
+
+Chat mit ChatGPT, der chat mit perplexity war unbrauchbar:
+du bist backend programmierer und erstellst das backend für "learnhub", Eine anwendungsbasierte Lernplattform für Schüler und Studierende mit Karteikarten, Stundenplan, Notenverwaltung und Dateiorganisation. Ermöglicht effizientes Lernen durch personalisierte Dashboards und kollaborative Funktionen.
+
+Unser aktueller html code anbei, in dem die meisten funktionen bereits als platzhalter und teilweise bereits funktionierend vorhanden ist. Nun sollst du ein backende erstellen, welches die daten vom nutzer speichert, wie bspw stundenplan, noten, to-dos usw. WIchtig ist, dass das backend gut strukturiert ist und mit kommentaren gepflegt ist. Man sollte leicht weitere sachen hinzufügen können, wenn weitere features oder ähnliches hinzugefügt werden.
+Erstelle das ganze in einer .py datei
+
+Alles klar 👍
+Ich übernehme die Rolle als Backend-Entwickler für LearnHub und baue dir ein sauberes, erweiterbares Python-Backend.
+
+Ich entscheide mich bewusst für FastAPI, weil:
+
+sehr sauber strukturiert
+
+extrem gut erweiterbar
+
+perfekt für moderne Frontends (auch später für Mobile Apps)
+
+automatische API-Doku (Swagger)
+
+sehr schnell & übersichtlich
+
+Das Backend ist so aufgebaut, dass du später problemlos neue Features (z. B. Chat, Lernstatistiken, Premium-Features) ergänzen kannst.
+
+🧠 Architektur (kurz erklärt)
+
+Schichtenprinzip (Best Practice):
+
+API / Routes – Endpunkte für Frontend
+
+Services – Logik (Business Logic)
+
+Models – Datenstrukturen (User, Todo, Note …)
+
+Database – SQLite (leicht, perfekt für Start)
+
+Auth – Login / Registrierung
+
+Alles in einer .py Datei, aber klar getrennt durch Kommentare, damit man es später leicht auf mehrere Dateien aufteilen kann.
+
+📦 Features im Backend
+
+✔ Benutzer (Login / Registrierung)
+✔ To-Dos
+✔ Noten
+✔ Stundenplan
+✔ Karteikarten
+✔ Dateien (Metadaten, kein Upload-Zwang)
+✔ Admin-Statistiken
+✔ Erweiterbar & dokumentiert
+
+🐍 learnhub_backend.py
+
+Starten mit:
+
+pip install fastapi uvicorn sqlalchemy passlib[bcrypt]
+uvicorn learnhub_backend:app --reload
+
+# =========================================
+# LearnHub Backend
+# Autor: Backend-Team
+# Technologie: FastAPI + SQLite
+# =========================================
+
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import datetime
+import sqlite3
+import uuid
+import hashlib
+
+# =========================================
+# APP INITIALISIERUNG
+# =========================================
+
+app = FastAPI(
+    title="LearnHub API",
+    description="Backend für die LearnHub Lernplattform",
+    version="1.0.0"
+)
+
+DB_NAME = "learnhub.db"
+
+
+# =========================================
+# DATABASE SETUP
+# =========================================
+
+def get_db():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db():
+    db = get_db()
+    cursor = db.cursor()
+
+    # USERS
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE,
+        email TEXT,
+        password TEXT,
+        role TEXT,
+        created_at TEXT
+    )
+    """)
+
+    # TODOS
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS todos (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        title TEXT,
+        subject TEXT,
+        due_date TEXT,
+        priority TEXT,
+        done INTEGER
+    )
+    """)
+
+    # GRADES
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS grades (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        subject TEXT,
+        value REAL,
+        description TEXT,
+        date TEXT
+    )
+    """)
+
+    # TIMETABLE
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS timetable (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        day TEXT,
+        time TEXT,
+        subject TEXT
+    )
+    """)
+
+    # FLASHCARDS
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS flashcards (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        subject TEXT,
+        front TEXT,
+        back TEXT,
+        public INTEGER
+    )
+    """)
+
+    db.commit()
+    db.close()
+
+
+init_db()
+
+# =========================================
+# HILFSFUNKTIONEN
+# =========================================
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def generate_id() -> str:
+    return str(uuid.uuid4())
+
+
+# =========================================
+# Pydantic MODELS (Request / Response)
+# =========================================
+
+class UserRegister(BaseModel):
+    username: str
+    email: str
+    password: str
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+class TodoCreate(BaseModel):
+    title: str
+    subject: str
+    due_date: str
+    priority: str
+
+
+class GradeCreate(BaseModel):
+    subject: str
+    value: float
+    description: Optional[str] = ""
+
+
+class FlashcardCreate(BaseModel):
+    subject: str
+    front: str
+    back: str
+    public: bool = False
+
+
+# =========================================
+# AUTH ROUTES
+# =========================================
+
+@app.post("/auth/register")
+def register(user: UserRegister):
+    db = get_db()
+    cursor = db.cursor()
+
+    try:
+        cursor.execute("""
+        INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            generate_id(),
+            user.username,
+            user.email,
+            hash_password(user.password),
+            "user",
+            datetime.utcnow().isoformat()
+        ))
+        db.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Username existiert bereits")
+
+    return {"message": "Registrierung erfolgreich"}
+
+
+@app.post("/auth/login")
+def login(data: UserLogin):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT * FROM users WHERE username=? AND password=?
+    """, (data.username, hash_password(data.password)))
+
+    user = cursor.fetchone()
+    if not user:
+        raise HTTPException(status_code=401, detail="Login fehlgeschlagen")
+
+    return {
+        "user_id": user["id"],
+        "username": user["username"],
+        "role": user["role"]
+    }
+
+
+# =========================================
+# TODO ROUTES
+# =========================================
+
+@app.post("/todos/{user_id}")
+def create_todo(user_id: str, todo: TodoCreate):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    INSERT INTO todos VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        generate_id(),
+        user_id,
+        todo.title,
+        todo.subject,
+        todo.due_date,
+        todo.priority,
+        0
+    ))
+
+    db.commit()
+    return {"message": "To-Do erstellt"}
+
+
+@app.get("/todos/{user_id}")
+def get_todos(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT * FROM todos WHERE user_id=?", (user_id,))
+    return cursor.fetchall()
+
+
+# =========================================
+# GRADES ROUTES
+# =========================================
+
+@app.post("/grades/{user_id}")
+def add_grade(user_id: str, grade: GradeCreate):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    INSERT INTO grades VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        generate_id(),
+        user_id,
+        grade.subject,
+        grade.value,
+        grade.description,
+        datetime.utcnow().isoformat()
+    ))
+
+    db.commit()
+    return {"message": "Note gespeichert"}
+
+
+@app.get("/grades/{user_id}")
+def get_grades(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT * FROM grades WHERE user_id=?", (user_id,))
+    return cursor.fetchall()
+
+
+# =========================================
+# FLASHCARDS ROUTES
+# =========================================
+
+@app.post("/flashcards/{user_id}")
+def create_flashcard(user_id: str, card: FlashcardCreate):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    INSERT INTO flashcards VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        generate_id(),
+        user_id,
+        card.subject,
+        card.front,
+        card.back,
+        int(card.public)
+    ))
+
+    db.commit()
+    return {"message": "Karteikarte erstellt"}
+
+
+@app.get("/flashcards/{user_id}")
+def get_flashcards(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT * FROM flashcards WHERE user_id=? OR public=1
+    """, (user_id,))
+    return cursor.fetchall()
+
+
+# =========================================
+# ADMIN ROUTES
+# =========================================
+
+@app.get("/admin/stats")
+def admin_stats():
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM users")
+    users = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM flashcards")
+    cards = cursor.fetchone()[0]
+
+    return {
+        "total_users": users,
+        "total_flashcards": cards
+    }
+
+🚀 Nächste sinnvolle Schritte
+
+Wenn du willst, können wir als Nächstes:
+
+🔗 dein HTML direkt mit der API verbinden (fetch / axios)
+
+🔐 echtes JWT-Login einbauen
+
+📁 Datei-Uploads (PDF, Bilder, Notizen)
+
+📊 Dashboard-Statistiken berechnen
+
+🧩 Backend in Module aufteilen (production ready)
+
+Sag mir einfach, was als Nächstes drankommt 💪
+
+datei uploads hinzufügen
+
+Perfekt 👍
+Dann erweitern wir das LearnHub-Backend sauber um Datei-Uploads, passend zu deinem bestehenden HTML („Dateien & Notizen“).
+
+Ich erkläre es Schritt für Schritt und gebe dir konkreten Code, den du direkt in dieselbe .py Datei einbauen kannst.
+
+🧠 Ziel der Datei-Uploads
+
+Das Backend soll:
+
+📁 Dateien pro Benutzer speichern
+
+🏷 Metadaten sichern (Name, Typ, Upload-Datum, Fach)
+
+⬇️ Dateien herunterladen können
+
+❌ Dateien löschen können
+
+🔒 Benutzertrennung (User sieht nur eigene Dateien)
+
+📦 Technik-Entscheidung
+
+FastAPI UploadFile → effizient & sauber
+
+Ordnerstruktur:
+
+uploads/
+  └── user_id/
+      └── datei.pdf
+
+
+SQLite speichert nur Metadaten (Best Practice)
+
+1️⃣ Datenbank erweitern (FILES Tabelle)
+
+👉 Unter init_db() hinzufügen
+
+    # FILES
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS files (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        filename TEXT,
+        original_name TEXT,
+        subject TEXT,
+        uploaded_at TEXT
+    )
+    """)
+
+2️⃣ Upload-Ordner vorbereiten
+
+👉 Ganz oben in der Datei
+
+import os
+from fastapi import UploadFile, File
+from fastapi.responses import FileResponse
+
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+3️⃣ Datei-Upload Endpoint
+
+👉 Neuer Abschnitt: FILE ROUTES
+
+# =========================================
+# FILE UPLOAD ROUTES
+# =========================================
+
+@app.post("/files/upload/{user_id}")
+def upload_file(
+    user_id: str,
+    subject: str,
+    file: UploadFile = File(...)
+):
+    db = get_db()
+    cursor = db.cursor()
+
+    file_id = generate_id()
+    user_dir = os.path.join(UPLOAD_DIR, user_id)
+    os.makedirs(user_dir, exist_ok=True)
+
+    file_ext = file.filename.split(".")[-1]
+    stored_filename = f"{file_id}.{file_ext}"
+    file_path = os.path.join(user_dir, stored_filename)
+
+    # Datei speichern
+    with open(file_path, "wb") as f:
+        f.write(file.file.read())
+
+    # Metadaten speichern
+    cursor.execute("""
+    INSERT INTO files VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        file_id,
+        user_id,
+        stored_filename,
+        file.filename,
+        subject,
+        datetime.utcnow().isoformat()
+    ))
+
+    db.commit()
+
+    return {"message": "Datei erfolgreich hochgeladen"}
+
+4️⃣ Dateien eines Users abrufen
+@app.get("/files/{user_id}")
+def get_user_files(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT id, original_name, subject, uploaded_at
+    FROM files WHERE user_id=?
+    """, (user_id,))
+
+    return cursor.fetchall()
+
+5️⃣ Datei herunterladen
+@app.get("/files/download/{user_id}/{file_id}")
+def download_file(user_id: str, file_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT filename, original_name
+    FROM files WHERE id=? AND user_id=?
+    """, (file_id, user_id))
+
+    file = cursor.fetchone()
+    if not file:
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+
+    file_path = os.path.join(UPLOAD_DIR, user_id, file["filename"])
+
+    return FileResponse(
+        path=file_path,
+        filename=file["original_name"]
+    )
+
+6️⃣ Datei löschen
+@app.delete("/files/{user_id}/{file_id}")
+def delete_file(user_id: str, file_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT filename FROM files WHERE id=? AND user_id=?
+    """, (file_id, user_id))
+
+    file = cursor.fetchone()
+    if not file:
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+
+    file_path = os.path.join(UPLOAD_DIR, user_id, file["filename"])
+
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    cursor.execute("DELETE FROM files WHERE id=?", (file_id,))
+    db.commit()
+
+    return {"message": "Datei gelöscht"}
+
+🔗 Frontend-Anbindung (kurz & wichtig)
+
+Dein HTML hat bereits:
+
+<button id="newFileBtn">Datei hochladen</button>
+
+
+👉 Frontend sendet:
+
+POST /files/upload/{user_id}
+
+multipart/form-data
+
+Felder:
+
+file
+
+subject
+
+Wenn du willst, schreibe ich dir exakt den JS-Fetch-Code, passend zu deinem bestehenden app.renderFiles().
+
+🚀 Optional als Nächstes
+
+Sag mir einfach, was du willst:
+
+🔐 Dateiberechtigungen (Admin / Public)
+
+🧠 Vorschau für PDFs & Bilder
+
+📂 Ordnerstruktur im Backend
+
+☁️ Cloud-Storage (S3 / Firebase)
+
+📊 Speicherverbrauch pro User
+
+Was ist dein nächster Schritt? 💪
+
+was passiert nun wenn man das backend startet
+
+Gute Frage – genau das muss man verstehen, sonst fühlt sich ein Backend wie „Magie“ an 😄
+Ich erkläre dir Schritt für Schritt, was konkret passiert, sobald du dein LearnHub-Backend startest.
+
+🚀 1️⃣ Du startest das Backend
+uvicorn learnhub_backend:app --reload
+
+
+👉 Was passiert dabei?
+
+Schritt 1: Python lädt die Datei
+
+learnhub_backend.py wird komplett ausgeführt
+
+alle Imports (fastapi, sqlite3, os, …) werden geladen
+
+🗄 2️⃣ Datenbank wird initialisiert
+init_db()
+
+Das passiert automatisch:
+
+learnhub.db wird erstellt (falls sie noch nicht existiert)
+
+Tabellen werden angelegt:
+
+users
+
+todos
+
+grades
+
+timetable
+
+flashcards
+
+files
+
+⚠️ Wichtig:
+Es werden keine Daten gelöscht, wenn du das Backend neu startest.
+
+📁 3️⃣ Upload-Ordner wird vorbereitet
+os.makedirs("uploads", exist_ok=True)
+
+
+👉 Ergebnis:
+
+uploads/
+
+
+Später:
+
+uploads/
+ └── user_id/
+     └── datei.pdf
+
+🌐 4️⃣ FastAPI startet den Server
+
+Du siehst im Terminal z. B.:
+
+INFO:     Uvicorn running on http://127.0.0.1:8000
+
+
+Jetzt läuft dein Backend permanent im Hintergrund und wartet auf Anfragen.
+
+🧪 5️⃣ Automatische API-Dokumentation
+Öffne im Browser:
+http://127.0.0.1:8000/docs
+
+
+👉 Dort kannst du:
+
+alle Endpoints sehen
+
+Requests testen (Login, Upload, Todos, etc.)
+
+Responses live anschauen
+
+Das ist extrem hilfreich beim Frontend-Bauen.
+
+👤 6️⃣ Was passiert, wenn ein User sich einloggt?
+Frontend sendet:
+POST /auth/login
+
+Backend:
+
+sucht User in der Datenbank
+
+prüft Passwort (Hash)
+
+gibt user_id, username, role zurück
+
+💡 Das Frontend speichert die user_id
+→ alle weiteren Requests laufen mit dieser ID
+
+📄 7️⃣ Beispiel: Datei hochladen
+Frontend:
+POST /files/upload/{user_id}
+
+Backend macht:
+
+erstellt Ordner uploads/{user_id}
+
+speichert Datei auf der Festplatte
+
+speichert Metadaten in files Tabelle
+
+gibt Erfolgsmeldung zurück
+
+👉 Ergebnis:
+
+uploads/
+ └── u123/
+     └── 9f2a.pdf
+
+
+Und in der DB:
+
+id	user_id	original_name	subject	uploaded_at
+🔄 8️⃣ Backend läuft dauerhaft
+
+wartet auf Requests
+
+verarbeitet mehrere User gleichzeitig
+
+speichert alles persistent
+
+kein Datenverlust beim Reload
+
+❌ Backend macht nichts von selbst
+✔️ es reagiert nur auf Anfragen
+
+🔌 9️⃣ Verbindung zu deinem HTML
+
+Dein aktuelles HTML nutzt LocalStorage.
+Ab jetzt gibt es zwei Wege:
+
+Option A (Übergang)
+
+Login + Files → Backend
+
+Rest → noch LocalStorage
+
+Option B (empfohlen)
+
+alles über Backend
+
+Frontend wird „dumm“
+
+Backend übernimmt Logik & Sicherheit
+
+🧠 Kurz gesagt
+
+Wenn du das Backend startest:
+
+✔ Server läuft
+✔ Datenbank existiert
+✔ Uploads funktionieren
+✔ API ist erreichbar
+✔ Frontend kann Daten speichern
+
+❌ Es passiert nichts automatisch
+➡️ alles passiert nur durch Frontend-Requests
+
+👉 Nächster sinnvoller Schritt
+
+Ich empfehle jetzt genau einen davon:
+
+1️⃣ Frontend → Backend verbinden (fetch-Code)
+2️⃣ Login sicher machen (JWT)
+3️⃣ LocalStorage komplett ersetzen
+4️⃣ Deployment (z. B. Render / VPS)
+
+👉 Was willst du als Nächstes umsetzen?
+
+geht auch "python backend.py" zum start?
+
+Kurze, klare Antwort: Jein 🙂
+Es geht, aber nicht automatisch – und nicht so, wie du es erwartest.
+Ich erklär dir das sauber, Schritt für Schritt.
+
+🧪 Was passiert bei
+python backend.py
+
+Schritt 1
+
+Python führt nur den Code aus, der direkt in der Datei steht:
+
+app = FastAPI()
+init_db()
+
+
+✔ Datenbank wird erstellt
+✔ Upload-Ordner wird erstellt
+
+❌ Der Webserver startet NICHT
+
+➡️ Dein Backend läuft nicht, es hört auf Anfragen zu warten.
+
+❌ Warum FastAPI so nicht läuft
+
+FastAPI ist nur das Framework, aber:
+
+es startet keinen Server selbst
+
+dafür brauchst du einen ASGI-Server
+
+das ist z. B. uvicorn
+
+✅ Richtig & professionell (empfohlen)
+uvicorn backend:app --reload
+
+
+👉 Das:
+
+startet den Webserver
+
+macht dein Backend erreichbar
+
+erlaubt Hot-Reload
+
+✅ ABER: python backend.py geht AUCH (wenn du willst)
+
+Wenn du unbedingt willst, kannst du Uvicorn direkt im Code starten.
+
+🔧 Lösung: Code ganz unten ergänzen
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "backend:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=True
+    )
+
+
+Jetzt funktioniert:
+
+python backend.py
+
+
+✔ Server startet
+✔ Backend erreichbar
+✔ Kein Unterschied für dich
+
+⚠️ Wichtiger Hinweis
+
+Diese Variante ist:
+
+✔ okay für Entwicklung
+
+❌ nicht ideal für Produktion
+
+In Produktion:
+
+uvicorn backend:app --host 0.0.0.0 --port 8000
+
+🔍 Woran erkennst du, dass es läuft?
+
+Im Terminal siehst du:
+
+Uvicorn running on http://127.0.0.1:8000
+
+
+Und im Browser:
+
+http://127.0.0.1:8000/docs
+
+🧠 Kurz zusammengefasst
+Befehl	Funktioniert?	Empfehlung
+python backend.py	❌ standardmäßig nein	nur mit Zusatzcode
+uvicorn backend:app	✅	⭐ empfohlen
+python backend.py + if-main	✅	ok für Dev
+
+Wenn du willst, machen wir als Nächstes:
+
+🔗 Frontend direkt anbinden
+
+🔐 Login absichern
+
+🧹 LocalStorage komplett entfernen
+
+Was ist dein nächster Schritt? 💪
+
+~/workspace$ python3 main.py
+INFO:     Will watch for changes in these directories: ['/home/runner/workspace']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [672] using StatReload
+ERROR:    Error loading ASGI app. Could not import module "backend".
+
+Perfekt, das ist ein klassischer, sehr guter Fehler – und er sagt uns exakt, was falsch läuft 👍
+Ich erkläre dir das glasklar, dann ist es in 30 Sekunden gefixt.
+
+❌ Die Fehlermeldung (übersetzt)
+Error loading ASGI app.
+Could not import module "backend"
+
+
+👉 Uvicorn sucht eine Datei namens backend.py
+👉 Die gibt es bei dir nicht
+
+Du startest nämlich:
+
+python3 main.py
+
+
+Aber im Code steht (oder implizit):
+
+uvicorn.run("backend:app", ...)
+
+
+➡️ Namenskonflikt
+
+🧠 Grundregel (sehr wichtig!)
+uvicorn DATEINAME:VARIABLE
+
+
+Also:
+
+Deine Datei heißt	Richtiger Start
+backend.py	backend:app
+main.py	main:app
+server.py	server:app
+✅ LÖSUNG 1 (empfohlen): Dateiname korrekt anpassen
+Du hast:
+python3 main.py
+
+
+👉 Dann ändere GANZ UNTEN in main.py:
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "main:app",   # 🔥 WICHTIG
+        host="127.0.0.1",
+        port=8000,
+        reload=True
+    )
+
+
+❌ NICHT backend:app
+✅ main:app
+
+✅ LÖSUNG 2 (alternativ): Direkt über Uvicorn starten
+
+Statt python3 main.py:
+
+uvicorn main:app --reload
+
+
+👉 Dann brauchst du gar keinen if __name__ == "__main__" Block
+
+🔍 Warum ist das so?
+
+main.py ist ein Python-Modul
+
+Uvicorn importiert es intern
+
+backend:app bedeutet:
+
+„Importiere backend.py und nimm die Variable app“
+
+Da backend.py nicht existiert, knallt es 💥
+
+✅ Checkliste (schnell)
+
+Bitte prüfe eins von beiden:
+
+✔ Variante A (mit python)
+python3 main.py
+
+uvicorn.run("main:app", ...)
+
+✔ Variante B (mit uvicorn)
+uvicorn main:app --reload
+
+🧪 Woran erkennst du, dass es jetzt richtig läuft?
+
+Im Terminal:
+
+Uvicorn running on http://127.0.0.1:8000
+
+
+Im Browser:
+
+http://127.0.0.1:8000/docs
+
+
+➡️ Swagger UI lädt
+➡️ Endpoints sichtbar
+➡️ Backend läuft sauber 🎉
+
+🚀 Nächster sinnvoller Schritt
+
+Jetzt, wo der Server läuft, können wir:
+
+1️⃣ Frontend-Datei-Upload anbinden (fetch + FormData)
+2️⃣ Login mit JWT absichern
+3️⃣ LocalStorage komplett ersetzen
+4️⃣ Fehlerhandling & Statuscodes verbessern
+
+👉 Was willst du als Nächstes angehen?
+
+wie würde eine beispiel request zum user login von dem frontend aussehen und wie die zugehörigr antwort des backend?
+
+Top Frage 👍
+Genau hier verbindet sich Frontend ↔ Backend.
+Ich zeige dir das realistisch, praxisnah und 1:1 passend zu deinem LearnHub-Backend.
+
+🔐 Beispiel: User-Login (Frontend → Backend)
+🧭 Überblick
+
+Endpoint: POST /auth/login
+
+Ziel: Benutzer authentifizieren
+
+Format: JSON
+
+Antwort: User-Infos (user_id, username, role)
+
+1️⃣ Frontend-Request (JavaScript – fetch)
+🔹 Beispiel aus deinem HTML / JS
+async function loginUser(username, password) {
+    const response = await fetch("http://127.0.0.1:8000/auth/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            username: username,
+            password: password
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error("Login fehlgeschlagen");
+    }
+
+    const data = await response.json();
+    return data;
+}
+
+🔹 Aufruf z. B.:
+loginUser("user", "user123")
+    .then(user => {
+        console.log("Eingeloggt:", user);
+        localStorage.setItem("user", JSON.stringify(user));
+    })
+    .catch(err => {
+        alert(err.message);
+    });
+
+2️⃣ Was genau sendet das Frontend?
+📤 HTTP Request
+POST /auth/login HTTP/1.1
+Host: 127.0.0.1:8000
+Content-Type: application/json
+
+{
+  "username": "user",
+  "password": "user123"
+}
+
+
+✔ Klar
+✔ Einfach
+✔ Framework-unabhängig
+
+3️⃣ Backend verarbeitet die Anfrage
+Dein Backend-Code (zur Erinnerung)
+@app.post("/auth/login")
+def login(data: UserLogin):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT * FROM users WHERE username=? AND password=?
+    """, (data.username, hash_password(data.password)))
+
+    user = cursor.fetchone()
+    if not user:
+        raise HTTPException(status_code=401, detail="Login fehlgeschlagen")
+
+    return {
+        "user_id": user["id"],
+        "username": user["username"],
+        "role": user["role"]
+    }
+
+Intern passiert:
+
+JSON → UserLogin Model
+
+Passwort wird gehasht
+
+DB-Vergleich
+
+Antwort wird erzeugt
+
+4️⃣ Backend-Antwort bei Erfolg ✅
+📥 HTTP Response
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "user_id": "c3e9d1a8-9b4a-4f73-a1f6-91b2d7d82c99",
+  "username": "user",
+  "role": "user"
+}
+
+
+👉 Das speichert dein Frontend
+
+{
+  user_id: "...",
+  username: "user",
+  role: "user"
+}
+
+5️⃣ Backend-Antwort bei Fehler ❌
+Falsches Passwort / User
+HTTP/1.1 401 Unauthorized
+Content-Type: application/json
+
+{
+  "detail": "Login fehlgeschlagen"
+}
+
+Frontend erkennt das hier:
+if (!response.ok) {
+    // z. B. response.status === 401
+}
+
+🧠 Wichtig für dein LearnHub-Frontend
+Nach dem Login solltest du:
+
+user_id speichern
+
+sie bei jeder weiteren Anfrage mitschicken
+
+Beispiel:
+
+const user = JSON.parse(localStorage.getItem("user"));
+
+fetch(`http://127.0.0.1:8000/todos/${user.user_id}`);
+
+🔐 Was NOCH fehlt (bewusst)
+
+Aktuell:
+
+❌ keine Sessions
+
+❌ keine Tokens
+
+❌ keine Zugriffskontrolle
+
+👉 Nächster Schritt wäre:
+JWT-Authentifizierung (professionell & sicher)
+
+🚀 Nächste sinnvolle Schritte
+
+Sag mir einfach, was du willst:
+
+1️⃣ Login-Fetch direkt in dein bestehendes HTML integrieren
+2️⃣ JWT statt user_id
+3️⃣ Backend-Fehler sauber im UI anzeigen
+4️⃣ Kompletter Flow: Login → Dashboard → Daten laden
+
+👉 Was bauen wir als Nächstes?
+
+Folgende post punkte des backends fehlen noch:
+- Stundenplan, dazu gehört: anzeigen, fach hinzufügen, löschen und bearbeiten
+- bei todo: delete todo
+
+Sehr gut, das sind logische nächste Schritte 👍
+Wir ergänzen dein Backend jetzt sauber und vollständig, exakt so, wie du es für LearnHub brauchst.
+
+Ich gehe Feature für Feature, erkläre kurz was es macht, und gebe dir fertigen Code, den du direkt in deine bestehende main.py einfügen kannst.
+
+🕒 STUNDENPLAN (Timetable)
+🧠 Datenmodell (was ein Eintrag ist)
+
+Ein Stundenplan-Eintrag besteht aus:
+
+id
+
+user_id
+
+day → z. B. "monday"
+
+time → z. B. "08:00 - 09:30"
+
+subject → "Mathematik"
+
+Die Tabelle hast du bereits ✔️
+
+1️⃣ Stundenplan anzeigen
+📌 Zweck
+
+Alle Stunden eines Users abrufen
+
+🔗 Endpoint
+
+GET /timetable/{user_id}
+
+@app.get("/timetable/{user_id}")
+def get_timetable(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT id, day, time, subject
+    FROM timetable
+    WHERE user_id=?
+    ORDER BY day, time
+    """, (user_id,))
+
+    return cursor.fetchall()
+
+2️⃣ Stunde hinzufügen
+📌 Zweck
+
+Neue Unterrichtsstunde anlegen
+
+🔗 Endpoint
+
+POST /timetable/{user_id}
+
+📦 Request Model
+
+👉 oben bei den Pydantic Models hinzufügen
+
+class TimetableCreate(BaseModel):
+    day: str       # monday, tuesday, ...
+    time: str      # "08:00 - 09:30"
+    subject: str
+
+🔧 Endpoint
+@app.post("/timetable/{user_id}")
+def add_timetable_entry(user_id: str, entry: TimetableCreate):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    INSERT INTO timetable VALUES (?, ?, ?, ?, ?)
+    """, (
+        generate_id(),
+        user_id,
+        entry.day,
+        entry.time,
+        entry.subject
+    ))
+
+    db.commit()
+    return {"message": "Stunde hinzugefügt"}
+
+3️⃣ Stunde bearbeiten
+📌 Zweck
+
+Zeit / Fach / Tag ändern
+
+🔗 Endpoint
+
+PUT /timetable/{user_id}/{entry_id}
+
+@app.put("/timetable/{user_id}/{entry_id}")
+def update_timetable_entry(
+    user_id: str,
+    entry_id: str,
+    entry: TimetableCreate
+):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    UPDATE timetable
+    SET day=?, time=?, subject=?
+    WHERE id=? AND user_id=?
+    """, (
+        entry.day,
+        entry.time,
+        entry.subject,
+        entry_id,
+        user_id
+    ))
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Eintrag nicht gefunden")
+
+    db.commit()
+    return {"message": "Stunde aktualisiert"}
+
+4️⃣ Stunde löschen
+📌 Zweck
+
+Stundenplan-Eintrag entfernen
+
+🔗 Endpoint
+
+DELETE /timetable/{user_id}/{entry_id}
+
+@app.delete("/timetable/{user_id}/{entry_id}")
+def delete_timetable_entry(user_id: str, entry_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    DELETE FROM timetable
+    WHERE id=? AND user_id=?
+    """, (entry_id, user_id))
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Eintrag nicht gefunden")
+
+    db.commit()
+    return {"message": "Stunde gelöscht"}
+
+✅ TODO: DELETE TODO
+
+Dein Backend kann To-Dos anlegen & anzeigen, aber löschen fehlt – das holen wir jetzt nach.
+
+🗑 To-Do löschen
+🔗 Endpoint
+
+DELETE /todos/{user_id}/{todo_id}
+
+@app.delete("/todos/{user_id}/{todo_id}")
+def delete_todo(user_id: str, todo_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    DELETE FROM todos
+    WHERE id=? AND user_id=?
+    """, (todo_id, user_id))
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="To-Do nicht gefunden")
+
+    db.commit()
+    return {"message": "To-Do gelöscht"}
+
+🧪 Beispiel-Requests (zur Kontrolle)
+➕ Stunde hinzufügen
+POST /timetable/u123
+{
+  "day": "monday",
+  "time": "08:00 - 09:30",
+  "subject": "Mathematik"
+}
+
+❌ Stunde löschen
+DELETE /timetable/u123/abc456
+
+❌ To-Do löschen
+DELETE /todos/u123/todo789
+
+🧠 Status deines Backends jetzt
+
+✔ Login / Register
+✔ To-Dos (create, list, delete)
+✔ Stundenplan (CRUD vollständig)
+✔ Noten
+✔ Karteikarten
+✔ Datei-Uploads
+✔ Admin Stats
+
+➡️ Backend ist jetzt funktional komplett 🎉
+
+🚀 Nächster sinnvoller Schritt
+
+Ich empfehle eins davon:
+
+1️⃣ Frontend-Stundenplan mit Backend verbinden
+2️⃣ Todos & Timetable per Fetch laden
+3️⃣ JWT Auth (kein user_id mehr im URL)
+4️⃣ Fehler & Ladezustände im UI
+
+👉 Was machen wir als Nächstes?
