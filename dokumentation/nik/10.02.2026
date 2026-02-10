@@ -1,0 +1,387 @@
+Backend routes weitergeführt mit change username und change password
+Mit xampp gehostet
+
+database.py
+Python
+wenn wir das ganze mit dem backend verbinden möchten (backend.py). Wie würden wir das machen?
+
+Gute Frage – genau hier wird aus Einzelteilen ein echtes System 👍
+Ich erkläre dir das sauber Schritt für Schritt, bezogen auf dein vorhandenes backend.py (FastAPI) und ein typisches Frontend (HTML/JS oder React).
+
+1️⃣ Grundidee: Wie Frontend & Backend zusammenarbeiten
+
+Backend (backend.py)
+
+Stellt HTTP-Routen (API-Endpoints) bereit
+
+z. B. /auth/login, /todos/{user_id}, /timetable/{user_id}
+
+Arbeitet mit der Datenbank (SQLite)
+
+Frontend
+
+Zeigt UI (Formulare, Buttons, Listen)
+
+Sendet HTTP-Requests (meist fetch)
+
+Bekommen JSON-Antworten zurück
+
+👉 Verbindung = HTTP (REST API)
+
+2️⃣ Backend starten (Basis)
+
+Dein Backend läuft so:
+
+uvicorn backend:app --reload
+
+
+Danach ist es erreichbar unter:
+
+http://127.0.0.1:8000
+
+
+Test:
+
+http://127.0.0.1:8000/docs
+👉 Swagger UI (super wichtig fürs Debuggen)
+
+3️⃣ Beispiel 1: Login vom Frontend → Backend
+🔹 Backend-Route (hast du schon)
+@app.post("/auth/login")
+def login(data: UserLogin):
+    ...
+
+
+Erwartet JSON:
+
+{
+  "username": "max",
+  "password": "1234"
+}
+
+🔹 Frontend (reines JavaScript)
+<form id="loginForm">
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Passwort">
+  <button type="submit">Login</button>
+</form>
+
+<script>
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const response = await fetch("http://127.0.0.1:8000/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      username: document.getElementById("username").value,
+      password: document.getElementById("password").value
+    })
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    alert(data.detail);
+    return;
+  }
+
+  console.log("Eingeloggt:", data);
+
+  // wichtig → user_id speichern
+  localStorage.setItem("user_id", data.user_id);
+});
+</script>
+
+🔹 Antwort vom Backend
+{
+  "user_id": "a8c3-...",
+  "username": "max",
+  "role": "user"
+}
+
+
+👉 user_id ist dein Schlüssel für ALLES weitere
+
+4️⃣ Beispiel 2: Todos vom Backend laden
+🔹 Backend-Route
+@app.get("/todos/{user_id}")
+def get_todos(user_id: str):
+
+🔹 Frontend-Request
+async function loadTodos() {
+  const userId = localStorage.getItem("user_id");
+
+  const response = await fetch(
+    `http://127.0.0.1:8000/todos/${userId}`
+  );
+
+  const todos = await response.json();
+  console.log(todos);
+}
+
+loadTodos();
+
+🔹 Typische Antwort
+[
+  {
+    "id": "123",
+    "title": "Mathe lernen",
+    "subject": "Mathe",
+    "done": 0
+  }
+]
+
+5️⃣ Beispiel 3: Timetable-Eintrag erstellen
+🔹 Backend
+@app.post("/timetable/{user_id}")
+def add_timetable_entry(user_id: str, entry: TimetableCreate):
+
+🔹 Frontend
+async function addLesson() {
+  const userId = localStorage.getItem("user_id");
+
+  await fetch(`http://127.0.0.1:8000/timetable/${userId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      day: "monday",
+      time: "08:00 - 09:30",
+      subject: "Mathe"
+    })
+  });
+}
+
+6️⃣ Ganz wichtig: CORS (sonst blockt der Browser ❌)
+
+Wenn dein Frontend nicht auf 127.0.0.1:8000 läuft (z. B. Vite, React, PHP), brauchst du CORS.
+
+👉 In backend.py oben hinzufügen:
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # später einschränken
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+Ohne das:
+
+❌ Requests kommen nicht an
+
+❌ Browser-Fehler, obwohl Backend korrekt ist
+
+7️⃣ Typische Architektur (so wie Profis 😎)
+Frontend
+│
+├─ login.js      → /auth/login
+├─ todos.js      → /todos/{user_id}
+├─ timetable.js → /timetable/{user_id}
+│
+Backend (FastAPI)
+│
+├─ Routes
+├─ Database (SQLite)
+└─ Responses (JSON)
+
+8️⃣ Merksatz (sehr wichtig)
+
+Frontend = fragt
+Backend = antwortet
+Daten = JSON
+user_id = Schlüssel
+
+Wenn du willst, machen wir als Nächstes:
+
+🔐 echtes JWT-Login
+
+🧱 saubere API-Service-Klasse im Frontend
+
+⚛️ das Ganze konkret in React/Vue
+
+🧪 Debugging mit Swagger & DevTools
+
+Sag mir einfach, was genau du als Frontend nutzt 👌
+
+kann man das ganze auch mit php und nicht mit javascript?
+
+Ja — problemlos 👍
+PHP funktioniert dafür sogar sehr gut, nur eben serverseitig statt im Browser wie JavaScript.
+
+Ich erkläre dir das sauber in Stufen, damit du genau verstehst, was sich ändert und wie man es richtig macht.
+
+1️⃣ Grundunterschied: JavaScript vs. PHP
+🔹 JavaScript (fetch)
+
+Läuft im Browser
+
+Schickt Requests direkt an das FastAPI-Backend
+
+Braucht CORS
+
+🔹 PHP
+
+Läuft auf dem Server
+
+PHP spricht server → server mit FastAPI
+
+❗ Kein CORS-Problem
+
+Sehr gut für klassische Login-Flows
+
+👉 Dein FastAPI-Backend bleibt exakt gleich
+
+2️⃣ Prinzip mit PHP (wichtiges Bild im Kopf)
+Browser
+  ↓ (Formular)
+PHP (login.php)
+  ↓ (cURL / HTTP)
+FastAPI Backend (backend.py)
+  ↓ (JSON)
+PHP
+  ↓
+HTML / Redirect / Session
+
+3️⃣ Beispiel: Login mit PHP → FastAPI
+🔹 HTML Formular (login.html)
+<form action="login.php" method="post">
+  <input name="username" placeholder="Username" required>
+  <input name="password" type="password" required>
+  <button type="submit">Login</button>
+</form>
+
+🔹 PHP (login.php)
+<?php
+session_start();
+
+$url = "http://127.0.0.1:8000/auth/login";
+
+$data = [
+    "username" => $_POST["username"],
+    "password" => $_POST["password"]
+];
+
+$ch = curl_init($url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "Content-Type: application/json"
+]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+
+$result = json_decode($response, true);
+
+if ($httpCode !== 200) {
+    die("Login fehlgeschlagen");
+}
+
+// Session setzen
+$_SESSION["user_id"] = $result["user_id"];
+$_SESSION["username"] = $result["username"];
+
+header("Location: dashboard.php");
+exit;
+
+4️⃣ Geschützte Seiten (Session statt localStorage)
+🔹 dashboard.php
+<?php
+session_start();
+
+if (!isset($_SESSION["user_id"])) {
+    header("Location: login.html");
+    exit;
+}
+
+echo "Hallo " . $_SESSION["username"];
+
+
+👉 PHP Sessions ersetzen hier JavaScript + localStorage
+
+5️⃣ Beispiel: Todos laden mit PHP
+🔹 todos.php
+<?php
+session_start();
+
+$userId = $_SESSION["user_id"];
+$url = "http://127.0.0.1:8000/todos/$userId";
+
+$ch = curl_init($url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$response = curl_exec($ch);
+curl_close($ch);
+
+$todos = json_decode($response, true);
+?>
+
+<ul>
+<?php foreach ($todos as $todo): ?>
+  <li><?= htmlspecialchars($todo["title"]) ?></li>
+<?php endforeach; ?>
+</ul>
+
+6️⃣ Todo löschen (PHP → DELETE Request)
+<?php
+session_start();
+
+$userId = $_SESSION["user_id"];
+$todoId = $_POST["todo_id"];
+
+$url = "http://127.0.0.1:8000/todos/$userId/$todoId";
+
+$ch = curl_init($url);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_exec($ch);
+curl_close($ch);
+
+header("Location: todos.php");
+
+7️⃣ Vorteile von PHP in deinem Setup
+
+✅ Kein CORS-Stress
+✅ Sehr gut für Login & Sessions
+✅ Klassisch & stabil
+✅ Ideal für Schule / GFS / Projekte
+✅ FastAPI bleibt reines API-Backend
+
+8️⃣ Wann JavaScript trotzdem Sinn macht
+
+Live-Updates ohne Reload
+
+Drag & Drop
+
+Single-Page-Apps
+
+Mobile Apps
+
+👉 Mischbetrieb ist völlig normal
+PHP für Logik, JS nur für UI-Extras
+
+9️⃣ Fazit (wichtig)
+
+Ja – PHP ist absolut geeignet
+Dein FastAPI-Backend ist perfekt dafür gebaut
+PHP übernimmt Auth + Sessions
+FastAPI übernimmt Daten & Logik
+
+Wenn du willst, können wir als Nächstes:
+
+🧱 eine saubere PHP-API-Helper-Klasse
+
+🔐 Login + Logout komplett absichern
+
+📁 deine hochgeladenen Dateien anzeigen
+
+🧪 Fehler sauber debuggen (HTTP-Codes)
+
+Sag mir einfach, was du als Nächstes bauen willst 🚀
