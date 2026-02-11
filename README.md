@@ -18,6 +18,6 @@ Eine anwendungsbasierte Lernplattform für Schüler und Studierende mit Karteika
 ## Installation & Start
 
 1. Repository klonen: `git clone [URL]`
-2. Browser öffnen: `index.html` direkt öffnen (kein Server nötig)
-3. Demo-Login: `admin/admin` oder `user/user`
-4. Daten werden in `localStorage` gespeichert
+2. In der Console `pip install -r regriements.txt` eingeben
+3. In der Console `python backend.py` eingeben
+4. `login.php` auf Server öffnen
