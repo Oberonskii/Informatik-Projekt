@@ -471,7 +471,12 @@ def login(user: UserLogin):
     if user_db is None or user_db['password'] != hash_password(user.password):
         raise HTTPException(status_code=401, detail="Ungültiger Benutzername oder Passwort")
 
-    return {"message": "Login erfolgreich"}
+    return {
+        "message": "Login erfolgreich",
+        "user_id": user_db["id"],
+        "username": user_db["username"]
+    }
+
 
 @app.delete("/auth/delete-account/{user_id}")
 def delete_account(user_id: str, data: DeleteAccountRequest):
