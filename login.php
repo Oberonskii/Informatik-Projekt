@@ -31,12 +31,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Überprüfen, ob die Anmeldung erfolgreich war
     if ($http_code == 200) {
-        $_SESSION['username'] = $username;  // Benutzername speichern
-        header('Location: current_dashboard.php');  // Weiterleitung
-        exit();
-    } else {
-        $error_message = 'Ungültige Anmeldedaten';
-    }
+
+    // JSON Antwort in Array umwandeln
+    $responseData = json_decode($response, true);
+
+    // user_id aus der API holen
+    $_SESSION['user_id'] = $responseData['user_id'];
+    $_SESSION['username'] = $responseData['username'];
+
+    header('Location: current_dashboard.php');
+    exit();
+}
+
 }
 ?>
 <!DOCTYPE html>
