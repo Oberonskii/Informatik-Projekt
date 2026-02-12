@@ -16,6 +16,15 @@ $user_id = $_SESSION['user_id'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LearnHub Dashboard</title>
+    <script>
+(function () {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+})();
+
+//
+</script>
+
     <style>
         :root {
             --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1084,17 +1093,35 @@ $user_id = $_SESSION['user_id'];
 
     <script>
         // Theme Toggle
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const themeText = document.getElementById('themeText');
-        let isDarkMode = false;
+        // Theme Toggle (mit localStorage)
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
+const themeText = document.getElementById('themeText');
 
-        themeToggle.addEventListener('click', () => {
-            isDarkMode = !isDarkMode;
-            document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
-            themeIcon.textContent = isDarkMode ? '☀️' : '🌙';
-            themeText.textContent = isDarkMode ? 'Light Mode' : 'Dark Mode';
-        });
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+
+    if (theme === 'dark') {
+        themeIcon.textContent = '☀️';
+        themeText.textContent = 'Light Mode';
+    } else {
+        themeIcon.textContent = '🌙';
+        themeText.textContent = 'Dark Mode';
+    }
+}
+
+// Initial Theme setzen
+const currentTheme = localStorage.getItem('theme') || 'light';
+applyTheme(currentTheme);
+
+// Toggle Button
+themeToggle.addEventListener('click', () => {
+    const activeTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = activeTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(newTheme);
+});
+
 
         // Navigation
         const navItems = document.querySelectorAll('.nav-item');
