@@ -870,7 +870,7 @@ if (!$files) {
                                     <span class="widget-icon">⚙️</span>
                                     Admin Statistiken
                                 </div>
-                                <button class="widget-action" view-data="admin">→</button>
+                                <button class="widget-action" data-view="admin">→</button>
                             </div>
                             <div class="admin-stats">
                                 <div class="stat-card">
