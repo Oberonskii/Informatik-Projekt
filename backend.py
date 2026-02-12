@@ -3,7 +3,8 @@
 # Autor: Backend-Team
 # Technologie: FastAPI + SQLite
 # =========================================
-
+from fastapi import UploadFile, File, Form
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
@@ -402,10 +403,17 @@ def download_file(user_id: str, file_id: str):
 
     file_path = os.path.join(UPLOAD_DIR, user_id, file["filename"])
 
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Datei physisch nicht vorhanden")
+
+    # FileResponse mit originalem Dateinamen inkl. Endung
     return FileResponse(
         path=file_path,
-        filename=file["original_name"]
+        filename=file["original_name"],  # <-- hier kommt der Name inkl. Endung
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{file["original_name"]}"'}
     )
+
 
 
 @app.get("/files/{user_id}")
@@ -420,27 +428,66 @@ def get_user_files(user_id: str):
 
     return cursor.fetchall()
 
+ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "docx", "txt"}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
 @app.post("/files/upload/{user_id}")
-def upload_file(
+async def upload_file(
     user_id: str,
-    subject: str,
+    subject: str = Form(...),
     file: UploadFile = File(...)
 ):
     db = get_db()
     cursor = db.cursor()
 
+    # ---------------------------
+    # 1️⃣ Dateityp prüfen
+    # ---------------------------
+    file_ext = file.filename.split(".")[-1].lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Dateityp nicht erlaubt")
+
+    # ---------------------------
+    # 2️⃣ Dateigröße prüfen
+    # ---------------------------
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="Datei zu groß (max 5MB)")
+
+    # ---------------------------
+    # 3️⃣ Speicherpfad
+    # ---------------------------
     file_id = generate_id()
     user_dir = os.path.join(UPLOAD_DIR, user_id)
     os.makedirs(user_dir, exist_ok=True)
 
-    file_ext = file.filename.split(".")[-1]
     stored_filename = f"{file_id}.{file_ext}"
     file_path = os.path.join(user_dir, stored_filename)
 
-    # Datei speichern
+    # ---------------------------
+    # 4️⃣ Datei speichern
+    # ---------------------------
     with open(file_path, "wb") as f:
-        f.write(file.file.read())
+        f.write(content)
+
+    # ---------------------------
+    # 5️⃣ DB speichern
+    # ---------------------------
+    cursor.execute("""
+    INSERT INTO files VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        file_id,
+        user_id,
+        stored_filename,
+        file.filename,
+        subject,
+        datetime.utcnow().isoformat()
+    ))
+
+    db.commit()
+
+    return {"message": "Datei erfolgreich hochgeladen"}
+
 
     # Metadaten speichern
     cursor.execute("""
