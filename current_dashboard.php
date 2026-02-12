@@ -283,16 +283,22 @@ if (!$files) {
         }
 
         .widget-action {
-            background: transparent;
+            background: var(--color-primary, #007bff); /* Nutzt deine Primärfarbe oder ein sattes Blau */
             border: none;
-            color: var(--color-text-secondary);
+            border-radius: 8px;                    /* Weiche, moderne Kanten */
+            color: white;                          /* Hoher Kontrast für Lesbarkeit */
             cursor: pointer;
-            padding: 0.25rem;
-            transition: color 0.2s;
+            padding: 0.6rem 1.2rem;                /* Mehr "Klickfläche" */
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Dezenter Schatten für Tiefe */
+            transition: all 0.3s ease;             /* Geschmeidige Übergänge für alle Eigenschaften */
         }
 
+        /* Interaktion: Was passiert beim Drüberfahren? */
         .widget-action:hover {
-            color: var(--color-primary);
+            background: var(--color-primary-dark, #0056b3); 
+            transform: translateY(-2px);           /* Kleiner "Hover-Lift" Effekt */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
 
         /* Stundenplan Widget */
@@ -721,7 +727,7 @@ if (!$files) {
                                     <span class="widget-icon">📅</span>
                                     Heute im Stundenplan
                                 </div>
-                                <button class="widget-action">→</button>
+                                <button class="widget-action" data-view="timetable">→</button>
                             </div>
                             <div class="timetable">
                                 <div class="timetable-day">
@@ -752,7 +758,7 @@ if (!$files) {
                                     <span class="widget-icon">📝</span>
                                     Aktuelle Noten
                                 </div>
-                                <button class="widget-action">→</button>
+                                <button class="widget-action" data-view ="grades">→</button>
                             </div>
                             <div class="grades-list">
                                 <div class="grade-item">
@@ -777,7 +783,7 @@ if (!$files) {
                                     <span class="widget-icon">✅</span>
                                     Offene Aufgaben
                                 </div>
-                                <button class="widget-action">→</button>
+                                <button class="widget-action" data-view="todos">→</button>
                             </div>
                             <div class="todo-list" id="todoList">
                                 <div class="todo-item">
@@ -805,7 +811,7 @@ if (!$files) {
                                     <span class="widget-icon">🎴</span>
                                     Karteikarten lernen
                                 </div>
-                                <button class="widget-action">→</button>
+                                <button class="widget-action" data-view="flashcards">→</button>
                             </div>
                             <div class="flashcard" id="flashcard" onclick="flipCard('flashcard')">
                                 <div class="flashcard-inner" id="flashcardInner">
@@ -830,7 +836,7 @@ if (!$files) {
                                     <span class="widget-icon">📁</span>
                                     Letzte Dateien
                                 </div>
-                                <button class="widget-action">→</button>
+                                <button class="widget-action" view-data="files">→</button>
                             </div>
                             <div class="files-list">
                                 <div class="file-item">
@@ -864,7 +870,7 @@ if (!$files) {
                                     <span class="widget-icon">⚙️</span>
                                     Admin Statistiken
                                 </div>
-                                <button class="widget-action">→</button>
+                                <button class="widget-action" view-data="admin">→</button>
                             </div>
                             <div class="admin-stats">
                                 <div class="stat-card">
@@ -1187,7 +1193,18 @@ themeToggle.addEventListener('click', () => {
                 }
             });
         });
-
+        
+        document.querySelectorAll('.widget-action').forEach(button => {
+            button.addEventListener('click', () => {
+                const viewId = button.getAttribute('data-view');
+                 const targetNav = document.querySelector(`.nav-item[data-view="${viewId}"]`);
+        
+                if (targetNav) {
+                    targetNav.click();
+                }
+            });
+        });
+        
         // To-Do Functionality
         const todos = [
             { text: 'Mathematik Hausaufgaben fertigstellen', priority: 'high', completed: false },
