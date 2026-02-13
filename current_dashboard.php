@@ -1390,67 +1390,6 @@ themeToggle.addEventListener('click', () => {
                 }
             });
         }
-
-        async function deleteFileById(fileId) {
-            if (!fileId) {
-                return;
-            }
-
-            uploadStatus.textContent = 'Datei wird gelöscht...';
-
-            try {
-                const response = await fetch('delete.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: `file_id=${encodeURIComponent(fileId)}`
-                });
-
-                const responseText = await response.text();
-                let result = {};
-
-                try {
-                    result = JSON.parse(responseText);
-                } catch (_) {
-                    throw new Error('Ungültige Serverantwort beim Löschen.');
-                }
-
-                if (!response.ok) {
-                    throw new Error(result.error || 'Löschen fehlgeschlagen.');
-                }
-
-                uploadStatus.textContent = result.message || 'Datei gelöscht.';
-                window.location.hash = 'files';
-                window.location.reload();
-            } catch (error) {
-                uploadStatus.textContent = error.message;
-            }
-        }
-
-        const filesList = document.getElementById('filesList');
-
-        if (filesList) {
-            filesList.addEventListener('click', (event) => {
-                const deleteButton = event.target.closest('.delete-file-btn');
-
-                if (!deleteButton) {
-                    return;
-                }
-
-                event.preventDefault();
-                event.stopPropagation();
-                deleteFileById(deleteButton.dataset.fileId);
-            });
-        }
-
-        document.querySelectorAll('.delete-file-btn').forEach((deleteButton) => {
-            deleteButton.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                deleteFileById(deleteButton.dataset.fileId);
-            });
-        });
         
     </script>
 </body>
