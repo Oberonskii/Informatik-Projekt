@@ -1390,43 +1390,6 @@ themeToggle.addEventListener('click', () => {
                 }
             });
         }
-
-        const filesList = document.getElementById('filesList');
-
-        if (filesList) {
-            filesList.addEventListener('click', async (event) => {
-                const deleteButton = event.target.closest('.delete-file-btn');
-
-                if (!deleteButton) {
-                    return;
-                }
-
-                const fileId = deleteButton.dataset.fileId;
-                if (!fileId) {
-                    return;
-                }
-
-                uploadStatus.textContent = 'Datei wird gelöscht...';
-
-                try {
-                    const response = await fetch(`delete.php?file_id=${encodeURIComponent(fileId)}`, {
-                        method: 'DELETE'
-                    });
-
-                    const result = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(result.error || 'Löschen fehlgeschlagen.');
-                    }
-
-                    uploadStatus.textContent = result.message || 'Datei gelöscht.';
-                    window.location.hash = 'files';
-                    window.location.reload();
-                } catch (error) {
-                    uploadStatus.textContent = error.message;
-                }
-            });
-        }
         
     </script>
 </body>
