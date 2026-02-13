@@ -1074,10 +1074,11 @@ if (!$files) {
                ⬇️
             </a>
 
-            <a class="btn-icon"
-               href="delete.php?file_id=<?php echo $file['id']; ?>">
+            <button class="btn-icon delete-file-btn"
+               type="button"
+               data-file-id="<?php echo $file['id']; ?>">
                🗑️
-            </a>
+            </button>
         </div>
     </div>
 <?php endforeach; ?>
