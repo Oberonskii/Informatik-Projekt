@@ -1046,15 +1046,16 @@ if (!$files) {
                         <div class="widget-header">
                             <div class="widget-title">Datei hochladen</div>
                         </div>
-                        <form action="upload.php" method="POST" enctype="multipart/form-data">
+                        <form id="uploadForm" action="upload.php" method="POST" enctype="multipart/form-data">
                         <div class="input-group">
                             <input type="text" name="subject" placeholder="Fach eingeben..." required>
                                 <input type="file" name="file" required>
                             <button class="btn-primary" type="submit">Hochladen</button>
                                 </div>
                             </form>
+                        <p id="uploadStatus" style="margin-top: 0.75rem; color: var(--color-text-secondary);"></p>
                         </div>
-                        <div class="files-list" style="margin-top: 1.5rem;">
+                        <div class="files-list" id="filesList" style="margin-top: 1.5rem;">
 <?php foreach ($files as $file): ?>
     <div class="file-item">
         <span class="file-icon">📄</span>
@@ -1176,23 +1177,37 @@ themeToggle.addEventListener('click', () => {
         const navItems = document.querySelectorAll('.nav-item');
         const viewContents = document.querySelectorAll('.view-content');
 
+        function activateView(viewId) {
+            navItems.forEach(nav => nav.classList.remove('active'));
+
+            const targetNav = document.querySelector(`.nav-item[data-view="${viewId}"]`);
+            if (targetNav) {
+                targetNav.classList.add('active');
+            }
+
+            viewContents.forEach(view => {
+                view.style.display = 'none';
+            });
+
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.style.display = 'block';
+            }
+        }
+
         navItems.forEach(item => {
             item.addEventListener('click', () => {
                 const viewId = item.getAttribute('data-view');
-                
-                navItems.forEach(nav => nav.classList.remove('active'));
-                item.classList.add('active');
-                
-                viewContents.forEach(view => {
-                    view.style.display = 'none';
-                });
-                
-                const targetView = document.getElementById(viewId);
-                if (targetView) {
-                    targetView.style.display = 'block';
-                }
+
+                activateView(viewId);
+                window.location.hash = viewId;
             });
         });
+
+        const initialView = window.location.hash ? window.location.hash.substring(1) : null;
+        if (initialView && document.getElementById(initialView)) {
+            activateView(initialView);
+        }
         
         document.querySelectorAll('.widget-action').forEach(button => {
             button.addEventListener('click', () => {
@@ -1344,6 +1359,36 @@ themeToggle.addEventListener('click', () => {
         }
 
         // Files Functionality
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                uploadStatus.textContent = 'Datei wird hochgeladen...';
+
+                try {
+                    const response = await fetch(uploadForm.action, {
+                        method: 'POST',
+                        body: new FormData(uploadForm)
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Upload fehlgeschlagen.');
+                    }
+
+                    uploadStatus.textContent = result.message || 'Upload erfolgreich.';
+                    uploadForm.reset();
+                    window.location.hash = 'files';
+                    window.location.reload();
+                } catch (error) {
+                    uploadStatus.textContent = error.message;
+                }
+            });
+        }
         
     </script>
 </body>
