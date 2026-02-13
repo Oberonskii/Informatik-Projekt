@@ -1078,6 +1078,11 @@ if (!$files) {
                <input type="hidden" name="file_id" value="<?php echo $file['id']; ?>">
                <button class="btn-icon delete-file-btn" type="submit" data-file-id="<?php echo $file['id']; ?>">🗑️</button>
             </form>
+            <button class="btn-icon delete-file-btn"
+               type="button"
+               data-file-id="<?php echo $file['id']; ?>">
+               🗑️
+            </button>
         </div>
     </div>
 <?php endforeach; ?>

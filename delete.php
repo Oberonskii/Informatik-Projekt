@@ -17,6 +17,7 @@ if (!isset($_SESSION['user_id'])) {
 $file_id = $_POST['file_id'] ?? $_GET['file_id'] ?? '';
 
 if ($file_id === '') {
+if (!isset($_GET['file_id']) || $_GET['file_id'] === '') {
     http_response_code(400);
     echo json_encode(["error" => "Keine Datei-ID übergeben"]);
     exit();
