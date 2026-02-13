@@ -15,7 +15,6 @@ if (!isset($_GET['file_id']) || $_GET['file_id'] === '') {
 }
 
 $user_id = $_SESSION['user_id'];
-$file_id = $_GET['file_id'];
 
 $backend_url = "http://127.0.0.1:8000/files/$user_id/$file_id";
 
