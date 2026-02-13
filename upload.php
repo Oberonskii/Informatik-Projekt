@@ -1,14 +1,19 @@
 <?php
 session_start();
+header('Content-Type: application/json');
 
 if (!isset($_SESSION['user_id'])) {
-    die("Nicht eingeloggt");
+    http_response_code(401);
+    echo json_encode(["error" => "Nicht eingeloggt"]);
+    exit();
 }
 
 $user_id = $_SESSION['user_id'];
 
 if (!isset($_FILES['file'])) {
-    die("Keine Datei empfangen");
+    http_response_code(400);
+    echo json_encode(["error" => "Keine Datei empfangen"]);
+    exit();
 }
 
 $subject = $_POST['subject'];
@@ -35,13 +40,27 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 $response = curl_exec($ch);
 
 if ($response === false) {
-    die("cURL Fehler: " . curl_error($ch));
+    http_response_code(502);
+    echo json_encode(["error" => "cURL Fehler: " . curl_error($ch)]);
+    curl_close($ch);
+    exit();
 }
+
+$status_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 curl_close($ch);
 
-echo "<pre>";
-echo "Backend Antwort:\n";
-echo $response;
-echo "</pre>";
+$decoded_response = json_decode($response, true);
+
+if ($status_code >= 400) {
+    http_response_code($status_code);
+    echo json_encode([
+        "error" => $decoded_response['detail'] ?? "Upload fehlgeschlagen"
+    ]);
+    exit();
+}
+
+echo json_encode([
+    "message" => $decoded_response['message'] ?? "Datei erfolgreich hochgeladen"
+]);
 exit();
