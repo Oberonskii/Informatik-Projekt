@@ -1074,6 +1074,10 @@ if (!$files) {
                ⬇️
             </a>
 
+            <form class="delete-file-form" action="delete.php" method="POST" style="display:inline;">
+               <input type="hidden" name="file_id" value="<?php echo $file['id']; ?>">
+               <button class="btn-icon delete-file-btn" type="submit" data-file-id="<?php echo $file['id']; ?>">🗑️</button>
+            </form>
             <button class="btn-icon delete-file-btn"
                type="button"
                data-file-id="<?php echo $file['id']; ?>">
@@ -1390,6 +1394,48 @@ themeToggle.addEventListener('click', () => {
                 }
             });
         }
+        async function deleteFileById(fileId) {
+            if (!fileId) {
+                return;
+            }
+
+            uploadStatus.textContent = 'Datei wird gelöscht...';
+
+            try {
+                const response = await fetch('delete.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: `file_id=${encodeURIComponent(fileId)}`
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Löschen fehlgeschlagen.');
+                }
+
+                uploadStatus.textContent = result.message || 'Datei gelöscht.';
+                window.location.hash = 'files';
+                window.location.reload();
+            } catch (error) {
+                uploadStatus.textContent = error.message;
+            }
+        }
+
+        document.querySelectorAll('.delete-file-form').forEach((deleteForm) => {
+            deleteForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const fileIdInput = deleteForm.querySelector('input[name="file_id"]');
+                if (!fileIdInput) {
+                    return;
+                }
+
+                deleteFileById(fileIdInput.value);
+            });
+        });
         
     </script>
 </body>

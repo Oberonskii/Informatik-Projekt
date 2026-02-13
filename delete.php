@@ -2,12 +2,21 @@
 session_start();
 header('Content-Type: application/json');
 
+
+function is_ajax_request(): bool {
+    return isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+        && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+}
+
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(["error" => "Nicht eingeloggt"]);
     exit();
 }
 
+$file_id = $_POST['file_id'] ?? $_GET['file_id'] ?? '';
+
+if ($file_id === '') {
 if (!isset($_GET['file_id']) || $_GET['file_id'] === '') {
     http_response_code(400);
     echo json_encode(["error" => "Keine Datei-ID übergeben"]);
@@ -42,6 +51,11 @@ if ($status_code >= 400) {
     echo json_encode([
         "error" => $decoded_response['detail'] ?? "Löschen fehlgeschlagen"
     ]);
+    exit();
+}
+
+if (!is_ajax_request()) {
+    header('Location: current_dashboard.php#files');
     exit();
 }
 
