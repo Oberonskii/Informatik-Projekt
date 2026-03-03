@@ -29,35 +29,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    // Überprüfen, ob die Anmeldung erfolgreich war
-    $response = curl_exec($ch);
-
-if ($response === false) {
-    $error_message = "Server nicht erreichbar.";
-} else {
-
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $responseData = json_decode($response, true);
-
-    if ($http_code == 200) {
-
-        $_SESSION['user_id'] = $responseData['user_id'];
-        $_SESSION['username'] = $responseData['username'];
-
-        header('Location: current_dashboard.php');
-        exit();
-
+    if ($response === false) {
+        $error_message = "Server nicht erreichbar.";
     } else {
-
-        if (isset($responseData['detail'])) {
-            $error_message = $responseData['detail'];
+        $responseData = json_decode($response, true);
+        if ($http_code == 200) {
+            $_SESSION['user_id'] = $responseData['user_id'];
+            $_SESSION['username'] = $responseData['username'];
+            $_SESSION['role'] = $responseData['role'] ?? 'user';
+            header('Location: current_dashboard.php');
+            exit();
         } else {
-            $error_message = "Anmeldung fehlgeschlagen.";
+            $error_message = $responseData['detail'] ?? "Anmeldung fehlgeschlagen.";
         }
     }
-}
-
-curl_close($ch);
 }
 
 
