@@ -682,6 +682,10 @@ if (!$files) {
                         <span class="nav-icon">✅</span>
                         <span>To-Dos</span>
                     </a>
+                    <a class="nav-item" data-view="exams">
+                        <span class="nav-icon">📝</span>
+                        <span>Klassenarbeiten</span>
+                    </a>
                     <a class="nav-item" data-view="flashcards">
                         <span class="nav-icon">🎴</span>
                         <span>Karteikarten</span>
@@ -803,6 +807,38 @@ if (!$files) {
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Klassenarbeiten Widget -->
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">
+                                    <span class="widget-icon">📝</span>
+                                    Klassenarbeiten
+                                </div>
+                                <button class="widget-action" data-view="exams">→</button>
+                            </div>
+                            <div class="grades-list">
+                                <div class="grade-item">
+                                    <div>
+                                        <div class="grade-subject">Mathe</div>
+                                        <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
+                                            Nächste Arbeit: 15.03.2026
+                                        </div>
+                                    </div>
+                                    <div class="grade-value warning">LK</div>
+                                </div>
+                                <div class="grade-item">
+                                    <div>
+                                        <div class="grade-subject">Deutsch</div>
+                                        <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
+                                            Nächste Arbeit: 22.03.2026
+                                        </div>
+                                    </div>
+                                    <div class="grade-value">GK</div>
+                                </div>
+                            </div>
+                        </div>
+
 
                         <!-- Karteikarten Widget -->
                         <div class="widget">
@@ -1008,6 +1044,26 @@ if (!$files) {
                             <button class="btn-primary" onclick="addTodo()">Hinzufügen</button>
                         </div>
                         <div class="todo-list" id="todosDetailList" style="margin-top: 1.5rem;"></div>
+                    </div>
+                </div>
+
+                <!-- Klassenarbeiten Detail View -->
+                <div id="exams" class="view-content" style="display: none;">
+                    <div class="content-header">
+                        <h1>📝 Klassenarbeiten</h1>
+                        <p>Behalte deine kommenden Arbeiten im Blick</p>
+                    </div>
+                    <div class="widget">
+                        <div class="widget-header">
+                            <div class="widget-title">Neue Klassenarbeit hinzufügen</div>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="examSubject" placeholder="Fach...">
+                            <input type="date" id="examDate">
+                            <input type="text" id="examTopic" placeholder="Thema...">
+                            <button class="btn-primary" onclick="addExam()">Hinzufügen</button>
+                        </div>
+                        <div class="grades-list" id="examsList" style="margin-top: 1.5rem;"></div>
                     </div>
                 </div>
 
