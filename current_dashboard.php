@@ -534,6 +534,36 @@ if (!$files) {
             color: var(--color-text-muted);
         }
 
+        /* Admin- Nachrichten Widget */
+        .messages-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .message-item {
+            padding: 0.75rem;
+            background-color: var(--color-bg-hover);
+            border-radius: 8px;
+        }
+
+        .message-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .message-meta {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .message-text {
+            font-size: 0.9rem;
+        }
+
         /* Admin Panel Widget */
         .admin-stats {
             display: grid;
@@ -693,6 +723,10 @@ if (!$files) {
                     <a class="nav-item" data-view="files">
                         <span class="nav-icon">📁</span>
                         <span>Dateien</span>
+                    </a>
+                    <a class="nav-item" data-view="admin-messages">
+                        <span class="nav-icon">💬</span>
+                        <span>Admin Nachrichten</span>
                     </a>
                     <a class="nav-item" data-view="admin">
                         <span class="nav-icon">⚙️</span>
@@ -894,6 +928,30 @@ if (!$files) {
                                     <div class="file-info">
                                         <div class="file-name">Physik_Experiment_Video.mp4</div>
                                         <div class="file-meta">Hochgeladen vor 1 Woche • 45 MB</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Nachrichten Widget -->
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">
+                                    <span class="widget-icon">💬</span>
+                                    <span>Admin Nachrichten</span>
+                                </div>
+                                <button class="widget-action" data-view="admin-messages">→</button>
+                            </div>
+                            <div class="widget-body">
+                                <div class="messages-list" id="adminMessagesPreview">
+                                    <!-- Hier z.B. die letzten 2–3 Nachrichten anzeigen -->
+                                    <div class="message-item">
+                                        <div class="message-title">Wichtige Info zur Klassenarbeit</div>
+                                        <div class="message-meta">von Admin · vor 1 Tag</div>
+                                    </div>
+                                    <div class="message-item">
+                                        <div class="message-title">Neues Material im Kurs Informatik</div>
+                                        <div class="message-meta">von Admin · vor 3 Tagen</div>
                                     </div>
                                 </div>
                             </div>
@@ -1138,6 +1196,42 @@ if (!$files) {
 <?php endforeach; ?>
 </div>
 
+                    </div>
+                </div>
+
+                <!-- Admin Nachrichten Detail View -->
+                <div id="admin-messages" class="view-content" style="display: none;">
+                    <div class="content-header">
+                        <h1>Admin Nachrichten</h1>
+                        <p>Hier erhältst du Mitteilungen von deinen Administratoren.</p>
+                    </div>
+
+                    <div class="widget">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">💬</span>
+                                <span>Nachrichtenübersicht</span>
+                            </div>
+                        </div>
+                        <div class="widget-body">
+                            <div class="messages-list" id="adminMessagesList">
+                                <!-- Beispielnachrichten, später per PHP/JS dynamisch -->
+                                <div class="message-item">
+                                    <div class="message-title">Wichtige Info zur Klassenarbeit</div>
+                                    <div class="message-meta">von Admin · 03.03.2026</div>
+                                    <div class="message-text">
+                                        Die Mathe-Klassenarbeit wurde auf den 18.03.2026 verschoben.
+                                    </div>
+                                </div>
+                                <div class="message-item">
+                                    <div class="message-title">Klausurvorbereitung hochgeladen</div>
+                                    <div class="message-meta">von Admin · 01.03.2026</div>
+                                    <div class="message-text">
+                                        Im Kurs Informatik findest du neue Übungsaufgaben zur nächsten Klausur.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
