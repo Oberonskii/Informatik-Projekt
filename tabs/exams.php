@@ -12,6 +12,19 @@
                             <input type="text" id="examSubject" placeholder="Fach...">
                             <input type="date" id="examDate">
                             <input type="text" id="examTopic" placeholder="Thema...">
+                            <select id="examPeriod">
+                                <option value="">Stunde (optional)</option>
+                                <option value="1">1. Stunde</option>
+                                <option value="2">2. Stunde</option>
+                                <option value="3">3. Stunde</option>
+                                <option value="4">4. Stunde</option>
+                                <option value="5">5. Stunde</option>
+                                <option value="6">6. Stunde</option>
+                                <option value="7">7. Stunde</option>
+                                <option value="8">8. Stunde</option>
+                                <option value="9">9. Stunde</option>
+                                <option value="10">10. Stunde</option>
+                            </select>
                             <button class="btn-primary" onclick="addExam()">Hinzufügen</button>
                         </div>
                         <div class="grades-list" id="examsList" style="margin-top: 1.5rem;"></div>

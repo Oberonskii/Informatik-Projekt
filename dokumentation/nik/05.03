@@ -1,5 +1,55 @@
 # Refactoring: Tabs in eigene Dateien ausgelagert
 
+Prompt an Github Copilot:
+Wir haben alle tabs des learnhubs in der datei current_dashboard.php kannst du alle tabs in jeweils eine eigene datei umbauen aber das layout und die funktionsweise soll vollständig erhalten bleiben. Schreibe eine neue datei in den ordner dokumentation/nik/05.03 wo alles dokumentiert ist was du geändert hast
+
+**Datum:** 05.03.2026  
+**Bearbeiter:** Nik  
+**Betroffene Datei:** `current_dashboard.php`
+
+---
+
+## Ausgangslage
+
+Alle Tab-Inhalte des LearnHub-Dashboards befanden sich als monolithischer Block in der einzigen Datei `current_dashboard.php` (1500 Zeilen). Das machte die Datei schwer lesbar und wartbar.
+
+---
+
+## Ziel
+
+Jeden Tab in eine eigene PHP-Datei auslagern, sodass `current_dashboard.php` nur noch das Grundgerüst (Session-Check, Layout, CSS, Sidebar, JavaScript) enthält und die Tab-Inhalte per `include` einbindet.
+
+---
+
+## Vorgenommene Änderungen
+
+### 1. Neues Verzeichnis `tabs/` angelegt
+
+Alle Tab-Dateien liegen im Unterordner `tabs/` direkt neben `current_dashboard.php`.
+
+### 2. Tab-Dateien erstellt
+
+| Datei | Tab-ID | Inhalt |
+|---|---|---|
+| `tabs/overview.php` | `#overview` | Übersichts-Dashboard mit allen Widget-Vorschauen (Stundenplan, Noten, To-Dos, Klassenarbeiten, Karteikarten, Dateien, Admin-Nachrichten, Admin-Statistiken) |
+| `tabs/timetable.php` | `#timetable` | Detailansicht Stundenplan mit Wochenübersicht (Mo–Fr) |
+| `tabs/grades.php` | `#grades` | Notenübersicht mit Formular zum Hinzufügen neuer Noten |
+| `tabs/todos.php` | `#todos` | To-Do-Liste mit Eingabeformular und Prioritätsauswahl |
+| `tabs/exams.php` | `#exams` | Klassenarbeiten-Übersicht mit Formular (Fach, Datum, Thema) |
+| `tabs/flashcards.php` | `#flashcards` | Interaktive Karteikarten-Ansicht mit Vor/Zurück-Navigation |
+| `tabs/files.php` | `#files` | Datei-Upload-Formular + dynamische Dateiliste vom Backend; enthält den ausgelagerten PHP-Code zum Abrufen der Dateien via cURL |
+| `tabs/admin-messages.php` | `#admin-messages` | Detailansicht der Admin-Nachrichten |
+| `tabs/admin.php` | `#admin` | Admin-Panel mit Statistiken und Systemeinstellungen |
+
+### 3. PHP-Block für Datei-Abruf verschoben
+
+Der cURL-Block zum Laden der Benutzerdateien vom Backend (`http://127.0.0.1:8000/files/$user_id`) war vorher ganz oben in `current_dashboard.php`. Er wurde in `tabs/files.php` verschoben, da er nur dort benötigt wird. Die Variable `$user_id` ist weiterhin verfügbar, da sie in `current_dashboard.php` vor dem Include gesetzt wird.
+
+# Refactoring: Tabs in eigene Dateien ausgelagert
+
+Prompt an Github Copilot:
+Wir haben alle tabs des learnhubs in der datei current_dashboard.php kannst du alle tabs in jeweils eine eigene datei umbauen aber das layout und die funktionsweise soll vollständig erhalten bleiben. Schreibe eine neue datei in den ordner dokumentation/nik/05.03 wo alles dokumentiert ist was du geändert hast
+
 **Datum:** 05.03.2026  
 **Bearbeiter:** Nik  
 **Betroffene Datei:** `current_dashboard.php`
@@ -45,6 +95,163 @@ Der cURL-Block zum Laden der Benutzerdateien vom Backend (`http://127.0.0.1:8000
 ### 4. `current_dashboard.php` angepasst
 
 - Der cURL-Datei-Abruf-Block (ehemals Zeilen 13–27) wurde entfernt.
+
+---
+---
+
+# Account-Einstellungen & Noten-System (0–15 Punkte)
+
+Prompt an Github Copilot:
+Implementiere die Account settings mit Benutzername ändern, passwort ändern email adresse ändern und account löschen und änderung von noten (1-6) zu punkten (0-15) schreibe alles was du wieder getan hast vollständig in die heutige dokumentation mit meinem prompt und deiner ausgabe dazu
+
+**Datum:** 05.03.2026  
+**Bearbeiter:** Nik / GitHub Copilot  
+**Betroffene Dateien:** `backend.py`, `current_dashboard.php`, `tabs/grades.php`, neu: `logout.php`
+
+---
+
+## Ausgangslage
+
+- Der „Account"-Button in der Sidebar-Footer hatte keinerlei Funktion.
+- Es fehlten Backend-Routen für E-Mail-Änderung und Note-Löschen.
+- Die Noten-Ansicht verwendete noch statische Beispieldaten; `addGrade()` schrieb nur ins DOM, ohne den Backend-API-Aufruf.
+- Das Noten-System zeigte zwar "P" (Punkte), war aber nicht konsistent an die REST-API angebunden.
+
+---
+
+## Durchgeführte Änderungen
+
+### 1. `backend.py` – neue API-Routen
+
+#### 1a. Neues Pydantic-Modell `ChangeEmail`
+```python
+class ChangeEmail(BaseModel):
+    new_email: str
+```
+
+#### 1b. Route `PUT /auth/change-email/{user_id}`
+Ändert die E-Mail-Adresse des Users in der Datenbank. Gibt `404` zurück, wenn der User nicht existiert.
+
+#### 1c. Route `DELETE /grades/{user_id}/{grade_id}`
+Löscht eine einzelne Note des Users. Gibt `404` zurück, wenn kein passender Eintrag gefunden wird.
+
+**Bereits vorhandene Backend-Routen (nicht neu):**
+- `PUT /auth/change-username/{user_id}` (Benutzername ändern)
+- `PUT /auth/change-password/{user_id}` (Passwort ändern, mit Prüfung des alten Passworts)
+- `DELETE /auth/delete-account/{user_id}` (Account inkl. aller Daten & Upload-Ordner löschen)
+- `POST /grades/{user_id}` (Note hinzufügen)
+- `GET /grades/{user_id}` (Noten laden)
+
+---
+
+### 2. `current_dashboard.php` – Account-Settings-Modal
+
+#### 2a. CSS-Ergänzungen
+Neue CSS-Klassen für das Modal-System:
+- `.modal-overlay` / `.modal-overlay.open` – Hintergrund-Overlay (fixed, z-index 1000)
+- `.modal-box` – Weißes Dialogfenster (max-width 460px, scrollbar bei Überlänge)
+- `.modal-section` – Einzelner Abschnitt mit Umrandung
+- `.modal-btn`, `.modal-btn-primary`, `.modal-btn-danger`, `.modal-btn-close` – Button-Varianten
+- `.modal-msg` / `.modal-msg.success` / `.modal-msg.error` – Statusnachrichten (grün/rot)
+
+#### 2b. HTML-Modal
+Das Modal `#accountModal` wird direkt vor `</body>` eingefügt. Es enthält vier Sektionen:
+
+| Sektion | Felder | Aktion |
+|---|---|---|
+| Benutzername ändern | `newUsername` (Text) | `PUT /auth/change-username/{id}` |
+| Passwort ändern | `oldPassword`, `newPassword`, `newPassword2` (Password) | `PUT /auth/change-password/{id}` |
+| E-Mail ändern | `newEmail` (Email) | `PUT /auth/change-email/{id}` |
+| Account löschen | `deletePassword` (Password) | `DELETE /auth/delete-account/{id}` |
+
+Die „Account löschen"-Sektion hat einen roten Rahmen (`border-color: var(--color-danger)`) als visuelle Warnung.
+
+#### 2c. Account-Button aktiviert
+```html
+<button class="account-btn" onclick="openAccountModal()">
+```
+
+#### 2d. JavaScript-Funktionen (Account-Modal)
+- `openAccountModal()` / `closeAccountModal()` – Modal öffnen/schließen; beim Schließen werden alle Fehlermeldungen zurückgesetzt
+- Klick auf Overlay schließt das Modal
+- `setMsg(id, text, type)` – Hilfsfunktion für Statusnachrichten
+- `changeUsername()` – API-Call mit Client-seitiger Validierung (Pflichtfeld)
+- `changePassword()` – API-Call mit Prüfung: alle Felder ausgefüllt, beide neuen Passwörter gleich, mind. 6 Zeichen
+- `changeEmail()` – API-Call mit einfacher E-Mail-Validierung (`@` vorhanden)
+- `deleteAccount()` – API-Call mit `confirm()`-Dialog; bei Erfolg Weiterleitung zu `logout.php`
+
+Die `user_id` wird serverseitig per PHP in die JavaScript-Variable `CURRENT_USER_ID` eingebettet:
+```js
+const CURRENT_USER_ID = "<?php echo htmlspecialchars($_SESSION['user_id']); ?>";
+```
+
+---
+
+### 3. `current_dashboard.php` – Noten-System umgestellt auf API (0–15 Punkte)
+
+Die alte DOM-only `addGrade()`-Funktion wurde entfernt und durch drei neue async-Funktionen ersetzt:
+
+#### `loadGrades()`
+- Ruft `GET /grades/{user_id}` auf
+- Zeigt Noten als Liste mit Fach, Beschreibung, Punktzahl (Farbe je nach Wert) und Löschen-Button an
+- Farbkodierung: ≥12 Punkte = grün (success), ≥7 = gelb (warning), <7 = rot (danger)
+
+#### `addGrade()`
+- Ruft `POST /grades/{user_id}` auf
+- Validiert Eingabe client-seitig (Pflichtfelder, Bereich 0–15)
+- Neues optionales Feld: `gradeDescription` (Beschreibung)
+- Nach erfolgreichem Speichern wird `loadGrades()` aufgerufen
+
+#### `removeGrade(gradeId)`
+- Ruft `DELETE /grades/{user_id}/{grade_id}` auf
+- Entfernt das Element aus dem DOM nach Bestätigung per `confirm()`
+
+#### `getGradeClass(value)`
+- Hilfsfunktion: gibt CSS-Klasse für die Farbe zurück (`''` / `'warning'` / `'danger'`)
+
+`loadGrades()` wird beim Seitenstart aufgerufen (in der Initialisierungssektion).
+
+---
+
+### 4. `tabs/grades.php` – UI aktualisiert
+
+- Subtitle geändert von „Alle deine Fächer und Noten" → „Alle deine Fächer und Noten (Punkte 0–15)"
+- Placeholder des Zahlfeldes: `"Punkte (0–15)"` (war: `"Note (0-15)"`)
+- Neues Eingabefeld `id="gradeDescription"` (Beschreibung, optional)
+- Statische Beispiel-Grade-Items entfernt; Platzhalter „Wird geladen..." stattdessen (wird durch `loadGrades()` ersetzt)
+
+---
+
+### 5. `logout.php` – neu erstellt
+
+Einfache Logout-Datei, die die Session zerstört und zu `login.php` weiterleitet. Wird beim Account-Löschen aufgerufen.
+
+```php
+<?php
+session_start();
+session_destroy();
+header("Location: login.php");
+exit();
+```
+
+---
+
+## Zusammenfassung der neuen API-Endpunkte
+
+| Methode | Route | Funktion |
+|---|---|---|
+| `PUT` | `/auth/change-email/{user_id}` | E-Mail-Adresse ändern |
+| `DELETE` | `/grades/{user_id}/{grade_id}` | Einzelne Note löschen |
+
+---
+
+## Sicherheitsaspekte
+
+- `user_id` wird aus `$_SESSION` gelesen (serverseitig), nicht aus GET/POST-Parametern
+- Password-Änderung erfordert das alte Passwort (Backend-Validierung)
+- Account-Löschen erfordert Passwortbestätigung + JavaScript `confirm()`-Dialog
+- HTML-Ausgabe in JS wird mit `escapeHtml()` gesäubert (XSS-Schutz)
+- File-Upload-Ordner des Nutzers wird beim Account-Löschen vollständig bereinigt (Backend)
 - Der `<div id="contentArea">`-Bereich (ehemals Zeilen 753–1288, ca. 536 Zeilen) wurde durch 9 `include`-Anweisungen ersetzt:
 
 ```php
@@ -91,3 +298,338 @@ Der cURL-Block zum Laden der Benutzerdateien vom Backend (`http://127.0.0.1:8000
     ├── admin-messages.php      ← Tab: Admin-Nachrichten
     └── admin.php               ← Tab: Admin-Panel
 ```
+
+---
+
+---
+
+# Stundenplan-Tab: Vollständige Implementierung
+
+Prompt an Github Copilot:
+Implementiere nun den Stundenplan Tab. Es gibt einen Bearbeitungsmodus wobei man seinen stundenplan bearbeiten kann. Außerhalb des Bearbeitungsmodus sieht man den stundenplan, dazugehörige hausaufgaben welche man immer eintragen kann und außerdem ist der aktuelle tag gehighlighted. achte darauf dass die stunden in denen klausuren geschrieben werden (im klassenarbeit tab hinterlegt) auch hervorgehoben werden.
+Außerdem kann man bearbeiten wann die 1. stunde startet und wann die 2. und die 3. usw bis zur 10. weil das ja für jede schule bisschen anders ist
+schreibe alles was du wieder getan hast vollständig in die heutige dokumentation mit meinem prompt und deiner ausgabe dazu
+
+**Datum:** 05.03.2026
+**Bearbeiter:** Nik
+**Betroffene Dateien:** `tabs/timetable.php`, `tabs/exams.php`, `current_dashboard.php`
+
+---
+
+## Ausgangslage
+
+Der `tabs/timetable.php` enthielt nur einen statischen Platzhalter mit hartcodierten Badges (Montag: Mathematik, Informatik, Physik usw.). Es gab keine Interaktivität, keinen Bearbeitungsmodus, keine Hausaufgaben und keine Klausur-Integration.
+
+---
+
+## Ziel
+
+- Interaktiver Stundenplan mit Ansichts- und Bearbeitungsmodus
+- Konfigurierbare Stundenbeginn-Zeiten (1.–10. Stunde)
+- Hervorhebung des aktuellen Wochentages
+- Hervorhebung von Klausur-Stunden (aus dem Klassenarbeiten-Tab)
+- Hausaufgaben-Sektion mit Eingabe und Löschen pro Wochentag
+- Persistente Speicherung aller Daten per `localStorage`
+
+---
+
+## Vorgenommene Änderungen
+
+### 1. `tabs/timetable.php` – Komplett neu geschrieben
+
+Der statische Platzhalter wurde durch eine dynamische HTML-Struktur ersetzt:
+
+- **Ansichtsmodus** (`#timetableViewMode`): Stundenplan-Grid wird per JavaScript gerendert
+- **Bearbeitungsmodus** (`#timetableEditMode`): zwei Abschnitte
+  - Stundenbeginn konfigurieren (Uhrzeiten 1.–10. Stunde)
+  - Fächer & Räume für jeden Wochentag/jede Stunde einzutragen
+- **Hausaufgaben-Widget** (`#homeworkGrid`): unterhalb des Stundenplans, ein Eingabefeld + Liste pro Wochentag
+
+### 2. `tabs/exams.php` – Stunden-Auswahl ergänzt
+
+Das Eingabeformular erhielt ein neues `<select id="examPeriod">` mit den Optionen 1.–10. Stunde (optional). Damit kann beim Eintragen einer Klassenarbeit angegeben werden, in welcher Stunde sie stattfindet.
+
+### 3. `current_dashboard.php` – Neues CSS und JavaScript
+
+#### Neue CSS-Klassen (ca. 280 Zeilen):
+
+| Klasse | Zweck |
+|---|---|
+| `.tt-grid` | CSS-Grid-Container (Spalten: Zeitangabe + 5 Wochentage) |
+| `.tt-header-cell` | Spaltenköpfe (Wochentage) |
+| `.tt-header-cell.today-header` | Aktueller Wochentag – blaue Hervorhebung im Header |
+| `.tt-time-cell` | Linke Spalte: Stunden-Nr. + Uhrzeit |
+| `.tt-subject-cell` | Einzelne Unterrichtszellen |
+| `.tt-subject-cell.today-col` | Blau hinterlegte Spalte = heutiger Tag |
+| `.tt-subject-cell.has-exam` | Rot hinterlegte Zelle = Klausur in dieser Stunde |
+| `.tt-exam-badge` | Kleines rotes Badge „📝 Mathematik" in der Zelle |
+| `.tt-homework-grid` | 5-Spalten-Grid für Hausaufgaben |
+| `.tt-hw-day` | Hausaufgaben-Karte pro Wochentag |
+| `.tt-hw-day.today` | Blauer Rahmen beim aktuellen Tag |
+| `.tt-times-grid` | Grid für Stundenbeginn-Eingaben |
+| `.tt-editor-table` | Tabelle im Bearbeitungsmodus (Fächer/Räume) |
+| `.btn-secondary` | Neuer sekundärer Button-Stil (transparent + Rahmen) |
+| `.exam-past` | Vergangene Klausuren werden halbtransparent dargestellt |
+
+#### Neue JavaScript-Funktionen (`escapeHtml`, Stundenplan, Hausaufgaben, Klassenarbeiten):
+
+**Hilfsfunktion:**
+- `escapeHtml(str)` – XSS-Schutz beim Einfügen von Nutzereingaben ins DOM
+
+**Stundenplan:**
+- `getCurrentDayKey()` – Gibt den aktuellen Wochentag als Schlüssel zurück (`'monday'` … `'friday'`)
+- `getMaxPeriod()` – Ermittelt die höchste belegte Stunde (min. 6, max. 10) für die Darstellung
+- `getExamHighlights()` – Gibt alle Klausuren der aktuellen Woche als Objekt `{ 'monday-3': [...] }` zurück
+- `renderTimetableView()` – Baut das Stundenplan-Grid (Kopfzeile + Stunden-Zeilen) per `innerHTML`
+- `renderTimetableEdit()` – Baut den Zeiten-Editor und die Fächer-Tabelle
+- `toggleTimetableEdit()` – Wechselt zwischen Ansichts- und Bearbeitungsmodus
+- `cancelTimetableEdit()` – Bricht die Bearbeitung ohne Speichern ab
+- `saveTimetable()` – Liest alle Eingaben ein, speichert in `localStorage` unter `timetable_data` und `timetable_times`
+
+**Hausaufgaben:**
+- `renderHomework()` – Baut das Hausaufgaben-Grid mit Eingabefeldern
+- `addHomework(day)` – Fügt eine Hausaufgabe hinzu und speichert in `localStorage` (`homework_data`)
+- `deleteHomework(day, index)` – Löscht eine Hausaufgabe aus dem Array
+
+**Klassenarbeiten (neu implementiert, war vorher leer):**
+- `addExam()` – Liest Formularwerte ein (inkl. Stunde), speichert in `localStorage` (`exams_data`)
+- `deleteExam(index)` – Löscht eine Klassenarbeit nach Index
+- `renderExams()` – Sortiert Klausuren nach Datum, zeigt „vergangen" / „⏳ bald"-Status und Löschen-Button
+
+**Initialisierung:** Beim Seitenload werden `renderTimetableView()`, `renderHomework()` und `renderExams()` aufgerufen.
+
+---
+
+## Datenstruktur (localStorage)
+
+```json
+// timetable_data
+{
+  "monday": { "1": { "subject": "Mathematik", "room": "101" }, "2": { "subject": "Deutsch", "room": "" } },
+  "tuesday": { ... }
+}
+
+// timetable_times
+{ "1": "07:45", "2": "08:30", "3": "09:15", "4": "10:15", "5": "11:00",
+  "6": "11:45", "7": "12:45", "8": "13:30", "9": "14:15", "10": "15:00" }
+
+// homework_data
+{ "monday": ["Mathe S.42 Nr.4", "Lesen bis S.30"], "tuesday": [] }
+
+// exams_data
+[{ "subject": "Mathematik", "date": "2026-03-10", "topic": "Algebra", "period": 3 }]
+```
+
+---
+
+## Klausur-Hervorhebung im Stundenplan
+
+Die Funktion `getExamHighlights()` berechnet beim Rendern:
+1. Den Montag der aktuellen Kalenderwoche
+2. Für jede gespeicherte Klassenarbeit: Liegt ihr Datum in dieser Woche?
+3. Wenn ja → Eintrag in `highlights["wochentag-stunde"]`
+4. Beim Rendern der Zelle: Klasse `.has-exam` und ein rotes `📝`-Badge werden hinzugefügt
+
+---
+
+## Ergebnis
+
+| Feature | Status |
+|---|---|
+| Ansichtsmodus: Stundenplan-Grid (Mo–Fr, Stunden 1–10) | ✅ |
+| Aktueller Tag hervorgehoben (Spalte blau) | ✅ |
+| Klausur-Stunden hervorgehoben (Zelle rot + Badge) | ✅ |
+| Bearbeitungsmodus (Fächer & Räume pro Stunde) | ✅ |
+| Individuelle Stundenbeginn-Zeiten (1.–10. Stunde) | ✅ |
+| Hausaufgaben hinzufügen/löschen pro Wochentag | ✅ |
+| Klausuren eintragen inkl. Stunden-Angabe | ✅ |
+| Alle Daten persistent via localStorage | ✅ |
+| XSS-Schutz durch `escapeHtml()` | ✅ |
+
+---
+
+---
+
+# Übersicht-Tab: Live-Vorschauen aller Widgets
+
+**Prompt an GitHub Copilot:**
+Implementiere auch dass in dem übersicht tab die vorschei für die einzelnen tabs funktioniert, zb stundenplan, letzte dateien usw
+schreibe alles was du wieder getan hast vollständig in die heutige dokumentation mit meinem prompt und deiner ausgabe dazu
+
+**Datum:** 05.03.2026
+**Bearbeiter:** Nik / GitHub Copilot
+**Betroffene Dateien:** `tabs/overview.php`, `current_dashboard.php`
+
+---
+
+## Ausgangslage
+
+Alle Widgets im Übersicht-Tab (`tabs/overview.php`) zeigten ausschließlich hartcodierte Beispieldaten:
+- Stundenplan-Widget: fest eingetragene Zeiten (08:00, 09:45, 11:30) und Fächer
+- Noten-Widget: fixe Einträge (Informatik 13 P, Mathematik 12 P, Physik 10 P)
+- To-Do-Widget: drei statische Aufgaben
+- Klassenarbeiten-Widget: zwei hartcodierte Einträge (Mathe 15.03., Deutsch 22.03.)
+- Dateien-Widget: drei Beispieldateien; außerdem war der Button fehlerhaft (`view-data` statt `data-view`)
+- Admin-Nachrichten-Widget: zwei statische Nachrichten
+
+---
+
+## Ziel
+
+Alle Widgets sollen echte, aktuelle Daten des angemeldeten Nutzers anzeigen – dieselben Daten, die auch in den Detailtabs verwaltet werden.
+
+---
+
+## Durchgeführte Änderungen
+
+### 1. `tabs/overview.php` – statische Inhalte durch ID-Platzhalter ersetzt
+
+Für jedes Widget wurde der statische HTML-Inhalt entfernt und durch ein Container-Element mit eindeutiger ID ersetzt. Dieses wird per JavaScript befüllt:
+
+| Widget | Alter Inhalt | Neues Element |
+|---|---|---|
+| Stundenplan | 3 hartcodierte Stunden | `<div class="timetable" id="overviewTimetable">` |
+| Aktuelle Noten | 3 statische Noten | `<div class="grades-list" id="overviewGrades">` |
+| Offene Aufgaben | 3 statische To-Dos | `<div class="todo-list" id="overviewTodos">` |
+| Klassenarbeiten | 2 statische Einträge | `<div class="grades-list" id="overviewExams">` |
+| Letzte Dateien | 3 statische Dateien | `<div class="files-list" id="overviewFiles">` |
+| Admin Nachrichten | 2 statische Nachrichten | `<div class="messages-list" id="overviewMessages">` |
+
+Außerdem wurde der Bug beim Dateien-Widget-Button behoben:
+```html
+<!-- Vorher (fehlerhaft, Button funktionierte nicht) -->
+<button class="widget-action" view-data="files">→</button>
+
+<!-- Nachher (korrekt) -->
+<button class="widget-action" data-view="files">→</button>
+```
+
+---
+
+### 2. `current_dashboard.php` – neue JavaScript-Funktionen
+
+#### 2a. `CURRENT_USER_ID` nach oben verschoben
+
+Die Konstante `CURRENT_USER_ID` (PHP-generierter User-ID-String) wurde aus dem „Account Settings Modal"-Block herausgenommen und weiter oben – vor den neuen Overview-Funktionen – deklariert, damit sie für alle API-Aufrufe verfügbar ist.
+
+#### 2b. Neue Funktion `renderOverviewTimetable()`
+
+Liest `timetableData` und `timetableTimes` aus dem `localStorage`. Zeigt die Fächer des **heutigen Wochentags** in aufsteigender Stunden-Reihenfolge (max. 5 Einträge). Bei leerem Stundenplan erscheint ein Hinweis-Text.
+
+```javascript
+function renderOverviewTimetable() {
+    // liest: timetableData[todayKey], timetableTimes
+    // schreibt: #overviewTimetable
+}
+```
+
+#### 2c. Neue Funktion `renderOverviewTodos()`
+
+Filtert das `todos`-Array nach nicht-erledigten Aufgaben und zeigt max. 3 davon an. Die Checkboxen sind direkt klickbar (rufen `toggleTodoByIndex()` auf). Bei leerer Liste erscheint ein 🎉-Hinweis.
+
+```javascript
+function renderOverviewTodos() {
+    // liest: todos[] (Speicher im RAM, selbes Array wie To-Do-Tab)
+    // schreibt: #overviewTodos
+}
+```
+
+#### 2d. Neue Funktion `renderOverviewExams()`
+
+Filtert `exams` (localStorage) nach **zukünftigen** Klassenarbeiten, sortiert aufsteigend nach Datum und zeigt max. 3 an. Jeder Eintrag zeigt Fach, Datum und ggf. Thema.
+
+```javascript
+function renderOverviewExams() {
+    // liest: exams[] (localStorage)
+    // schreibt: #overviewExams
+}
+```
+
+#### 2e. Neue async-Funktion `renderOverviewGrades()`
+
+Ruft `GET http://localhost:8000/grades/{user_id}` auf. Zeigt die **letzten 3 eingetragenen Noten** (neueste zuerst) mit Fach, optionaler Beschreibung und Punktzahl inkl. Farbcodierung (`getGradeClass()`).
+
+```javascript
+async function renderOverviewGrades() {
+    // API: GET /grades/{CURRENT_USER_ID}
+    // schreibt: #overviewGrades
+}
+```
+
+#### 2f. Neue async-Funktion `renderOverviewFiles()`
+
+Ruft `GET http://localhost:8000/files/{user_id}` auf. Zeigt die **letzten 3 hochgeladenen Dateien** (neueste zuerst) mit passendem Emoji-Icon je Dateiendung (pdf, xlsx, docx, mp4 …) und einem direkten Download-Link.
+
+```javascript
+async function renderOverviewFiles() {
+    // API: GET /files/{CURRENT_USER_ID}
+    // schreibt: #overviewFiles
+    // Dateiendungs-Icons: pdf→📄, xlsx→📊, mp4→🎥, png→🖼️ usw.
+}
+```
+
+#### 2g. Neue Funktion `renderOverviewMessages()`
+
+Klont die ersten 2 `.message-item`-Elemente aus `#adminMessagesList` (dem Detailtab, der via PHP statisch eingebunden ist) und zeigt sie im Widget – ohne den ausführlichen `message-text`, nur Titel und Meta.
+
+```javascript
+function renderOverviewMessages() {
+    // liest: DOM #adminMessagesList .message-item (aus admin-messages.php)
+    // schreibt: #overviewMessages (kompakte Vorschau ohne Nachrichtentext)
+}
+```
+
+#### 2h. Neue Funktion `renderOverview()`
+
+Koordinierungsfunktion, die alle obigen Render-Funktionen aufruft:
+
+```javascript
+function renderOverview() {
+    renderOverviewTimetable();
+    renderOverviewTodos();
+    renderOverviewExams();
+    renderOverviewGrades();
+    renderOverviewFiles();
+    renderOverviewMessages();
+}
+```
+
+---
+
+### 3. Automatische Aktualisierungen
+
+#### 3a. Beim Seitenstart
+
+`renderOverview()` wird beim initialen Laden der Seite aufgerufen (nach `renderTimetableView()`, `renderHomework()`, `renderExams()`, `loadGrades()`).
+
+#### 3b. Beim Wechsel zum Übersicht-Tab
+
+Im Navigation-Click-Handler wurde eine Bedingung ergänzt:
+```javascript
+if (viewId === 'overview') {
+    renderOverview();
+}
+```
+Jedes Mal, wenn der Nutzer auf „Übersicht" klickt, werden alle Widgets neu geladen – so sind Noten und Dateien immer aktuell.
+
+#### 3c. Nach Todo-Änderungen
+
+- `toggleTodoByIndex()` ruft nach `renderTodos()` auch `renderOverviewTodos()` auf.
+- `addTodo()` ruft nach `renderTodos()` auch `renderOverviewTodos()` auf.
+
+So bleibt die Vorschau im Übersicht-Tab sofort synchron wenn man im To-Do-Tab Aufgaben hinzufügt oder abhakt.
+
+---
+
+## Ergebnis
+
+| Widget | Datenquelle | Status |
+|---|---|---|
+| Stundenplan „Heute" | `localStorage` (timetable_data + timetable_times) | ✅ Live |
+| Aktuelle Noten | REST-API `GET /grades/{user_id}` | ✅ Live |
+| Offene Aufgaben | JavaScript-Array `todos[]` | ✅ Live + Synchron |
+| Klassenarbeiten | `localStorage` (exams_data) | ✅ Live |
+| Letzte Dateien | REST-API `GET /files/{user_id}` | ✅ Live + Download-Link |
+| Admin Nachrichten | DOM-Klon aus `#adminMessagesList` | ✅ Live |
+| Karteikarten | Bereits zuvor live (shared `flashcards[]`) | ✅ unverändert |
+| Dateien-Button-Bug | `view-data` → `data-view` | ✅ behoben |

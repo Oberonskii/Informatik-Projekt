@@ -151,6 +151,10 @@ class ChangePassword(BaseModel):
     new_password: str
 
 
+class ChangeEmail(BaseModel):
+    new_email: str
+
+
 class UserRegister(BaseModel):
     username: str
     email: str
@@ -266,6 +270,25 @@ def change_password(user_id: str, data: ChangePassword):
 
     db.commit()
     return {"message": "Passwort erfolgreich geändert"}
+
+
+@app.put("/auth/change-email/{user_id}")
+def change_email(user_id: str, data: ChangeEmail):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT id FROM users WHERE id=?", (user_id,))
+    if not cursor.fetchone():
+        raise HTTPException(status_code=404, detail="User nicht gefunden")
+
+    cursor.execute("""
+        UPDATE users
+        SET email=?
+        WHERE id=?
+    """, (data.new_email, user_id))
+
+    db.commit()
+    return {"message": "E-Mail erfolgreich geändert"}
 
 
 # =========================================
@@ -656,6 +679,23 @@ def get_grades(user_id: str):
 
     cursor.execute("SELECT * FROM grades WHERE user_id=?", (user_id,))
     return cursor.fetchall()
+
+
+@app.delete("/grades/{user_id}/{grade_id}")
+def delete_grade(user_id: str, grade_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    DELETE FROM grades
+    WHERE id=? AND user_id=?
+    """, (grade_id, user_id))
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Note nicht gefunden")
+
+    db.commit()
+    return {"message": "Note gelöscht"}
 
 
 # =========================================

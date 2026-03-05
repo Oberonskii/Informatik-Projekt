@@ -15,25 +15,8 @@
                                 </div>
                                 <button class="widget-action" data-view="timetable">→</button>
                             </div>
-                            <div class="timetable">
-                                <div class="timetable-day">
-                                    <span class="day-name">08:00</span>
-                                    <div class="day-classes">
-                                        <span class="class-badge">Mathematik</span>
-                                    </div>
-                                </div>
-                                <div class="timetable-day">
-                                    <span class="day-name">09:45</span>
-                                    <div class="day-classes">
-                                        <span class="class-badge">Informatik</span>
-                                    </div>
-                                </div>
-                                <div class="timetable-day">
-                                    <span class="day-name">11:30</span>
-                                    <div class="day-classes">
-                                        <span class="class-badge">Physik</span>
-                                    </div>
-                                </div>
+                            <div class="timetable" id="overviewTimetable">
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
                             </div>
                         </div>
 
@@ -44,21 +27,10 @@
                                     <span class="widget-icon">📝</span>
                                     Aktuelle Noten
                                 </div>
-                                <button class="widget-action" data-view ="grades">→</button>
+                                <button class="widget-action" data-view="grades">→</button>
                             </div>
-                            <div class="grades-list">
-                                <div class="grade-item">
-                                    <span class="grade-subject">Informatik</span>
-                                    <span class="grade-value">13 P</span>
-                                </div>
-                                <div class="grade-item">
-                                    <span class="grade-subject">Mathematik</span>
-                                    <span class="grade-value">12 P</span>
-                                </div>
-                                <div class="grade-item">
-                                    <span class="grade-subject">Physik</span>
-                                    <span class="grade-value warning">10 P</span>
-                                </div>
+                            <div class="grades-list" id="overviewGrades">
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
                             </div>
                         </div>
 
@@ -71,22 +43,8 @@
                                 </div>
                                 <button class="widget-action" data-view="todos">→</button>
                             </div>
-                            <div class="todo-list" id="todoList">
-                                <div class="todo-item">
-                                    <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
-                                    <div class="todo-text">Mathematik Hausaufgaben fertigstellen</div>
-                                    <div class="todo-priority priority-high"></div>
-                                </div>
-                                <div class="todo-item">
-                                    <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
-                                    <div class="todo-text">Physik Referat vorbereiten</div>
-                                    <div class="todo-priority priority-medium"></div>
-                                </div>
-                                <div class="todo-item">
-                                    <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
-                                    <div class="todo-text">Karteikarten für Informatik erstellen</div>
-                                    <div class="todo-priority priority-low"></div>
-                                </div>
+                            <div class="todo-list" id="overviewTodos">
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
                             </div>
                         </div>
 
@@ -99,25 +57,8 @@
                                 </div>
                                 <button class="widget-action" data-view="exams">→</button>
                             </div>
-                            <div class="grades-list">
-                                <div class="grade-item">
-                                    <div>
-                                        <div class="grade-subject">Mathe</div>
-                                        <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
-                                            Nächste Arbeit: 15.03.2026
-                                        </div>
-                                    </div>
-                                    <div class="grade-value warning">LK</div>
-                                </div>
-                                <div class="grade-item">
-                                    <div>
-                                        <div class="grade-subject">Deutsch</div>
-                                        <div style="font-size: 0.8rem; color: var(--color-text-secondary);">
-                                            Nächste Arbeit: 22.03.2026
-                                        </div>
-                                    </div>
-                                    <div class="grade-value">GK</div>
-                                </div>
+                            <div class="grades-list" id="overviewExams">
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
                             </div>
                         </div>
 
@@ -154,30 +95,10 @@
                                     <span class="widget-icon">📁</span>
                                     Letzte Dateien
                                 </div>
-                                <button class="widget-action" view-data="files">→</button>
+                                <button class="widget-action" data-view="files">→</button>
                             </div>
-                            <div class="files-list">
-                                <div class="file-item">
-                                    <span class="file-icon">📄</span>
-                                    <div class="file-info">
-                                        <div class="file-name">Informatik_Klausur_Vorbereitung.pdf</div>
-                                        <div class="file-meta">Hochgeladen vor 2 Tagen • 2.3 MB</div>
-                                    </div>
-                                </div>
-                                <div class="file-item">
-                                    <span class="file-icon">📊</span>
-                                    <div class="file-info">
-                                        <div class="file-name">Mathe_Formelsammlung.xlsx</div>
-                                        <div class="file-meta">Hochgeladen vor 5 Tagen • 1.1 MB</div>
-                                    </div>
-                                </div>
-                                <div class="file-item">
-                                    <span class="file-icon">🎥</span>
-                                    <div class="file-info">
-                                        <div class="file-name">Physik_Experiment_Video.mp4</div>
-                                        <div class="file-meta">Hochgeladen vor 1 Woche • 45 MB</div>
-                                    </div>
-                                </div>
+                            <div class="files-list" id="overviewFiles">
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
                             </div>
                         </div>
 
@@ -191,16 +112,8 @@
                                 <button class="widget-action" data-view="admin-messages">→</button>
                             </div>
                             <div class="widget-body">
-                                <div class="messages-list" id="adminMessagesPreview">
-                                    <!-- Hier z.B. die letzten 2–3 Nachrichten anzeigen -->
-                                    <div class="message-item">
-                                        <div class="message-title">Wichtige Info zur Klassenarbeit</div>
-                                        <div class="message-meta">von Admin · vor 1 Tag</div>
-                                    </div>
-                                    <div class="message-item">
-                                        <div class="message-title">Neues Material im Kurs Informatik</div>
-                                        <div class="message-meta">von Admin · vor 3 Tagen</div>
-                                    </div>
+                                <div class="messages-list" id="overviewMessages">
+                                    <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
                                 </div>
                             </div>
                         </div>

@@ -2,48 +2,43 @@
                 <div id="timetable" class="view-content" style="display: none;">
                     <div class="content-header">
                         <h1>📅 Stundenplan</h1>
-                        <p>Deine Wochenübersicht</p>
+                        <p>Deine Wochenübersicht – heutiger Tag ist hervorgehoben</p>
                     </div>
+
+                    <!-- Stundenplan Widget -->
                     <div class="widget">
-                        <div class="timetable">
-                            <div class="timetable-day">
-                                <span class="day-name">Montag</span>
-                                <div class="day-classes">
-                                    <span class="class-badge">Mathematik</span>
-                                    <span class="class-badge">Informatik</span>
-                                    <span class="class-badge">Physik</span>
-                                </div>
+                        <div class="widget-header">
+                            <div class="widget-title">📋 Wochenplan</div>
+                            <button id="timetableEditBtn" class="btn-primary" onclick="toggleTimetableEdit()">✏️ Bearbeiten</button>
+                        </div>
+
+                        <!-- Ansichtsmodus -->
+                        <div id="timetableViewMode">
+                            <div id="timetableGrid"></div>
+                        </div>
+
+                        <!-- Bearbeitungsmodus -->
+                        <div id="timetableEditMode" style="display:none;">
+                            <div class="tt-edit-section">
+                                <div class="tt-edit-section-title">⏰ Stundenbeginn konfigurieren</div>
+                                <div id="periodTimesEditor"></div>
                             </div>
-                            <div class="timetable-day">
-                                <span class="day-name">Dienstag</span>
-                                <div class="day-classes">
-                                    <span class="class-badge">Deutsch</span>
-                                    <span class="class-badge">Englisch</span>
-                                    <span class="class-badge">Ethik</span>
-                                </div>
+                            <div class="tt-edit-section" style="margin-top:2rem;">
+                                <div class="tt-edit-section-title">📝 Fächer & Räume eintragen</div>
+                                <div id="timetableEditor" style="overflow-x:auto;"></div>
                             </div>
-                            <div class="timetable-day">
-                                <span class="day-name">Mittwoch</span>
-                                <div class="day-classes">
-                                    <span class="class-badge">Mathematik</span>
-                                    <span class="class-badge">Informatik</span>
-                                </div>
-                            </div>
-                            <div class="timetable-day">
-                                <span class="day-name">Donnerstag</span>
-                                <div class="day-classes">
-                                    <span class="class-badge">Physik</span>
-                                    <span class="class-badge">Ethik</span>
-                                    <span class="class-badge">Englisch</span>
-                                </div>
-                            </div>
-                            <div class="timetable-day">
-                                <span class="day-name">Freitag</span>
-                                <div class="day-classes">
-                                    <span class="class-badge">Deutsch</span>
-                                    <span class="class-badge">Mathematik</span>
-                                </div>
+                            <div style="margin-top:1.5rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+                                <button class="btn-primary" onclick="saveTimetable()">💾 Speichern</button>
+                                <button class="btn-secondary" onclick="cancelTimetableEdit()">Abbrechen</button>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Hausaufgaben Widget -->
+                    <div class="widget" style="margin-top:1.5rem;">
+                        <div class="widget-header">
+                            <div class="widget-title">📚 Hausaufgaben</div>
+                        </div>
+                        <div id="homeworkGrid"></div>
                     </div>
                 </div>
