@@ -647,6 +647,24 @@ def delete_todo(user_id: str, todo_id: str):
     return {"message": "To-Do gelöscht"}
 
 
+@app.patch("/todos/{user_id}/{todo_id}/toggle")
+def toggle_todo(user_id: str, todo_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT done FROM todos WHERE id=? AND user_id=?", (todo_id, user_id))
+    todo = cursor.fetchone()
+    if not todo:
+        raise HTTPException(status_code=404, detail="To-Do nicht gefunden")
+
+    new_done = 0 if todo["done"] else 1
+    cursor.execute(
+        "UPDATE todos SET done=? WHERE id=? AND user_id=?",
+        (new_done, todo_id, user_id)
+    )
+    db.commit()
+    return {"message": "Status geändert", "done": bool(new_done)}
+
 
 # =========================================
 # GRADES ROUTES

@@ -516,6 +516,56 @@ $user_id = $_SESSION['user_id'];
         .priority-medium { background-color: var(--color-warning); }
         .priority-low { background-color: var(--color-info); }
 
+        /* Todo Filter Buttons */
+        .todo-filter-btn {
+            padding: 0.35rem 0.85rem;
+            background: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .todo-filter-btn:hover {
+            background-color: var(--color-bg-hover);
+            color: var(--color-text-primary);
+        }
+        .todo-filter-btn.active {
+            background-color: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        /* Todo Item Body */
+        .todo-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .todo-meta {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.2rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .todo-tag {
+            font-size: 0.72rem;
+            padding: 0.1rem 0.45rem;
+            background-color: rgba(13, 110, 253, 0.15);
+            color: var(--color-primary);
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .todo-due {
+            font-size: 0.72rem;
+            color: var(--color-text-muted);
+        }
+        .todo-item.todo-done {
+            opacity: 0.55;
+        }
+
         /* Karteikarten Widget */
         .flashcard {
             perspective: 1000px;
@@ -1275,55 +1325,130 @@ themeToggle.addEventListener('click', () => {
             });
         });
         
-        // To-Do Functionality
-        const todos = [
-            { text: 'Mathematik Hausaufgaben fertigstellen', priority: 'high', completed: false },
-            { text: 'Physik Referat vorbereiten', priority: 'medium', completed: false },
-            { text: 'Karteikarten für Informatik erstellen', priority: 'low', completed: false }
-        ];
+        // ===== TO-DO API =====
+        let todosData = null;
+        let todoFilter = 'all';
 
-        function renderTodos() {
-            const todoList = document.getElementById('todosDetailList');
-            if (!todoList) return;
-            
-            todoList.innerHTML = todos.map((todo, index) => `
-                <div class="todo-item">
-                    <div class="todo-checkbox ${todo.completed ? 'checked' : ''}" onclick="toggleTodoByIndex(${index})"></div>
-                    <div class="todo-text ${todo.completed ? 'completed' : ''}">${todo.text}</div>
-                    <div class="todo-priority priority-${todo.priority}"></div>
-                </div>
-            `).join('');
-        }
-
-        function toggleTodo(element) {
-            element.classList.toggle('checked');
-            const textElement = element.nextElementSibling;
-            textElement.classList.toggle('completed');
-        }
-
-        function toggleTodoByIndex(index) {
-            todos[index].completed = !todos[index].completed;
-            renderTodos();
-            renderOverviewTodos();
-        }
-
-        function addTodo() {
-            const input = document.getElementById('todoInput');
-            const priority = document.getElementById('todoPriority');
-            
-            if (input.value.trim()) {
-                todos.push({
-                    text: input.value.trim(),
-                    priority: priority.value,
-                    completed: false
-                });
-                input.value = '';
-                renderTodos();
+        async function loadTodos() {
+            try {
+                const res = await fetch('todo_load.php');
+                if (!res.ok) { todosData = []; return; }
+                todosData = await res.json();
+                renderTodosUI();
+                renderOverviewTodos();
+            } catch {
+                todosData = [];
+                renderTodosUI();
                 renderOverviewTodos();
             }
         }
 
-        renderTodos();
+        function setTodoFilter(filter, btn) {
+            todoFilter = filter;
+            document.querySelectorAll('.todo-filter-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderTodosUI();
+        }
+
+        function formatTodoDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr + 'T00:00:00');
+            return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        function getPriorityLabel(p) {
+            return { high: 'Hoch', medium: 'Mittel', low: 'Niedrig' }[p] || p;
+        }
+
+        function renderTodosUI() {
+            const list = document.getElementById('todosDetailList');
+            if (!list) return;
+
+            if (todosData === null) {
+                list.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:1.5rem;">Lädt…</p>';
+                return;
+            }
+
+            let filtered = todosData;
+            if (todoFilter === 'open') filtered = todosData.filter(t => !t.done);
+            if (todoFilter === 'done') filtered = todosData.filter(t =>  t.done);
+
+            if (!filtered.length) {
+                const msg = todoFilter === 'done' ? 'Noch nichts erledigt.' : 'Keine Aufgaben &#x2014; super! 🎉';
+                list.innerHTML = `<p style="color:var(--color-text-muted);text-align:center;padding:1.5rem;">${msg}</p>`;
+                return;
+            }
+
+            const pOrder = { high: 0, medium: 1, low: 2 };
+            const sorted = [...filtered].sort((a, b) => {
+                if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+                return (pOrder[a.priority] ?? 1) - (pOrder[b.priority] ?? 1);
+            });
+
+            list.innerHTML = sorted.map(todo => `
+                <div class="todo-item ${todo.done ? 'todo-done' : ''}" id="todo-${todo.id}">
+                    <div class="todo-checkbox ${todo.done ? 'checked' : ''}" onclick="toggleTodoById('${escapeHtml(todo.id)}')"></div>
+                    <div class="todo-body">
+                        <div class="todo-text ${todo.done ? 'completed' : ''}">${escapeHtml(todo.title)}</div>
+                        <div class="todo-meta">
+                            ${todo.subject ? `<span class="todo-tag">${escapeHtml(todo.subject)}</span>` : ''}
+                            ${todo.due_date ? `<span class="todo-due">📅 ${formatTodoDate(todo.due_date)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="todo-priority priority-${todo.priority}" title="${getPriorityLabel(todo.priority)}"></div>
+                    <button class="btn-icon" onclick="deleteTodoById('${escapeHtml(todo.id)}')" title="Löschen">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        async function addTodo() {
+            const titleEl    = document.getElementById('todoTitle');
+            const subjectEl  = document.getElementById('todoSubject');
+            const dueDateEl  = document.getElementById('todoDueDate');
+            const priorityEl = document.getElementById('todoPriority');
+            if (!titleEl || !titleEl.value.trim()) return;
+            try {
+                const res = await fetch('todo_add.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title:    titleEl.value.trim(),
+                        subject:  subjectEl  ? subjectEl.value.trim()  : '',
+                        due_date: dueDateEl  ? (dueDateEl.value || '')  : '',
+                        priority: priorityEl ? priorityEl.value         : 'medium'
+                    })
+                });
+                if (res.ok) {
+                    titleEl.value = '';
+                    if (subjectEl)  subjectEl.value  = '';
+                    if (dueDateEl)  dueDateEl.value  = '';
+                    await loadTodos();
+                }
+            } catch { /* Server nicht erreichbar */ }
+        }
+
+        async function toggleTodoById(todoId) {
+            try {
+                const res = await fetch(`todo_toggle.php?todo_id=${encodeURIComponent(todoId)}`, {
+                    method: 'POST'
+                });
+                if (res.ok) await loadTodos();
+            } catch { /* Server nicht erreichbar */ }
+        }
+
+        async function deleteTodoById(todoId) {
+            try {
+                const res = await fetch(`todo_delete.php?todo_id=${encodeURIComponent(todoId)}`, {
+                    method: 'POST'
+                });
+                if (res.ok) {
+                    todosData = (todosData || []).filter(t => t.id !== todoId);
+                    renderTodosUI();
+                    renderOverviewTodos();
+                }
+            } catch { /* Server nicht erreichbar */ }
+        }
+
 
         // Flashcard Functionality
         let currentCard = 0;
@@ -1740,19 +1865,22 @@ themeToggle.addEventListener('click', () => {
         function renderOverviewTodos() {
             const container = document.getElementById('overviewTodos');
             if (!container) return;
-            const open = todos.filter(t => !t.completed).slice(0, 3);
+            if (todosData === null) {
+                container.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>';
+                return;
+            }
+            const open = todosData.filter(t => !t.done).slice(0, 3);
             if (!open.length) {
                 container.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Keine offenen Aufgaben 🎉</p>';
                 return;
             }
-            container.innerHTML = open.map(todo => {
-                const idx = todos.indexOf(todo);
-                return `<div class="todo-item">
-                    <div class="todo-checkbox ${todo.completed ? 'checked' : ''}" onclick="toggleTodoByIndex(${idx})"></div>
-                    <div class="todo-text">${escapeHtml(todo.text)}</div>
-                    <div class="todo-priority priority-${todo.priority}"></div>
-                </div>`;
-            }).join('');
+            container.innerHTML = open.map(todo => `
+                <div class="todo-item">
+                    <div class="todo-checkbox" onclick="toggleTodoById('${escapeHtml(todo.id)}')"></div>
+                    <div class="todo-text">${escapeHtml(todo.title)}</div>
+                    <div class="todo-priority priority-${todo.priority}" title="${getPriorityLabel(todo.priority)}"></div>
+                </div>
+            `).join('');
         }
 
         function renderOverviewExams() {
@@ -1869,6 +1997,7 @@ themeToggle.addEventListener('click', () => {
         renderHomework();
         renderExams();
         loadGrades();
+        loadTodos();
         renderOverview();
 
         // ===== ACCOUNT SETTINGS MODAL =====

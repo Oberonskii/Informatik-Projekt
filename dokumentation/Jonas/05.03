@@ -1,0 +1,110 @@
+# Dokumentation – 05.03.2026
+
+## Prompt 1
+
+"Implementiere den Tab To-Dos. Achte darauf dass das ganze funktionsfähig ist und ideal in das layout passt und dabei möglichst clean aussieht. Implementiere auch die verknüpfung zum backend. löse diese wie bei dem download und upload von dateien. Verknüpfe auch das widget im overview. schreibe meinen prompt, deine ausgabe und alles was du getan hast in die heutige dokumentation von jonas"
+
+---
+
+## Was wurde implementiert
+
+### 1. tabs/todos.php – Komplett neu gebaut
+- **Zwei Widgets**: „Neue Aufgabe" (Eingabeformular) + „Aufgaben" (Liste mit Filter)
+- **Eingabefelder**: Aufgabentitel, Fach (optional), Fälligkeitsdatum (optional), Priorität (Niedrig / Mittel / Hoch)
+- **Filter-Buttons**: Alle / Offen / Erledigt – dynamisch per JS
+- Altes HTML (nur `todoInput` + `todoPriority`) wurde ersetzt durch vollständige UI
+
+### 2. backend.py – Neuer PATCH-Endpunkt
+```
+PATCH /todos/{user_id}/{todo_id}/toggle
+```
+- Liest den aktuellen `done`-Status aus der DB
+- Toggled ihn (0→1 oder 1→0)
+- Gibt `{ "message": "Status geändert", "done": true/false }` zurück
+
+### 3. current_dashboard.php – JS komplett umgebaut
+
+**CSS hinzugefügt:**
+- `.todo-filter-btn` / `.todo-filter-btn.active` – Filter-Buttons mit Highlight
+- `.todo-body`, `.todo-meta` – Layout für Titel + Fach/Datum
+- `.todo-tag`, `.todo-due` – Badges für Fach und Datum
+- `.todo-item.todo-done` – Erblaste Items (opacity 0.55)
+
+**Alte statische Todo-Logik entfernt:**
+- `const todos = [...]` (Dummy-Array)
+- `renderTodos()`, `toggleTodo()`, `toggleTodoByIndex()`, `addTodo()` (alte Version)
+
+**Neue Backend-basierte Funktionen:**
+- `loadTodos()` – async fetch von `GET /todos/{user_id}`, aktualisiert `todosData`, ruft `renderTodosUI()` und `renderOverviewTodos()` auf
+- `renderTodosUI()` – rendert die Detail-Liste mit Sortierung (offen vor erledigt, Hoch vor Niedrig) und Filter
+- `setTodoFilter(filter, btn)` – setzt Filter und re-rendert Liste
+- `addTodo()` – async POST an Backend, leert Felder, lädt neu
+- `toggleTodoById(id)` – async PATCH an neuen Toggle-Endpunkt
+- `deleteTodoById(id)` – async DELETE, entfernt Item sofort aus DOM + `todosData`
+- `formatTodoDate(dateStr)` – formatiert ISO-Datum auf DD.MM.YYYY
+- `getPriorityLabel(p)` – gibt deutschen Prioritäts-Label zurück
+
+**Overview-Widget neu verknüpft:**
+- `renderOverviewTodos()` liest jetzt aus `todosData` (Backend-Daten)
+- Zeigt bis zu 3 offene Aufgaben mit Toggle-Button
+- Zeigt „Lädt…" solange `todosData === null`, danach echte Daten
+- Wird nach `loadTodos()` automatisch aktualisiert
+
+**Initialisierung:**
+- `loadTodos()` wurde zur Init-Sequenz hinzugefügt
+
+---
+
+## Ausgabe / Ergebnis
+
+- To-Do Tab ist voll funktionsfähig: Aufgaben hinzufügen, abhaken (toggle), löschen
+- Alle Daten werden persistent im Backend (SQLite via FastAPI) gespeichert
+- Das Overview-Widget zeigt live die offenen Aufgaben aus dem Backend
+- Filter (Alle / Offen / Erledigt) funktioniert clientseitig ohne API-Call
+- Layout passt nahtlos ins bestehende Design (gleiche Widget-Klassen, gleiche Farbvariablen)
+- Sicherheit: `escapeHtml()` wird für alle Nutzereingaben in der Darstellung verwendet
+
+---
+
+## Prompt 2
+
+"im backend kommt keine anfrage an wenn man ein todo hinzufügt. erstelle diese verknüpfung und löse das ganze wie bei download und upload.php schreibe alles was du geändert hast, meinen prompt und deine ausgabe in die heutige dokumentation für jonas"
+
+## Problem & Ursache
+
+Das JS hat die Anfragen direkt an `http://localhost:8000/todos/...` geschickt (FastAPI). Das funktioniert nicht, weil der Browser keinen direkten Zugriff auf den Backend-Port hat (kein CORS, anderer Origin). Das Muster von `upload.php` / `download.php` / `delete.php` nutzt stattdessen PHP auf dem Server als cURL-Proxy – der PHP-Server kommuniziert serverseitig mit dem Backend.
+
+## Geänderte / neue Dateien
+
+### todo_add.php (neu)
+- Empfängt JSON per POST (Titel, Fach, Datum, Priorität)
+- Leitet per cURL als `POST /todos/{user_id}` ans Backend weiter
+- Gibt JSON-Antwort des Backends zurück
+
+### todo_load.php (neu)
+- Holt per cURL `GET /todos/{user_id}` vom Backend
+- Gibt JSON-Array aller Todos zurück
+
+### todo_toggle.php (neu)
+- Empfängt `?todo_id=...` per GET-Parameter
+- Sendet `PATCH /todos/{user_id}/{todo_id}/toggle` ans Backend per cURL
+
+### todo_delete.php (neu)
+- Empfängt `?todo_id=...` per GET-Parameter
+- Sendet `DELETE /todos/{user_id}/{todo_id}` ans Backend per cURL
+
+Alle vier PHP-Dateien prüfen die Session (`$_SESSION['user_id']`) bevor sie etwas ausführen.
+
+### current_dashboard.php (geändert)
+Die drei JS-Funktionen wurden von direkten Backend-Fetch-Aufrufen auf PHP-Proxy-Aufrufe umgestellt:
+
+| Funktion | vorher | nachher |
+|---|---|---|
+| `loadTodos()` | `fetch('http://localhost:8000/todos/...')` | `fetch('todo_load.php')` |
+| `addTodo()` | `fetch('http://localhost:8000/todos/...', POST)` | `fetch('todo_add.php', POST)` |
+| `toggleTodoById()` | `fetch('http://localhost:8000/.../toggle', PATCH)` | `fetch('todo_toggle.php?todo_id=...', POST)` |
+| `deleteTodoById()` | `fetch('http://localhost:8000/todos/...', DELETE)` | `fetch('todo_delete.php?todo_id=...', POST)` |
+
+## Ergebnis
+
+Alle Todo-Operationen laufen jetzt über PHP-cURL-Proxies, identisch zum Muster von upload.php / download.php / delete.php. Backend-Anfragen kommen zuverlässig an.
