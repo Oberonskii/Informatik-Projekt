@@ -1,0 +1,93 @@
+# Refactoring: Tabs in eigene Dateien ausgelagert
+
+**Datum:** 05.03.2026  
+**Bearbeiter:** Nik  
+**Betroffene Datei:** `current_dashboard.php`
+
+---
+
+## Ausgangslage
+
+Alle Tab-Inhalte des LearnHub-Dashboards befanden sich als monolithischer Block in der einzigen Datei `current_dashboard.php` (1500 Zeilen). Das machte die Datei schwer lesbar und wartbar.
+
+---
+
+## Ziel
+
+Jeden Tab in eine eigene PHP-Datei auslagern, sodass `current_dashboard.php` nur noch das Grundgerüst (Session-Check, Layout, CSS, Sidebar, JavaScript) enthält und die Tab-Inhalte per `include` einbindet.
+
+---
+
+## Vorgenommene Änderungen
+
+### 1. Neues Verzeichnis `tabs/` angelegt
+
+Alle Tab-Dateien liegen im Unterordner `tabs/` direkt neben `current_dashboard.php`.
+
+### 2. Tab-Dateien erstellt
+
+| Datei | Tab-ID | Inhalt |
+|---|---|---|
+| `tabs/overview.php` | `#overview` | Übersichts-Dashboard mit allen Widget-Vorschauen (Stundenplan, Noten, To-Dos, Klassenarbeiten, Karteikarten, Dateien, Admin-Nachrichten, Admin-Statistiken) |
+| `tabs/timetable.php` | `#timetable` | Detailansicht Stundenplan mit Wochenübersicht (Mo–Fr) |
+| `tabs/grades.php` | `#grades` | Notenübersicht mit Formular zum Hinzufügen neuer Noten |
+| `tabs/todos.php` | `#todos` | To-Do-Liste mit Eingabeformular und Prioritätsauswahl |
+| `tabs/exams.php` | `#exams` | Klassenarbeiten-Übersicht mit Formular (Fach, Datum, Thema) |
+| `tabs/flashcards.php` | `#flashcards` | Interaktive Karteikarten-Ansicht mit Vor/Zurück-Navigation |
+| `tabs/files.php` | `#files` | Datei-Upload-Formular + dynamische Dateiliste vom Backend; enthält den ausgelagerten PHP-Code zum Abrufen der Dateien via cURL |
+| `tabs/admin-messages.php` | `#admin-messages` | Detailansicht der Admin-Nachrichten |
+| `tabs/admin.php` | `#admin` | Admin-Panel mit Statistiken und Systemeinstellungen |
+
+### 3. PHP-Block für Datei-Abruf verschoben
+
+Der cURL-Block zum Laden der Benutzerdateien vom Backend (`http://127.0.0.1:8000/files/$user_id`) war vorher ganz oben in `current_dashboard.php`. Er wurde in `tabs/files.php` verschoben, da er nur dort benötigt wird. Die Variable `$user_id` ist weiterhin verfügbar, da sie in `current_dashboard.php` vor dem Include gesetzt wird.
+
+### 4. `current_dashboard.php` angepasst
+
+- Der cURL-Datei-Abruf-Block (ehemals Zeilen 13–27) wurde entfernt.
+- Der `<div id="contentArea">`-Bereich (ehemals Zeilen 753–1288, ca. 536 Zeilen) wurde durch 9 `include`-Anweisungen ersetzt:
+
+```php
+<div id="contentArea">
+    <?php include __DIR__ . '/tabs/overview.php'; ?>
+    <?php include __DIR__ . '/tabs/timetable.php'; ?>
+    <?php include __DIR__ . '/tabs/grades.php'; ?>
+    <?php include __DIR__ . '/tabs/todos.php'; ?>
+    <?php include __DIR__ . '/tabs/exams.php'; ?>
+    <?php include __DIR__ . '/tabs/flashcards.php'; ?>
+    <?php include __DIR__ . '/tabs/files.php'; ?>
+    <?php include __DIR__ . '/tabs/admin-messages.php'; ?>
+    <?php include __DIR__ . '/tabs/admin.php'; ?>
+</div>
+```
+
+- **Unverändert geblieben:** Session-Check, `$user_id`-Zuweisung, gesamtes CSS, Sidebar-HTML, alle JavaScript-Funktionen (Theme-Toggle, Navigation, To-Do-Logik, Karteikarten-Logik, Noten-Logik).
+
+---
+
+## Ergebnis
+
+| | Vorher | Nachher |
+|---|---|---|
+| `current_dashboard.php` | 1500 Zeilen | ~960 Zeilen |
+| Anzahl Dateien | 1 | 10 (1 Haupt + 9 Tabs) |
+| Layout/Funktionsweise | — | vollständig erhalten |
+
+---
+
+## Dateistruktur nach dem Refactoring
+
+```
+/
+├── current_dashboard.php       ← Haupt-Einstiegspunkt (Layout, CSS, JS)
+└── tabs/
+    ├── overview.php            ← Tab: Übersicht
+    ├── timetable.php           ← Tab: Stundenplan
+    ├── grades.php              ← Tab: Noten
+    ├── todos.php               ← Tab: To-Dos
+    ├── exams.php               ← Tab: Klassenarbeiten
+    ├── flashcards.php          ← Tab: Karteikarten
+    ├── files.php               ← Tab: Dateien (inkl. cURL-Logik)
+    ├── admin-messages.php      ← Tab: Admin-Nachrichten
+    └── admin.php               ← Tab: Admin-Panel
+```
