@@ -1,0 +1,15 @@
+Chatverlauf und Änderungen vom 11.03.2026
+
+- Problem: Noten konnten nicht eingetragen werden, beim Klick auf "Hinzufügen" blieb die Anzeige auf "Wird geladen..." stehen.
+- Ursache: JavaScript im Frontend versuchte, direkt den FastAPI-Server unter http://localhost:8000 anzusprechen. Im Codespace war dieser Port für den Browser nicht erreichbar und zudem war keine CORS-Konfiguration vorhanden. Daher schlug der `fetch`-Aufruf fehl und endete im `catch`-Block, der stumm blieb.
+
+Schritte zur Behebung:
+1. Backend-Code (`backend.py`) um CORS-Middleware erweitert, damit Anfragen von beliebigen Origins akzeptiert werden (während der Entwicklung `allow_origins=["*"]`).
+2. Dreiteilige PHP-Proxy-Lösung eingeführt (`grades/grades_load.php`, `grades/grade_add.php`, `grades/grade_delete.php`), analog zu bestehenden `todos/*.php`-Skripten. Diese Skripte rufen serverseitig das API auf und umgehen Port-/CORS-Probleme.
+3. Frontend (`current_dashboard.php`) angepasst:
+   - Alle `fetch`-Aufrufe für Noten auf die neuen PHP-Endpoints umgestellt.
+   - Fehlerbehandlung ergänzt, damit Rückmeldungen im UI/der Konsole erscheinen.
+4. Tests: Backend neu gestartet und Seite im Browser neu geladen; Noten konnten nun eingetragen, geladen und gelöscht werden.
+5. Änderungen committet (`Fix grades submission by adding CORS & PHP proxy`).
+
+Datei erstellt und commit vorbereitet.
