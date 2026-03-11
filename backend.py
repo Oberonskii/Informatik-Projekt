@@ -8,16 +8,39 @@ from fastapi.responses import FileResponse
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import sqlite3
 import uuid
 import hashlib
 import os
-from fastapi import UploadFile, File
-from fastapi.responses import FileResponse
+import smtplib
+import secrets
+import ssl
+import json
+from email.message import EmailMessage
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+def load_local_env_files():
+    env_paths = [".venv/.env", ".env"]
+    for env_path in env_paths:
+        if not os.path.exists(env_path):
+            continue
+        with open(env_path, "r", encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+
+
+load_local_env_files()
 
 
 # =========================================
@@ -42,6 +65,9 @@ app.add_middleware(
 )
 
 DB_NAME = "learnhub.db"
+SMTP_HOST = "smtp.gmail.com"
+SMTP_PORT = 465
+VERIFICATION_TTL_MINUTES = 10
 
 
 # =========================================
@@ -173,6 +199,20 @@ def init_db():
     except Exception:
         pass  # Column already exists
 
+    # E-MAIL VERIFICATION CODES
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS email_verifications (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        email TEXT,
+        purpose TEXT,
+        code_hash TEXT,
+        payload TEXT,
+        expires_at TEXT,
+        created_at TEXT
+    )
+    """)
+
     db.commit()
     db.close()
 
@@ -189,6 +229,108 @@ def hash_password(password: str) -> str:
 
 def generate_id() -> str:
     return str(uuid.uuid4())
+
+
+def is_valid_email(email: str) -> bool:
+    if not email or "@" not in email:
+        return False
+    local, _, domain = email.partition("@")
+    return bool(local and domain and "." in domain)
+
+
+def hash_verification_code(code: str) -> str:
+    return hashlib.sha256(code.encode()).hexdigest()
+
+
+def send_verification_email(receiver_email: str, code: str, purpose: str):
+    sender_email = os.getenv("LEARNHUB_SMTP_EMAIL")
+    sender_password = os.getenv("LEARNHUB_SMTP_PASSWORD")
+
+    if not sender_email or not sender_password:
+        raise HTTPException(
+            status_code=500,
+            detail="E-Mail-Versand ist nicht konfiguriert (LEARNHUB_SMTP_EMAIL/LEARNHUB_SMTP_PASSWORD fehlen)"
+        )
+
+    subject_map = {
+        "register": "Dein LearnHub Verifizierungscode (Registrierung)",
+        "change_email": "Dein LearnHub Verifizierungscode (E-Mail-Aenderung)",
+        "delete_account": "Dein LearnHub Verifizierungscode (Account-Loeschung)"
+    }
+    message = EmailMessage()
+    message["Subject"] = subject_map.get(purpose, "LearnHub Verifizierungscode")
+    message["From"] = sender_email
+    message["To"] = receiver_email
+    message.set_content(
+        f"Hallo,\n\n"
+        f"dein Verifizierungscode lautet: {code}\n"
+        f"Der Code ist {VERIFICATION_TTL_MINUTES} Minuten gueltig.\n\n"
+        "Wenn du diese Aktion nicht gestartet hast, ignoriere diese E-Mail.\n\n"
+        "LearnHub"
+    )
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as server:
+        server.login(sender_email, sender_password)
+        server.send_message(message)
+
+
+def cleanup_expired_verifications(db):
+    cursor = db.cursor()
+    cursor.execute(
+        "DELETE FROM email_verifications WHERE expires_at < ?",
+        (datetime.utcnow().isoformat(),)
+    )
+
+
+def create_verification(db, user_id: Optional[str], email: str, purpose: str, payload: dict):
+    cleanup_expired_verifications(db)
+    cursor = db.cursor()
+
+    verification_id = generate_id()
+    code = f"{secrets.randbelow(1000000):06d}"
+    now = datetime.utcnow()
+    expires_at = now + timedelta(minutes=VERIFICATION_TTL_MINUTES)
+
+    cursor.execute("""
+    INSERT INTO email_verifications VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        verification_id,
+        user_id,
+        email,
+        purpose,
+        hash_verification_code(code),
+        json.dumps(payload),
+        expires_at.isoformat(),
+        now.isoformat()
+    ))
+
+    db.commit()
+    send_verification_email(email, code, purpose)
+    return verification_id
+
+
+def consume_verification(db, verification_id: str, code: str, purpose: str, user_id: Optional[str]):
+    cleanup_expired_verifications(db)
+    cursor = db.cursor()
+    cursor.execute(
+        "SELECT * FROM email_verifications WHERE id=? AND purpose=?",
+        (verification_id, purpose)
+    )
+    verification = cursor.fetchone()
+
+    if not verification:
+        raise HTTPException(status_code=400, detail="Verifizierung ungültig oder abgelaufen")
+
+    if user_id is not None and verification["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Verifizierung gehört zu einem anderen User")
+
+    if verification["code_hash"] != hash_verification_code(code):
+        raise HTTPException(status_code=400, detail="Verifizierungscode ist falsch")
+
+    cursor.execute("DELETE FROM email_verifications WHERE id=?", (verification_id,))
+    db.commit()
+    return verification
 
 
 # =========================================
@@ -214,6 +356,25 @@ class UserRegister(BaseModel):
     password: str
 
 
+class RegisterCodeConfirm(BaseModel):
+    verification_id: str
+    code: str
+
+
+class ChangeEmailCodeConfirm(BaseModel):
+    verification_id: str
+    code: str
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str
+
+
+class DeleteAccountCodeConfirm(BaseModel):
+    verification_id: str
+    code: str
+
+
 class UserLogin(BaseModel):
     username: str
     password: str
@@ -230,9 +391,6 @@ class GradeCreate(BaseModel):
     subject: str
     value: float
     description: Optional[str] = ""
-
-class DeleteAccountRequest(BaseModel):
-    password: str
 
     
 class FlashcardCreate(BaseModel):
@@ -283,14 +441,58 @@ def register(user: UserRegister):
     db = get_db()
     cursor = db.cursor()
 
+    if not is_valid_email(user.email):
+        raise HTTPException(status_code=400, detail="Ungültige E-Mail-Adresse")
+
+    cursor.execute("SELECT id FROM users WHERE username=?", (user.username,))
+    if cursor.fetchone():
+        raise HTTPException(status_code=400, detail="Username existiert bereits")
+
+    verification_id = create_verification(
+        db=db,
+        user_id=None,
+        email=user.email,
+        purpose="register",
+        payload={
+            "username": user.username,
+            "email": user.email,
+            "password_hash": hash_password(user.password)
+        }
+    )
+
+    return {
+        "message": "Verifizierungscode wurde versendet",
+        "verification_id": verification_id,
+        "expires_in_minutes": VERIFICATION_TTL_MINUTES
+    }
+
+
+@app.post("/auth/register/confirm")
+def register_confirm(data: RegisterCodeConfirm):
+    db = get_db()
+    cursor = db.cursor()
+
+    verification = consume_verification(
+        db=db,
+        verification_id=data.verification_id,
+        code=data.code,
+        purpose="register",
+        user_id=None
+    )
+    payload = json.loads(verification["payload"])
+
+    cursor.execute("SELECT id FROM users WHERE username=?", (payload["username"],))
+    if cursor.fetchone():
+        raise HTTPException(status_code=400, detail="Username existiert bereits")
+
     try:
         cursor.execute("""
         INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)
         """, (
             generate_id(),
-            user.username,
-            user.email,
-            hash_password(user.password),
+            payload["username"],
+            payload["email"],
+            payload["password_hash"],
             "user",
             datetime.utcnow().isoformat()
         ))
@@ -361,11 +563,47 @@ def change_email(user_id: str, data: ChangeEmail):
     if not cursor.fetchone():
         raise HTTPException(status_code=404, detail="User nicht gefunden")
 
+    if not is_valid_email(data.new_email):
+        raise HTTPException(status_code=400, detail="Ungültige E-Mail-Adresse")
+
+    verification_id = create_verification(
+        db=db,
+        user_id=user_id,
+        email=data.new_email,
+        purpose="change_email",
+        payload={"new_email": data.new_email}
+    )
+
+    return {
+        "message": "Verifizierungscode wurde an die neue E-Mail gesendet",
+        "verification_id": verification_id,
+        "expires_in_minutes": VERIFICATION_TTL_MINUTES
+    }
+
+
+@app.put("/auth/change-email/confirm/{user_id}")
+def change_email_confirm(user_id: str, data: ChangeEmailCodeConfirm):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT id FROM users WHERE id=?", (user_id,))
+    if not cursor.fetchone():
+        raise HTTPException(status_code=404, detail="User nicht gefunden")
+
+    verification = consume_verification(
+        db=db,
+        verification_id=data.verification_id,
+        code=data.code,
+        purpose="change_email",
+        user_id=user_id
+    )
+    payload = json.loads(verification["payload"])
+
     cursor.execute("""
         UPDATE users
         SET email=?
         WHERE id=?
-    """, (data.new_email, user_id))
+    """, (payload["new_email"], user_id))
 
     db.commit()
     return {"message": "E-Mail erfolgreich geändert"}
@@ -677,45 +915,66 @@ def login(user: UserLogin):
     }
 
 
-@app.delete("/auth/delete-account/{user_id}")
-def delete_account(user_id: str, data: DeleteAccountRequest):
+@app.post("/auth/delete-account/request-code/{user_id}")
+def request_delete_account_code(user_id: str, data: DeleteAccountRequest):
     db = get_db()
     cursor = db.cursor()
 
-    # -------------------------
-    # 1️⃣ User abrufen
-    # -------------------------
-    cursor.execute("SELECT password FROM users WHERE id=?", (user_id,))
+    cursor.execute("SELECT email, password FROM users WHERE id=?", (user_id,))
     user = cursor.fetchone()
 
     if not user:
         raise HTTPException(status_code=404, detail="User nicht gefunden")
 
-    # -------------------------
-    # 2️⃣ Passwort prüfen
-    # -------------------------
     if user["password"] != hash_password(data.password):
         raise HTTPException(status_code=401, detail="Passwort ist falsch")
 
-    # -------------------------
-    # 3️⃣ Abhängige Daten löschen
-    # -------------------------
+    verification_id = create_verification(
+        db=db,
+        user_id=user_id,
+        email=user["email"],
+        purpose="delete_account",
+        payload={"approved": True}
+    )
+
+    return {
+        "message": "Verifizierungscode wurde an deine E-Mail gesendet",
+        "verification_id": verification_id,
+        "expires_in_minutes": VERIFICATION_TTL_MINUTES
+    }
+
+
+@app.post("/auth/delete-account/confirm/{user_id}")
+def confirm_delete_account(user_id: str, data: DeleteAccountCodeConfirm):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT id FROM users WHERE id=?", (user_id,))
+    user = cursor.fetchone()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User nicht gefunden")
+
+    consume_verification(
+        db=db,
+        verification_id=data.verification_id,
+        code=data.code,
+        purpose="delete_account",
+        user_id=user_id
+    )
+
     cursor.execute("DELETE FROM todos WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM grades WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM timetable WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM timetable_times WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM flashcards WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM files WHERE user_id=?", (user_id,))
+    cursor.execute("DELETE FROM flashcard_decks WHERE user_id=?", (user_id,))
+    cursor.execute("DELETE FROM email_verifications WHERE user_id=?", (user_id,))
 
-    # -------------------------
-    # 4️⃣ User löschen
-    # -------------------------
     cursor.execute("DELETE FROM users WHERE id=?", (user_id,))
     db.commit()
 
-    # -------------------------
-    # 5️⃣ Upload-Ordner löschen
-    # -------------------------
     user_dir = os.path.join(UPLOAD_DIR, user_id)
     if os.path.exists(user_dir):
         for filename in os.listdir(user_dir):

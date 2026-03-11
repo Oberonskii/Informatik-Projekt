@@ -2,39 +2,76 @@
 // Fehlernachricht (falls vorhanden)
 $error_message = '';
 $success_message = '';
+$verification_id = '';
+$username_value = '';
+$email_value = '';
 
 
 // Wenn das Formular abgesendet wird
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = $_POST['username'];
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+    $action = $_POST['action'] ?? 'request_code';
 
-    // API-Endpunkt für Registrierung
-    $url = 'http://localhost:8000/auth/register';
+    if ($action === 'request_code') {
+        $username = trim($_POST['username'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
 
-    // POST-Daten vorbereiten
-    $data = json_encode([
-        'username' => $username,
-        'email' => $email,
-        'password' => $password
-    ]);
+        $username_value = $username;
+        $email_value = $email;
 
-    // cURL-Anfrage zur API
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+        $url = 'http://localhost:8000/auth/register';
+        $data = json_encode([
+            'username' => $username,
+            'email' => $email,
+            'password' => $password
+        ]);
 
-    // Überprüfen, ob die Registrierung erfolgreich war
-    if ($http_code == 200) {
-        $success_message = 'Registrierung erfolgreich! Du kannst dich jetzt einloggen.';
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $json = json_decode($response, true);
+
+        if ($http_code == 200) {
+            $verification_id = $json['verification_id'] ?? '';
+            $success_message = 'Verifizierungscode wurde gesendet. Bitte Code eingeben, um die Registrierung abzuschließen.';
+        } else {
+            $error_message = $json['detail'] ?? 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.';
+        }
     } else {
-        $error_message = 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.';
+        $verification_id = trim($_POST['verification_id'] ?? '');
+        $code = trim($_POST['verification_code'] ?? '');
+
+        $url = 'http://localhost:8000/auth/register/confirm';
+        $data = json_encode([
+            'verification_id' => $verification_id,
+            'code' => $code
+        ]);
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $json = json_decode($response, true);
+
+        if ($http_code == 200) {
+            $success_message = 'Registrierung erfolgreich! Du kannst dich jetzt einloggen.';
+            $verification_id = '';
+            $username_value = '';
+            $email_value = '';
+        } else {
+            $error_message = $json['detail'] ?? 'Verifizierung fehlgeschlagen. Bitte erneut versuchen.';
+        }
     }
 }
 ?>
@@ -230,12 +267,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="error-message"><?php echo $error_message; ?></div>
         <?php endif; ?>
 
-        <form method="POST" action="register.php">
-            <input type="text" name="username" class="input-field" placeholder="Benutzername" required>
-            <input type="email" name="email" class="input-field" placeholder="E-Mail" required>
-            <input type="password" name="password" class="input-field" placeholder="Passwort" required>
-            <button type="submit" class="button">Registrieren</button>
-        </form>
+        <?php if (!$verification_id): ?>
+            <form method="POST" action="register.php">
+                <input type="hidden" name="action" value="request_code">
+                <input type="text" name="username" class="input-field" placeholder="Benutzername" value="<?php echo htmlspecialchars($username_value); ?>" required>
+                <input type="email" name="email" class="input-field" placeholder="E-Mail" value="<?php echo htmlspecialchars($email_value); ?>" required>
+                <input type="password" name="password" class="input-field" placeholder="Passwort" required>
+                <button type="submit" class="button">Code senden</button>
+            </form>
+        <?php else: ?>
+            <form method="POST" action="register.php">
+                <input type="hidden" name="action" value="confirm_code">
+                <input type="hidden" name="verification_id" value="<?php echo htmlspecialchars($verification_id); ?>">
+                <input type="text" name="verification_code" class="input-field" placeholder="Verifizierungscode" required>
+                <button type="submit" class="button">Registrierung abschließen</button>
+            </form>
+        <?php endif; ?>
 
         <div class="login-link">
             <p>Bereits ein Account? <a href="login.php">Jetzt einloggen</a></p>

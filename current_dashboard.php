@@ -184,7 +184,7 @@ $user_id = $_SESSION['user_id'];
             border-top: 1px solid var(--color-border);
         }
 
-        .theme-toggle, .account-btn {
+        .theme-toggle, .account-btn, .logout-btn {
             display: flex;
             align-items: center;
             width: 100%;
@@ -197,11 +197,23 @@ $user_id = $_SESSION['user_id'];
             transition: all 0.2s;
             font-size: 0.9rem;
             margin-bottom: 0.5rem;
+            text-decoration: none;
         }
 
-        .theme-toggle:hover, .account-btn:hover {
+        .theme-toggle:hover, .account-btn:hover, .logout-btn:hover {
             background-color: var(--color-bg-hover);
             border-color: var(--color-primary);
+        }
+
+        .logout-btn {
+            border-color: rgba(220, 53, 69, 0.45);
+            color: var(--color-danger);
+            justify-content: center;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+            border-color: var(--color-danger);
         }
 
         /* Account Settings Modal */
@@ -1243,6 +1255,10 @@ $user_id = $_SESSION['user_id'];
                     <span>👤</span>
                     <span style="margin-left: 0.5rem;">Account</span>
                 </button>
+                <a class="logout-btn" href="auth/logout.php">
+                    <span>🚪</span>
+                    <span style="margin-left: 0.5rem;">Logout</span>
+                </a>
             </div>
         </aside>
 
@@ -1295,8 +1311,10 @@ $user_id = $_SESSION['user_id'];
             <div class="modal-section">
                 <h3>&#128231; E-Mail-Adresse ändern</h3>
                 <input type="email" id="newEmail" placeholder="Neue E-Mail-Adresse">
+                <input type="text" id="emailVerificationCode" placeholder="Verifizierungscode (6-stellig)">
                 <div>
-                    <button class="modal-btn modal-btn-primary" onclick="changeEmail()">Speichern</button>
+                    <button class="modal-btn modal-btn-primary" onclick="requestEmailChangeCode()">Code senden</button>
+                    <button class="modal-btn modal-btn-primary" onclick="confirmEmailChange()">E-Mail ändern</button>
                 </div>
                 <div class="modal-msg" id="msgEmail"></div>
             </div>
@@ -1308,8 +1326,10 @@ $user_id = $_SESSION['user_id'];
                     Diese Aktion ist <strong>unwiderruflich</strong>. Alle deine Daten werden gelöscht.
                 </p>
                 <input type="password" id="deletePassword" placeholder="Passwort zur Bestätigung">
+                <input type="text" id="deleteVerificationCode" placeholder="Verifizierungscode (6-stellig)">
                 <div>
-                    <button class="modal-btn modal-btn-danger" onclick="deleteAccount()">Account endgültig löschen</button>
+                    <button class="modal-btn modal-btn-danger" onclick="requestDeleteAccountCode()">Code senden</button>
+                    <button class="modal-btn modal-btn-danger" onclick="confirmDeleteAccount()">Account endgültig löschen</button>
                 </div>
                 <div class="modal-msg" id="msgDelete"></div>
             </div>
@@ -2504,6 +2524,9 @@ themeToggle.addEventListener('click', () => {
 
         // ===== ACCOUNT SETTINGS MODAL =====
 
+        let emailChangeVerificationId = '';
+        let deleteAccountVerificationId = '';
+
         function openAccountModal() {
             document.getElementById('accountModal').classList.add('open');
         }
@@ -2514,6 +2537,12 @@ themeToggle.addEventListener('click', () => {
                 const el = document.getElementById(id);
                 if (el) { el.textContent = ''; el.className = 'modal-msg'; }
             });
+            emailChangeVerificationId = '';
+            deleteAccountVerificationId = '';
+            const emailCode = document.getElementById('emailVerificationCode');
+            const deleteCode = document.getElementById('deleteVerificationCode');
+            if (emailCode) emailCode.value = '';
+            if (deleteCode) deleteCode.value = '';
         }
 
         document.getElementById('accountModal').addEventListener('click', function(e) {
@@ -2570,7 +2599,7 @@ themeToggle.addEventListener('click', () => {
             } catch { setMsg('msgPassword', '❌ Server nicht erreichbar.', 'error'); }
         }
 
-        async function changeEmail() {
+        async function requestEmailChangeCode() {
             const val = document.getElementById('newEmail').value.trim();
             if (!val || !val.includes('@')) return setMsg('msgEmail', 'Bitte eine gültige E-Mail eingeben.', 'error');
             try {
@@ -2581,23 +2610,65 @@ themeToggle.addEventListener('click', () => {
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    setMsg('msgEmail', '✅ ' + data.message, 'success');
-                    document.getElementById('newEmail').value = '';
+                    emailChangeVerificationId = data.verification_id || '';
+                    setMsg('msgEmail', '✅ Code gesendet. Bitte Verifizierungscode eingeben.', 'success');
                 } else {
                     setMsg('msgEmail', '❌ ' + (data.detail || 'Fehler'), 'error');
                 }
             } catch { setMsg('msgEmail', '❌ Server nicht erreichbar.', 'error'); }
         }
 
-        async function deleteAccount() {
+        async function confirmEmailChange() {
+            const code = document.getElementById('emailVerificationCode').value.trim();
+            if (!emailChangeVerificationId) return setMsg('msgEmail', 'Bitte zuerst einen Code senden.', 'error');
+            if (!code) return setMsg('msgEmail', 'Bitte den Verifizierungscode eingeben.', 'error');
+            try {
+                const res = await fetch(`http://localhost:8000/auth/change-email/confirm/${CURRENT_USER_ID}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ verification_id: emailChangeVerificationId, code: code })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    setMsg('msgEmail', '✅ ' + data.message, 'success');
+                    document.getElementById('newEmail').value = '';
+                    document.getElementById('emailVerificationCode').value = '';
+                    emailChangeVerificationId = '';
+                } else {
+                    setMsg('msgEmail', '❌ ' + (data.detail || 'Fehler'), 'error');
+                }
+            } catch { setMsg('msgEmail', '❌ Server nicht erreichbar.', 'error'); }
+        }
+
+        async function requestDeleteAccountCode() {
             const pw = document.getElementById('deletePassword').value;
             if (!pw) return setMsg('msgDelete', 'Bitte dein Passwort eingeben.', 'error');
-            if (!confirm('Bist du sicher? Diese Aktion kann NICHT rückgängig gemacht werden!')) return;
             try {
-                const res = await fetch(`http://localhost:8000/auth/delete-account/${CURRENT_USER_ID}`, {
-                    method: 'DELETE',
+                const res = await fetch(`http://localhost:8000/auth/delete-account/request-code/${CURRENT_USER_ID}`, {
+                    method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ password: pw })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    deleteAccountVerificationId = data.verification_id || '';
+                    setMsg('msgDelete', '✅ Code gesendet. Bitte Verifizierungscode eingeben.', 'success');
+                } else {
+                    setMsg('msgDelete', '❌ ' + (data.detail || 'Fehler'), 'error');
+                }
+            } catch { setMsg('msgDelete', '❌ Server nicht erreichbar.', 'error'); }
+        }
+
+        async function confirmDeleteAccount() {
+            const code = document.getElementById('deleteVerificationCode').value.trim();
+            if (!deleteAccountVerificationId) return setMsg('msgDelete', 'Bitte zuerst einen Code senden.', 'error');
+            if (!code) return setMsg('msgDelete', 'Bitte den Verifizierungscode eingeben.', 'error');
+            if (!confirm('Bist du sicher? Diese Aktion kann NICHT rückgängig gemacht werden!')) return;
+            try {
+                const res = await fetch(`http://localhost:8000/auth/delete-account/confirm/${CURRENT_USER_ID}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ verification_id: deleteAccountVerificationId, code: code })
                 });
                 const data = await res.json();
                 if (res.ok) {

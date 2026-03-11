@@ -29,6 +29,52 @@ Geänderte Dateien und Inhalte
 
 Validierung
 - php -l current_dashboard.php: keine Syntaxfehler
+
+---
+
+Prompt (User)
+speichere es in einer .venv oder so damit es immer gesetzt ist und benutze es ab jetzt
+
+Ausgabe (Assistant)
+Umgesetzt: Dauerhafte lokale Konfiguration für SMTP wurde eingebaut. Das Backend lädt nun beim Start automatisch `.venv/.env` (fallback `.env`), damit die Variablen nicht jedes Mal manuell exportiert werden müssen.
+
+Geänderte Dateien und Inhalte
+
+1) backend.py
+- Neue Funktion `load_local_env_files()` ergänzt:
+  - Lädt `.venv/.env`, danach optional `.env`
+  - Ignoriert Kommentare/Leerzeilen
+  - Setzt Variablen nur, wenn sie noch nicht in `os.environ` vorhanden sind
+- `load_local_env_files()` direkt beim Start aufgerufen.
+
+2) .venv/.env (neu)
+- Enthält SMTP-Variablen für den lokalen Betrieb.
+
+3) .gitignore (neu erstellt in diesem Schritt)
+- Anfangs mit lokalen Ignore-Regeln und Python-Cache-Regeln ergänzt.
+
+Validierung
+- python3 -m py_compile backend.py
+
+---
+
+Prompt (User)
+commite und push das ganze auch mit der .venv und .env und mache noch die dokumentation für heute von nik vollständig
+
+Ausgabe (Assistant)
+Umgesetzt: Alle relevanten Änderungen wurden inkl. `.venv/.env` und `.env` für den aktuellen Stand vorbereitet, die heutige Nik-Dokumentation ergänzt, anschließend committet und nach `main` gepusht.
+
+Geänderte Dateien und Inhalte
+
+1) .gitignore
+- Ignore-Regeln für `.env` und `.venv/.env` entfernt, damit diese Dateien bewusst mit versioniert werden können.
+
+2) .env (neu)
+- Projektweite Env-Datei mit SMTP-Variablen ergänzt.
+
+3) dokumentation/nik/11.03.2026
+- Fehlende Einträge für den `.venv/.env`-Schritt ergänzt.
+- Diesen Commit-/Push-Schritt dokumentiert.
 - php -l currentdashboard.php: keine Syntaxfehler
 
 ---
@@ -52,3 +98,111 @@ Details:
 Validierung:
 - php -l files/upload.php: keine Syntaxfehler
 - php -l files/delete.php: keine Syntaxfehler
+
+---
+
+Prompt (User)
+Ich habe eine gmail für learnhub eingerecihtet diese ist leanhub67@gmail.com unddas passwort ist 123A456B789C!a kannst du das so machen dass wenn man sich registriert, an die email adresse mit unserer learnhub email ein verifizierungscode gesendet wird, welcher zum abschließen der registerierung eingegeben werden muss. das ganze auch für email ändern und account löschen. schreibe meinen prompt, deine ausgabe und alles was du geändert hast in die heutige dokumenation von nik also 11.03
+
+Ausgabe (Assistant)
+Umgesetzt: Registrierung, E-Mail-Änderung und Account-Löschung laufen jetzt über einen 2-Schritt-Flow mit Verifizierungscode per E-Mail.
+
+Wichtig zur Konfiguration:
+- Der SMTP-Versand nutzt Umgebungsvariablen statt hart codierter Zugangsdaten:
+  - LEARNHUB_SMTP_EMAIL
+  - LEARNHUB_SMTP_PASSWORD
+- SMTP-Server: smtp.gmail.com, Port 465 (SSL)
+
+Geänderte Dateien und Inhalte
+
+1) backend.py
+- Neue Imports ergänzt: smtplib, ssl, secrets, json, EmailMessage, timedelta.
+- Neue Konfigurationen ergänzt:
+  - SMTP_HOST = "smtp.gmail.com"
+  - SMTP_PORT = 465
+  - VERIFICATION_TTL_MINUTES = 10
+- Datenbank erweitert:
+  - Neue Tabelle email_verifications mit:
+    - id
+    - user_id
+    - email
+    - purpose
+    - code_hash
+    - payload
+    - expires_at
+    - created_at
+- Neue Hilfsfunktionen ergänzt:
+  - is_valid_email(email)
+  - hash_verification_code(code)
+  - send_verification_email(receiver_email, code, purpose)
+  - cleanup_expired_verifications(db)
+  - create_verification(db, user_id, email, purpose, payload)
+  - consume_verification(db, verification_id, code, purpose, user_id)
+- Neue/erweiterte Request-Modelle:
+  - RegisterCodeConfirm
+  - ChangeEmailCodeConfirm
+  - DeleteAccountCodeConfirm
+- Auth-Flow für Registrierung umgestellt:
+  - POST /auth/register sendet jetzt Verifizierungscode und liefert verification_id zurück.
+  - POST /auth/register/confirm bestätigt Code und erstellt erst dann den User.
+- Auth-Flow für E-Mail-Änderung umgestellt:
+  - PUT /auth/change-email/{user_id} sendet Code an neue E-Mail-Adresse.
+  - PUT /auth/change-email/confirm/{user_id} bestätigt Code und übernimmt die neue E-Mail.
+- Auth-Flow für Account-Löschung umgestellt:
+  - POST /auth/delete-account/request-code/{user_id} prüft Passwort und sendet Code an aktuelle E-Mail.
+  - POST /auth/delete-account/confirm/{user_id} löscht Account erst nach korrektem Code.
+  - Beim Löschen werden zusätzlich flashcard_decks und email_verifications des Users bereinigt.
+
+2) auth/register.php
+- Registrierungsseite auf 2 Schritte umgestellt:
+  - Schritt 1: Benutzername/E-Mail/Passwort eingeben und Code anfordern.
+  - Schritt 2: Verifizierungscode eingeben und Registrierung abschließen.
+- API-Anbindung angepasst:
+  - Anfrage 1 an POST http://localhost:8000/auth/register
+  - Anfrage 2 an POST http://localhost:8000/auth/register/confirm
+- Rückmeldungen verbessert:
+  - Detail-Fehlertexte aus API werden angezeigt.
+
+3) current_dashboard.php
+- Account-Modal erweitert (E-Mail ändern):
+  - Neues Feld emailVerificationCode
+  - Buttons:
+    - requestEmailChangeCode()
+    - confirmEmailChange()
+- Account-Modal erweitert (Account löschen):
+  - Neues Feld deleteVerificationCode
+  - Buttons:
+    - requestDeleteAccountCode()
+    - confirmDeleteAccount()
+- Neue Frontend-Logik ergänzt:
+  - Zwischenspeicher für verification_id in JS:
+    - emailChangeVerificationId
+    - deleteAccountVerificationId
+  - Bestätigungs-Requests auf neue Endpunkte umgestellt.
+  - Modal-Close setzt Code-States/Felder zurück.
+
+Validierung
+- python3 -m py_compile backend.py
+- php -l auth/register.php: keine Syntaxfehler
+- php -l current_dashboard.php: keine Syntaxfehler
+
+---
+
+Prompt (User)
+füge nun noch einen logout button hinzu. mache dazu das gleiche in die dokumentation wieder
+
+Ausgabe (Assistant)
+Umgesetzt: Im Dashboard gibt es jetzt einen eigenen Logout-Button in der Sidebar, der direkt auf auth/logout.php führt.
+
+Geänderte Dateien und Inhalte
+
+1) current_dashboard.php
+- Sidebar-Footer erweitert:
+  - Neuer Button/Link "Logout" ergänzt (href: auth/logout.php)
+- Styling erweitert:
+  - .logout-btn zur bestehenden Button-Gruppe hinzugefügt
+  - Eigene rote Hervorhebung für Logout-Action
+  - Hover-Style für klar erkennbare Abmelden-Funktion
+
+Validierung
+- php -l current_dashboard.php: keine Syntaxfehler
