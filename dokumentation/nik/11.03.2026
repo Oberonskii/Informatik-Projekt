@@ -102,7 +102,7 @@ Validierung:
 ---
 
 Prompt (User)
-Ich habe eine gmail für learnhub eingerecihtet diese ist leanhub67@gmail.com unddas passwort ist 123A456B789C!a kannst du das so machen dass wenn man sich registriert, an die email adresse mit unserer learnhub email ein verifizierungscode gesendet wird, welcher zum abschließen der registerierung eingegeben werden muss. das ganze auch für email ändern und account löschen. schreibe meinen prompt, deine ausgabe und alles was du geändert hast in die heutige dokumenation von nik also 11.03
+Ich habe eine gmail für learnhub eingerecihtet diese ist leanhub67@gmail.com unddas passwort ist ** kannst du das so machen dass wenn man sich registriert, an die email adresse mit unserer learnhub email ein verifizierungscode gesendet wird, welcher zum abschließen der registerierung eingegeben werden muss. das ganze auch für email ändern und account löschen. schreibe meinen prompt, deine ausgabe und alles was du geändert hast in die heutige dokumenation von nik also 11.03
 
 Ausgabe (Assistant)
 Umgesetzt: Registrierung, E-Mail-Änderung und Account-Löschung laufen jetzt über einen 2-Schritt-Flow mit Verifizierungscode per E-Mail.
