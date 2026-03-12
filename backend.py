@@ -13,6 +13,7 @@ import sqlite3
 import uuid
 import hashlib
 import os
+import re
 import smtplib
 import secrets
 import ssl
@@ -163,6 +164,51 @@ def init_db():
         cursor.execute("ALTER TABLE timetable ADD COLUMN room TEXT")
     except Exception:
         pass  # column already present
+
+    # Repair rows that were written with a wrong column order.
+    # Old buggy writes stored values as:
+    # - time   <- period
+    # - subject<- time
+    # - period <- subject
+    cursor.execute("SELECT id, time, subject, period FROM timetable")
+    timetable_rows = cursor.fetchall()
+
+    def _parse_period(value):
+        if value is None:
+            return None
+        try:
+            p = int(str(value).strip())
+            return p if 1 <= p <= 10 else None
+        except Exception:
+            return None
+
+    def _looks_like_time(value):
+        if value is None:
+            return False
+        return bool(re.match(r"^\d{1,2}:\d{2}$", str(value).strip()))
+
+    for row in timetable_rows:
+        existing_period = _parse_period(row["period"])
+        time_as_period = _parse_period(row["time"])
+
+        if existing_period is not None:
+            continue
+        if time_as_period is None:
+            continue
+        if not _looks_like_time(row["subject"]):
+            continue
+
+        fixed_subject = "" if row["period"] is None else str(row["period"]).strip()
+        fixed_time = str(row["subject"]).strip()
+
+        cursor.execute(
+            """
+            UPDATE timetable
+            SET time=?, subject=?, period=?
+            WHERE id=?
+            """,
+            (fixed_time, fixed_subject, time_as_period, row["id"])
+        )
 
     # separate table for storing period times; this allows the user to configure slot times even if
     # no classes are set in that period
@@ -631,6 +677,7 @@ def get_timetable(user_id: str):
     SELECT id, day, period, time, subject, room
     FROM timetable
     WHERE user_id=?
+            AND period IS NOT NULL
     ORDER BY day, period
     """, (user_id,))
 
@@ -650,14 +697,15 @@ def add_timetable_entry(user_id: str, entry: TimetableCreate):
     cursor = db.cursor()
 
     cursor.execute("""
-    INSERT INTO timetable VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO timetable (id, user_id, day, time, subject, period, room)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
         generate_id(),
         user_id,
         entry.day,
-        entry.period,
         entry.time,
         entry.subject,
+        entry.period,
         entry.room
     ))
 
@@ -678,13 +726,13 @@ def update_timetable_entry(
 
     cursor.execute("""
     UPDATE timetable
-    SET day=?, period=?, time=?, subject=?, room=?
+    SET day=?, time=?, subject=?, period=?, room=?
     WHERE id=? AND user_id=?
     """, (
         entry.day,
-        entry.period,
         entry.time,
         entry.subject,
+        entry.period,
         entry.room,
         entry_id,
         user_id
@@ -733,14 +781,15 @@ def bulk_update_timetable(user_id: str, bulk: TimetableBulk):
     cursor.execute("DELETE FROM timetable WHERE user_id=?", (user_id,))
     for entry in bulk.entries:
         cursor.execute("""
-        INSERT INTO timetable VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO timetable (id, user_id, day, time, subject, period, room)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             generate_id(),
             user_id,
             entry.day,
-            entry.period,
             entry.time,
             entry.subject,
+            entry.period,
             entry.room
         ))
 

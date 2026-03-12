@@ -1617,11 +1617,16 @@ themeToggle.addEventListener('click', () => {
                         localStorage.setItem('timetable_times', JSON.stringify(timetableTimes));
                     }
                 }
+
+                normalizeHomeworkData();
             } catch (e) {
                 console.error('Timetable load error', e);
             }
             renderTimetableView();
+            renderHomework(true, 'homeworkGrid');
+            renderHomework(false, 'homeworkGridTimetable');
             renderOverviewTimetable();
+            renderOverviewHomeworks();
         }
 
         function setTodoFilter(filter, btn) {
@@ -1828,6 +1833,58 @@ themeToggle.addEventListener('click', () => {
         // zusätzliche Kalendereinträge, unabhängig von Hausaufgaben/Klassenarbeiten
         let calendarExtras = JSON.parse(localStorage.getItem('calendar_extras')) || [];
 
+        function getScheduledPeriodsForDay(day) {
+            const dayData = timetableData[day] || {};
+            return Object.keys(dayData)
+                .map(p => parseInt(p, 10))
+                .filter(p => Number.isInteger(p) && p >= 1 && p <= 10 && dayData[p] && dayData[p].subject)
+                .sort((a, b) => a - b);
+        }
+
+        function normalizeHomeworkData() {
+            const source = homework && typeof homework === 'object' ? homework : {};
+            const normalized = {};
+
+            TT_DAYS.forEach(day => {
+                const dayRaw = source[day];
+                const dayOut = {};
+                const scheduled = getScheduledPeriodsForDay(day);
+                const fallbackPeriod = scheduled.length ? String(scheduled[0]) : null;
+
+                const pushItems = (periodKey, values) => {
+                    const clean = Array.isArray(values)
+                        ? values.map(v => String(v || '').trim()).filter(Boolean)
+                        : [];
+                    if (!clean.length) return;
+
+                    let target = periodKey;
+                    if (!target || !scheduled.includes(parseInt(target, 10))) {
+                        if (!fallbackPeriod) return;
+                        target = fallbackPeriod;
+                    }
+                    if (!dayOut[target]) dayOut[target] = [];
+                    dayOut[target].push(...clean);
+                };
+
+                if (Array.isArray(dayRaw)) {
+                    // Legacy format: { monday: ["...", "..."] }
+                    pushItems(fallbackPeriod, dayRaw);
+                } else if (dayRaw && typeof dayRaw === 'object') {
+                    Object.entries(dayRaw).forEach(([periodKey, values]) => {
+                        const parsed = parseInt(periodKey, 10);
+                        pushItems(Number.isInteger(parsed) ? String(parsed) : null, values);
+                    });
+                }
+
+                normalized[day] = dayOut;
+            });
+
+            homework = normalized;
+            localStorage.setItem('homework_data', JSON.stringify(homework));
+        }
+
+        normalizeHomeworkData();
+
         function saveCalendarExtras() {
             localStorage.setItem('calendar_extras', JSON.stringify(calendarExtras));
         }
@@ -1912,11 +1969,15 @@ themeToggle.addEventListener('click', () => {
         }
 
         function getHomeworkHighlights() {
-            // returns an object { dayKey: ["homework1","homework2"], ... }
+            // returns an object { "monday-3": ["homework1", ...], ... }
             const highlights = {};
             TT_DAYS.forEach(day => {
-                const list = homework[day] || [];
-                if (list.length) highlights[day] = list.slice();
+                const dayData = homework[day] || {};
+                Object.entries(dayData).forEach(([period, list]) => {
+                    if (Array.isArray(list) && list.length) {
+                        highlights[`${day}-${period}`] = list.slice();
+                    }
+                });
             });
             return highlights;
         }
@@ -1952,13 +2013,15 @@ themeToggle.addEventListener('click', () => {
                     const subject  = cell.subject || '';
                     const room     = cell.room     || '';
                     const examKey  = `${day}-${p}`;
+                    const hwKey    = `${day}-${p}`;
                     const hasExam  = !!examHighlights[examKey];
                     const examList = hasExam ? examHighlights[examKey] : [];
+                    const hwList   = homeworkHighlights[hwKey] || [];
 
                     let cls = 'tt-subject-cell';
                     if (isToday) cls += ' today-col';
                     if (hasExam) cls += ' has-exam';
-                    if (homeworkHighlights[day] && homeworkHighlights[day].length) cls += ' has-homework';
+                    if (hwList.length) cls += ' has-homework';
 
                     html += `<div class="${cls}">`;
                     if (subject) {
@@ -1968,8 +2031,6 @@ themeToggle.addEventListener('click', () => {
                     examList.forEach(ex => {
                         html += `<span class="tt-exam-badge">📝 ${escapeHtml(ex.subject)}</span>`;
                     });
-                    // Hausaufgaben desselben Tages einfügen
-                    const hwList = homeworkHighlights[day] || [];
                     hwList.forEach(hw => {
                         html += `<span class="tt-homework-badge">📚 ${escapeHtml(hw)}</span>`;
                     });
@@ -2063,6 +2124,7 @@ themeToggle.addEventListener('click', () => {
             });
             timetableData = newData;
             localStorage.setItem('timetable_data', JSON.stringify(timetableData));
+            normalizeHomeworkData();
 
             // Synchronisation mit Backend
             try {
@@ -2104,21 +2166,40 @@ themeToggle.addEventListener('click', () => {
             let html = '<div class="tt-homework-grid">';
             TT_DAYS.forEach(day => {
                 const isToday = day === todayKey;
-                const dayHw   = homework[day] || [];
+                const dayHw   = homework[day] || {};
+                const periods = getScheduledPeriodsForDay(day);
                 html += `<div class="tt-hw-day ${isToday ? 'today' : ''}">
                     <div class="tt-hw-day-title">${TT_DAY_NAMES[day]}</div>`;
-                dayHw.forEach((hw, i) => {
-                    html += `<div class="tt-hw-item">
-                        <button class="tt-hw-delete" onclick="deleteHomework('${day}',${i})" title="Löschen">✕</button>
-                        <span>${escapeHtml(hw)}</span>
-                    </div>`;
-                });
-                if (editable) {
-                    html += `<div class="tt-hw-input-row">
-                        <input class="tt-hw-input" type="text" id="hwInput_${day}" placeholder="Hausaufgabe..."
-                               onkeydown="if(event.key==='Enter') addHomework('${day}')">
-                        <button class="tt-hw-add-btn" onclick="addHomework('${day}')">+</button>
-                    </div>`;
+
+                if (!periods.length) {
+                    html += '<p style="font-size:0.82rem;color:var(--color-text-muted);">Keine Stunden eingetragen</p>';
+                } else {
+                    periods.forEach(period => {
+                        const key = String(period);
+                        const periodHomework = dayHw[key] || [];
+                        const cell = (timetableData[day] || {})[period] || {};
+                        html += `<div style="margin-bottom:0.65rem;">
+                            <div style="font-size:0.78rem;color:var(--color-text-muted);margin-bottom:0.25rem;">
+                                ${period}. Stunde${cell.subject ? ' · ' + escapeHtml(cell.subject) : ''}
+                            </div>`;
+
+                        periodHomework.forEach((hw, i) => {
+                            html += `<div class="tt-hw-item">
+                                <button class="tt-hw-delete" onclick="deleteHomework('${day}',${period},${i})" title="Löschen">✕</button>
+                                <span>${escapeHtml(hw)}</span>
+                            </div>`;
+                        });
+
+                        if (editable) {
+                            html += `<div class="tt-hw-input-row">
+                                <input class="tt-hw-input" type="text" id="hwInput_${day}_${period}" placeholder="Hausaufgabe..."
+                                       onkeydown="if(event.key==='Enter') addHomework('${day}',${period})">
+                                <button class="tt-hw-add-btn" onclick="addHomework('${day}',${period})">+</button>
+                            </div>`;
+                        }
+
+                        html += '</div>';
+                    });
                 }
                 html += '</div>';
             });
@@ -2126,11 +2207,13 @@ themeToggle.addEventListener('click', () => {
             grid.innerHTML = html;
         }
 
-        function addHomework(day) {
-            const input = document.getElementById(`hwInput_${day}`);
+        function addHomework(day, period) {
+            const input = document.getElementById(`hwInput_${day}_${period}`);
             if (!input || !input.value.trim()) return;
-            if (!homework[day]) homework[day] = [];
-            homework[day].push(input.value.trim());
+            const p = String(period);
+            if (!homework[day]) homework[day] = {};
+            if (!homework[day][p]) homework[day][p] = [];
+            homework[day][p].push(input.value.trim());
             localStorage.setItem('homework_data', JSON.stringify(homework));
             renderHomework(true, 'homeworkGrid');
             renderHomework(false, 'homeworkGridTimetable');
@@ -2138,9 +2221,11 @@ themeToggle.addEventListener('click', () => {
             renderOverviewHomeworks();
         }
 
-        function deleteHomework(day, index) {
-            if (!homework[day]) return;
-            homework[day].splice(index, 1);
+        function deleteHomework(day, period, index) {
+            const p = String(period);
+            if (!homework[day] || !homework[day][p]) return;
+            homework[day][p].splice(index, 1);
+            if (!homework[day][p].length) delete homework[day][p];
             localStorage.setItem('homework_data', JSON.stringify(homework));
             renderHomework(true, 'homeworkGrid');
             renderHomework(false, 'homeworkGridTimetable');
@@ -2454,13 +2539,19 @@ themeToggle.addEventListener('click', () => {
             if (!container) return;
             const items = [];
             TT_DAYS.forEach(day => {
-                const list = homework[day] || [];
-                list.forEach(hw => {
-                    items.push({ day, text: hw });
+                const dayData = homework[day] || {};
+                Object.entries(dayData).forEach(([period, list]) => {
+                    (list || []).forEach(hw => {
+                        items.push({ day, period: parseInt(period, 10) || 0, text: hw });
+                    });
                 });
             });
             // sort by day order
-            items.sort((a,b) => TT_DAY_INDEX[a.day] - TT_DAY_INDEX[b.day]);
+            items.sort((a,b) => {
+                const byDay = TT_DAY_INDEX[a.day] - TT_DAY_INDEX[b.day];
+                if (byDay !== 0) return byDay;
+                return a.period - b.period;
+            });
             const upcoming = items.slice(0,3);
             if (!upcoming.length) {
                 container.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Keine Hausaufgaben eingetragen</p>';
@@ -2471,7 +2562,7 @@ themeToggle.addEventListener('click', () => {
                 return `<div class="grade-item">
                     <div>
                         <div>${escapeHtml(item.text)}</div>
-                        <div style="font-size:0.8rem;color:var(--color-text-muted);">${escapeHtml(dayName)}</div>
+                        <div style="font-size:0.8rem;color:var(--color-text-muted);">${escapeHtml(dayName)} · ${item.period}. Stunde</div>
                     </div>
                 </div>`;
             }).join('');
