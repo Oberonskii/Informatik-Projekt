@@ -146,6 +146,7 @@
                             </div>
                         </div>
 
+                        <?php if (!empty($is_admin)): ?>
                         <!-- Admin Panel Widget -->
                         <div class="widget">
                             <div class="widget-header">
@@ -157,22 +158,23 @@
                             </div>
                             <div class="admin-stats">
                                 <div class="stat-card">
-                                    <div class="stat-value">156</div>
-                                    <div class="stat-label">Aktive User</div>
+                                    <div class="stat-value" id="overviewAdminMau">-</div>
+                                    <div class="stat-label">MAU</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-value">24</div>
-                                    <div class="stat-label">Kurse</div>
+                                    <div class="stat-value" id="overviewAdminUsers">-</div>
+                                    <div class="stat-label">Nutzer gesamt</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-value">89%</div>
-                                    <div class="stat-label">Abschlussrate</div>
+                                    <div class="stat-value" id="overviewAdminTodos">-</div>
+                                    <div class="stat-label">To-Do Quote</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-value">4.8</div>
-                                    <div class="stat-label">Ø Bewertung</div>
+                                    <div class="stat-value" id="overviewAdminFailures">-</div>
+                                    <div class="stat-label">Fehl-Logins (7d)</div>
                                 </div>
                             </div>
                         </div>
+                        <?php endif; ?>
                     </div>
                 </div>

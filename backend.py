@@ -303,6 +303,36 @@ def init_db():
     )
     """)
 
+    # LOGIN ATTEMPTS (for security/admin analytics)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS login_attempts (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        username TEXT,
+        success INTEGER,
+        created_at TEXT
+    )
+    """)
+
+    # USER ACTIVITY (lightweight event log for admin analytics)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS user_activity (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        event_type TEXT,
+        created_at TEXT
+    )
+    """)
+
+    # Ensure there is at least one admin in existing databases.
+    cursor.execute("SELECT COUNT(*) AS total FROM users WHERE lower(role)='admin'")
+    admin_count = cursor.fetchone()["total"]
+    if admin_count == 0:
+        cursor.execute("SELECT id FROM users ORDER BY created_at ASC LIMIT 1")
+        first_user = cursor.fetchone()
+        if first_user:
+            cursor.execute("UPDATE users SET role='admin' WHERE id=?", (first_user["id"],))
+
     db.commit()
     db.close()
 
@@ -330,6 +360,48 @@ def is_valid_email(email: str) -> bool:
 
 def hash_verification_code(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
+
+
+def log_login_attempt(db, username: str, success: bool, user_id: Optional[str] = None):
+    cursor = db.cursor()
+    cursor.execute(
+        """
+        INSERT INTO login_attempts VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            generate_id(),
+            user_id,
+            username,
+            1 if success else 0,
+            datetime.utcnow().isoformat()
+        )
+    )
+    db.commit()
+
+
+def log_user_activity(db, user_id: str, event_type: str):
+    cursor = db.cursor()
+    cursor.execute(
+        """
+        INSERT INTO user_activity VALUES (?, ?, ?, ?)
+        """,
+        (
+            generate_id(),
+            user_id,
+            event_type,
+            datetime.utcnow().isoformat()
+        )
+    )
+    db.commit()
+
+
+def require_admin_user(cursor, user_id: str):
+    cursor.execute("SELECT id, role FROM users WHERE id=?", (user_id,))
+    user_row = cursor.fetchone()
+    if not user_row:
+        raise HTTPException(status_code=404, detail="User nicht gefunden")
+    if (user_row["role"] or "").lower() != "admin":
+        raise HTTPException(status_code=403, detail="Nur Admins haben Zugriff")
 
 
 def send_verification_email(receiver_email: str, code: str, purpose: str):
@@ -595,6 +667,10 @@ def register_confirm(data: RegisterCodeConfirm):
     if cursor.fetchone():
         raise HTTPException(status_code=400, detail="Username existiert bereits")
 
+    cursor.execute("SELECT COUNT(*) AS total FROM users")
+    users_total = cursor.fetchone()["total"]
+    new_role = "admin" if users_total == 0 else "user"
+
     try:
         cursor.execute("""
         INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)
@@ -603,7 +679,7 @@ def register_confirm(data: RegisterCodeConfirm):
             payload["username"],
             payload["email"],
             payload["password_hash"],
-            "user",
+            new_role,
             datetime.utcnow().isoformat()
         ))
         db.commit()
@@ -1019,12 +1095,17 @@ def login(user: UserLogin):
     user_db = cursor.fetchone()
 
     if user_db is None or user_db['password'] != hash_password(user.password):
+        log_login_attempt(db, user.username, False)
         raise HTTPException(status_code=401, detail="Ungültiger Benutzername oder Passwort")
+
+    log_login_attempt(db, user.username, True, user_db["id"])
+    log_user_activity(db, user_db["id"], "login")
 
     return {
         "message": "Login erfolgreich",
         "user_id": user_db["id"],
-        "username": user_db["username"]
+        "username": user_db["username"],
+        "role": user_db["role"]
     }
 
 
@@ -1633,20 +1714,162 @@ def get_flashcards(user_id: str):
 # ADMIN ROUTES
 # =========================================
 
-@app.get("/admin/stats")
-def admin_stats():
+@app.get("/admin/stats/{requester_id}")
+def admin_stats(requester_id: str):
     db = get_db()
     cursor = db.cursor()
 
-    cursor.execute("SELECT COUNT(*) FROM users")
-    users = cursor.fetchone()[0]
+    require_admin_user(cursor, requester_id)
 
-    cursor.execute("SELECT COUNT(*) FROM flashcards")
-    cards = cursor.fetchone()[0]
+    now = datetime.utcnow()
+    cutoff_1d = (now - timedelta(days=1)).isoformat()
+    cutoff_7d = (now - timedelta(days=7)).isoformat()
+    cutoff_30d = (now - timedelta(days=30)).isoformat()
+
+    cursor.execute("SELECT COUNT(*) AS total FROM users")
+    total_users = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) AS total FROM users WHERE created_at >= ?", (cutoff_30d,))
+    new_users_30d = cursor.fetchone()["total"]
+
+    cursor.execute(
+        "SELECT COUNT(DISTINCT user_id) AS total FROM user_activity WHERE event_type='login' AND created_at >= ?",
+        (cutoff_1d,)
+    )
+    dau = cursor.fetchone()["total"]
+
+    cursor.execute(
+        "SELECT COUNT(DISTINCT user_id) AS total FROM user_activity WHERE event_type='login' AND created_at >= ?",
+        (cutoff_7d,)
+    )
+    wau = cursor.fetchone()["total"]
+
+    cursor.execute(
+        "SELECT COUNT(DISTINCT user_id) AS total FROM user_activity WHERE event_type='login' AND created_at >= ?",
+        (cutoff_30d,)
+    )
+    mau = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) AS total FROM login_attempts WHERE success=0 AND created_at >= ?", (cutoff_7d,))
+    failed_logins_7d = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) AS total FROM todos")
+    total_todos = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) AS total FROM todos WHERE done=1")
+    completed_todos = cursor.fetchone()["total"]
+
+    todo_completion_rate = (completed_todos / total_todos * 100) if total_todos else 0
+
+    cursor.execute("SELECT COUNT(*) AS total FROM grades")
+    total_grades = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT AVG(value) AS avg_grade FROM grades")
+    avg_row = cursor.fetchone()["avg_grade"]
+    average_grade = round(float(avg_row), 2) if avg_row is not None else 0
+
+    cursor.execute("SELECT COUNT(*) AS total FROM flashcard_decks")
+    total_flashcard_decks = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) AS total FROM flashcards")
+    total_flashcards = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) AS total FROM files")
+    total_files = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) AS total FROM files WHERE uploaded_at >= ?", (cutoff_30d,))
+    upload_count_30d = cursor.fetchone()["total"]
+
+    total_upload_size_bytes = 0
+    cursor.execute("SELECT user_id, filename FROM files")
+    for row in cursor.fetchall():
+        file_path = os.path.join(UPLOAD_DIR, row["user_id"], row["filename"])
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            total_upload_size_bytes += os.path.getsize(file_path)
+
+    cursor.execute(
+        """
+        SELECT u.username, COUNT(*) AS logins_30d
+        FROM user_activity a
+        JOIN users u ON u.id = a.user_id
+        WHERE a.event_type='login' AND a.created_at >= ?
+        GROUP BY a.user_id
+        ORDER BY logins_30d DESC, u.username ASC
+        LIMIT 5
+        """,
+        (cutoff_30d,)
+    )
+    top_active_users = [dict(row) for row in cursor.fetchall()]
+
+    cursor.execute(
+        """
+        SELECT u.username, COUNT(*) AS open_todos
+        FROM todos t
+        JOIN users u ON u.id = t.user_id
+        WHERE t.done = 0
+        GROUP BY t.user_id
+        ORDER BY open_todos DESC, u.username ASC
+        LIMIT 5
+        """
+    )
+    users_many_open_todos = [dict(row) for row in cursor.fetchall()]
+
+    cursor.execute(
+        """
+        SELECT substr(created_at, 1, 10) AS date, COUNT(*) AS count
+        FROM users
+        WHERE created_at >= ?
+        GROUP BY substr(created_at, 1, 10)
+        ORDER BY date ASC
+        """,
+        (cutoff_7d,)
+    )
+    registrations_last_7_days = [dict(row) for row in cursor.fetchall()]
+
+    cursor.execute(
+        """
+        SELECT substr(created_at, 1, 10) AS date, COUNT(*) AS count
+        FROM user_activity
+        WHERE event_type='login' AND created_at >= ?
+        GROUP BY substr(created_at, 1, 10)
+        ORDER BY date ASC
+        """,
+        (cutoff_7d,)
+    )
+    logins_last_7_days = [dict(row) for row in cursor.fetchall()]
 
     return {
-        "total_users": users,
-        "total_flashcards": cards
+        "overview": {
+            "total_users": total_users,
+            "new_users_30d": new_users_30d,
+            "dau": dau,
+            "wau": wau,
+            "mau": mau,
+            "failed_logins_7d": failed_logins_7d
+        },
+        "learning": {
+            "total_todos": total_todos,
+            "completed_todos": completed_todos,
+            "todo_completion_rate": round(todo_completion_rate, 1),
+            "total_grades": total_grades,
+            "average_grade": average_grade,
+            "total_flashcard_decks": total_flashcard_decks,
+            "total_flashcards": total_flashcards
+        },
+        "content": {
+            "total_files": total_files,
+            "upload_count_30d": upload_count_30d,
+            "total_upload_size_bytes": total_upload_size_bytes
+        },
+        "top_lists": {
+            "top_active_users": top_active_users,
+            "users_many_open_todos": users_many_open_todos
+        },
+        "trends": {
+            "registrations_last_7_days": registrations_last_7_days,
+            "logins_last_7_days": logins_last_7_days
+        },
+        "generated_at": now.isoformat()
     }
 
 if __name__ == "__main__":

@@ -2,49 +2,63 @@
                 <div id="admin" class="view-content" style="display: none;">
                     <div class="content-header">
                         <h1>⚙️ Admin Panel</h1>
-                        <p>Systemverwaltung und Statistiken</p>
+                        <p>Systemverwaltung und Live-Statistiken</p>
                     </div>
                     <div class="dashboard-grid">
                         <div class="widget">
                             <div class="widget-header">
-                                <div class="widget-title">Statistiken</div>
+                                <div class="widget-title">Kern-KPIs</div>
+                                <button class="btn-primary" onclick="loadAdminPanel()">Aktualisieren</button>
                             </div>
                             <div class="admin-stats">
                                 <div class="stat-card">
-                                    <div class="stat-value">156</div>
-                                    <div class="stat-label">Aktive User</div>
+                                    <div class="stat-value" id="adminTotalUsers">-</div>
+                                    <div class="stat-label">Nutzer gesamt</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-value">24</div>
-                                    <div class="stat-label">Kurse</div>
+                                    <div class="stat-value" id="adminNewUsers30d">-</div>
+                                    <div class="stat-label">Neue Nutzer (30 Tage)</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-value">89%</div>
-                                    <div class="stat-label">Abschlussrate</div>
+                                    <div class="stat-value" id="adminDauWauMau">-</div>
+                                    <div class="stat-label">DAU / WAU / MAU</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-value">4.8</div>
-                                    <div class="stat-label">Ø Bewertung</div>
+                                    <div class="stat-value" id="adminTodoRate">-</div>
+                                    <div class="stat-label">To-Do Erledigungsquote</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-value">1.2k</div>
-                                    <div class="stat-label">Lernstunden</div>
+                                    <div class="stat-value" id="adminAverageGrade">-</div>
+                                    <div class="stat-label">Ø Notenwert</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-value">342</div>
-                                    <div class="stat-label">Abschlüsse</div>
+                                    <div class="stat-value" id="adminFailedLogins7d">-</div>
+                                    <div class="stat-label">Fehlgeschlagene Logins (7 Tage)</div>
                                 </div>
                             </div>
+                            <p id="adminGeneratedAt" style="margin-top:1rem;color:var(--color-text-muted);font-size:0.85rem;">Zuletzt aktualisiert: -</p>
                         </div>
                         <div class="widget">
                             <div class="widget-header">
-                                <div class="widget-title">Systemeinstellungen</div>
+                                <div class="widget-title">Lernen, Inhalte und Trends</div>
                             </div>
                             <div class="input-group" style="flex-direction: column; gap: 1rem;">
-                                <button class="btn-primary" style="width: 100%;">Benutzer verwalten</button>
-                                <button class="btn-primary" style="width: 100%;">Kurse verwalten</button>
-                                <button class="btn-primary" style="width: 100%;">Berichte erstellen</button>
-                                <button class="btn-primary" style="width: 100%;">Einstellungen</button>
+                                <div>
+                                    <strong>Inhalte</strong>
+                                    <p id="adminContentSummary" style="margin-top:0.25rem;color:var(--color-text-secondary);">-</p>
+                                </div>
+                                <div>
+                                    <strong>Top aktive Nutzer (30 Tage)</strong>
+                                    <div id="adminTopUsers" style="margin-top:0.25rem;color:var(--color-text-secondary);">-</div>
+                                </div>
+                                <div>
+                                    <strong>Nutzer mit vielen offenen To-Dos</strong>
+                                    <div id="adminOpenTodos" style="margin-top:0.25rem;color:var(--color-text-secondary);">-</div>
+                                </div>
+                                <div>
+                                    <strong>Registrierungen / Logins (7 Tage)</strong>
+                                    <div id="adminTrends" style="margin-top:0.25rem;color:var(--color-text-secondary);">-</div>
+                                </div>
                             </div>
                         </div>
                     </div>

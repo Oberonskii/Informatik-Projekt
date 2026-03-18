@@ -7,6 +7,8 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
+$user_role = $_SESSION['role'] ?? 'user';
+$is_admin = strtolower((string)$user_role) === 'admin';
 
 ?>
 
@@ -1343,10 +1345,12 @@ $user_id = $_SESSION['user_id'];
                         <span class="nav-icon">💬</span>
                         <span>Admin Nachrichten</span>
                     </a>
+                    <?php if ($is_admin): ?>
                     <a class="nav-item" data-view="admin">
                         <span class="nav-icon">⚙️</span>
                         <span>Admin Panel</span>
                     </a>
+                    <?php endif; ?>
                 </div>
             </nav>
 
@@ -1379,7 +1383,9 @@ $user_id = $_SESSION['user_id'];
                 <?php include __DIR__ . '/tabs/flashcards.php'; ?>
                 <?php include __DIR__ . '/tabs/files.php'; ?>
                 <?php include __DIR__ . '/tabs/admin-messages.php'; ?>
+                <?php if ($is_admin): ?>
                 <?php include __DIR__ . '/tabs/admin.php'; ?>
+                <?php endif; ?>
             </div>
         </main>
     </div>
@@ -1545,6 +1551,8 @@ themeToggle.addEventListener('click', () => {
             } else if (viewId === 'timetable') {
                 renderTimetableView();
                 renderHomework(false, 'homeworkGridTimetable');
+            } else if (viewId === 'admin') {
+                loadAdminPanel();
             } else if (viewId === 'flashcards') {
                 if (typeof fcShowDecksView === 'function') {
                     fcShowDecksView();
@@ -1580,7 +1588,6 @@ themeToggle.addEventListener('click', () => {
                 if (targetView) {
                     targetView.style.display = 'block';
                 }
-
                 syncTabParam(viewId);
                 refreshViewState(viewId);
             });
@@ -2620,6 +2627,103 @@ themeToggle.addEventListener('click', () => {
         }
 
         // ===== ÜBERSICHT VORSCHAUEN =====
+        const IS_ADMIN = <?php echo !empty($is_admin) ? 'true' : 'false'; ?>;
+        let adminStatsCache = null;
+
+        function setAdminText(id, value) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = value;
+        }
+
+        function formatBytes(bytes) {
+            const b = Number(bytes || 0);
+            if (b < 1024) return `${b} B`;
+            if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+            if (b < 1024 * 1024 * 1024) return `${(b / (1024 * 1024)).toFixed(1)} MB`;
+            return `${(b / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+        }
+
+        function buildSimpleList(items, formatter, emptyText) {
+            if (!Array.isArray(items) || !items.length) return `<p style="color:var(--color-text-muted);">${emptyText}</p>`;
+            return items.map(formatter).join('');
+        }
+
+        function renderOverviewAdmin() {
+            if (!IS_ADMIN || !adminStatsCache) return;
+
+            const overview = adminStatsCache.overview || {};
+            const learning = adminStatsCache.learning || {};
+
+            setAdminText('overviewAdminMau', String(overview.mau ?? '-'));
+            setAdminText('overviewAdminUsers', String(overview.total_users ?? '-'));
+            setAdminText('overviewAdminTodos', `${Number(learning.todo_completion_rate || 0).toFixed(1)}%`);
+            setAdminText('overviewAdminFailures', String(overview.failed_logins_7d ?? '-'));
+        }
+
+        async function loadAdminPanel() {
+            if (!IS_ADMIN) return;
+
+            try {
+                const res = await fetch('admin/admin_stats.php');
+                const data = await res.json();
+                if (!res.ok) {
+                    const message = data.error || data.detail || 'Fehler beim Laden der Admin-Statistiken';
+                    setAdminText('adminContentSummary', message);
+                    return;
+                }
+
+                adminStatsCache = data;
+
+                const overview = data.overview || {};
+                const learning = data.learning || {};
+                const content = data.content || {};
+                const topLists = data.top_lists || {};
+                const trends = data.trends || {};
+
+                setAdminText('adminTotalUsers', String(overview.total_users ?? 0));
+                setAdminText('adminNewUsers30d', String(overview.new_users_30d ?? 0));
+                setAdminText('adminDauWauMau', `${overview.dau ?? 0} / ${overview.wau ?? 0} / ${overview.mau ?? 0}`);
+                setAdminText('adminTodoRate', `${Number(learning.todo_completion_rate || 0).toFixed(1)}%`);
+                setAdminText('adminAverageGrade', Number(learning.average_grade || 0).toFixed(2));
+                setAdminText('adminFailedLogins7d', String(overview.failed_logins_7d ?? 0));
+
+                setAdminText(
+                    'adminContentSummary',
+                    `Dateien: ${content.total_files ?? 0} (30 Tage: ${content.upload_count_30d ?? 0}, Speicher: ${formatBytes(content.total_upload_size_bytes)}) | Decks: ${learning.total_flashcard_decks ?? 0} | Karten: ${learning.total_flashcards ?? 0}`
+                );
+
+                const topUsersHtml = buildSimpleList(
+                    topLists.top_active_users,
+                    (entry) => `<div>• ${escapeHtml(entry.username)}: ${entry.logins_30d} Logins</div>`,
+                    'Keine Daten'
+                );
+                const openTodosHtml = buildSimpleList(
+                    topLists.users_many_open_todos,
+                    (entry) => `<div>• ${escapeHtml(entry.username)}: ${entry.open_todos} offene To-Dos</div>`,
+                    'Keine offenen To-Dos gefunden'
+                );
+
+                const registrations = (trends.registrations_last_7_days || []).reduce((sum, d) => sum + Number(d.count || 0), 0);
+                const logins = (trends.logins_last_7_days || []).reduce((sum, d) => sum + Number(d.count || 0), 0);
+                setAdminText('adminTrends', `Registrierungen: ${registrations} | Logins: ${logins}`);
+
+                const topUsersEl = document.getElementById('adminTopUsers');
+                if (topUsersEl) topUsersEl.innerHTML = topUsersHtml;
+
+                const openTodosEl = document.getElementById('adminOpenTodos');
+                if (openTodosEl) openTodosEl.innerHTML = openTodosHtml;
+
+                if (data.generated_at) {
+                    const dt = new Date(data.generated_at);
+                    setAdminText('adminGeneratedAt', `Zuletzt aktualisiert: ${dt.toLocaleString('de-DE')}`);
+                }
+
+                renderOverviewAdmin();
+            } catch {
+                setAdminText('adminContentSummary', 'Admin-Statistiken konnten nicht geladen werden');
+            }
+        }
 
         function renderOverviewTimetable() {
             const container = document.getElementById('overviewTimetable');
@@ -2896,8 +3000,8 @@ themeToggle.addEventListener('click', () => {
             renderOverviewGrades();
             renderOverviewFiles();
             renderOverviewMessages();
+            renderOverviewAdmin();
         }
-
         // ===== CALENDAR EVENT HANDLING =====
         async function addCalendarEvent() {
             const titleEl = document.getElementById('eventTitle');
@@ -2940,6 +3044,7 @@ themeToggle.addEventListener('click', () => {
         loadCalendarExtras();
         loadGrades();
         loadTodos();
+        if (IS_ADMIN) loadAdminPanel();
 
         const initialTabParam = new URLSearchParams(window.location.search).get('tab');
         const initialView = mapTabParamToView(initialTabParam);
