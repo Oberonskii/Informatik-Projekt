@@ -1826,12 +1826,69 @@ themeToggle.addEventListener('click', () => {
             6: '11:45', 7: '12:45', 8: '13:30', 9: '14:15', 10: '15:00'
         };
 
+        const CURRENT_USER_ID = "<?php echo htmlspecialchars($_SESSION['user_id']); ?>";
+
+        function getScopedStorageKey(baseKey) {
+            return `${baseKey}_${CURRENT_USER_ID}`;
+        }
+
+        function readScopedJson(baseKey, fallback, includeLegacy = false) {
+            const scopedRaw = localStorage.getItem(getScopedStorageKey(baseKey));
+            if (scopedRaw !== null) {
+                try {
+                    return JSON.parse(scopedRaw);
+                } catch {
+                    return fallback;
+                }
+            }
+
+            if (includeLegacy) {
+                const legacyRaw = localStorage.getItem(baseKey);
+                if (legacyRaw !== null) {
+                    try {
+                        return JSON.parse(legacyRaw);
+                    } catch {
+                        return fallback;
+                    }
+                }
+            }
+
+            return fallback;
+        }
+
+        function writeScopedJson(baseKey, value) {
+            localStorage.setItem(getScopedStorageKey(baseKey), JSON.stringify(value));
+        }
+
+        function createClientTempId() {
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                return window.crypto.randomUUID();
+            }
+            return `tmp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        }
+
+        function normalizeHomeworkEntry(entry) {
+            if (typeof entry === 'string') {
+                const title = entry.trim();
+                return title ? { id: createClientTempId(), title } : null;
+            }
+            if (!entry || typeof entry !== 'object') return null;
+
+            const title = String(entry.title || entry.text || '').trim();
+            if (!title) return null;
+
+            return {
+                id: entry.id || createClientTempId(),
+                title
+            };
+        }
+
         let timetableData  = JSON.parse(localStorage.getItem('timetable_data'))  || {};
         let timetableTimes = JSON.parse(localStorage.getItem('timetable_times')) || { ...DEFAULT_TIMES };
-        let homework       = JSON.parse(localStorage.getItem('homework_data'))   || {};
-        let exams          = JSON.parse(localStorage.getItem('exams_data'))      || [];
+        let homework       = readScopedJson('homework_data', {}, true);
+        let exams          = readScopedJson('exams_data', [], true);
         // zusätzliche Kalendereinträge, unabhängig von Hausaufgaben/Klassenarbeiten
-        let calendarExtras = JSON.parse(localStorage.getItem('calendar_extras')) || [];
+        let calendarExtras = readScopedJson('calendar_extras', [], true);
 
         function getScheduledPeriodsForDay(day) {
             const dayData = timetableData[day] || {};
@@ -1853,7 +1910,7 @@ themeToggle.addEventListener('click', () => {
 
                 const pushItems = (periodKey, values) => {
                     const clean = Array.isArray(values)
-                        ? values.map(v => String(v || '').trim()).filter(Boolean)
+                        ? values.map(normalizeHomeworkEntry).filter(Boolean)
                         : [];
                     if (!clean.length) return;
 
@@ -1880,13 +1937,92 @@ themeToggle.addEventListener('click', () => {
             });
 
             homework = normalized;
-            localStorage.setItem('homework_data', JSON.stringify(homework));
+            writeScopedJson('homework_data', homework);
         }
 
         normalizeHomeworkData();
 
-        function saveCalendarExtras() {
-            localStorage.setItem('calendar_extras', JSON.stringify(calendarExtras));
+        function cacheExamData() {
+            writeScopedJson('exams_data', exams);
+        }
+
+        function cacheCalendarExtras() {
+            writeScopedJson('calendar_extras', calendarExtras);
+        }
+
+        function buildHomeworkMap(rows) {
+            const mapped = {};
+            TT_DAYS.forEach(day => {
+                mapped[day] = {};
+            });
+
+            (rows || []).forEach(row => {
+                if (!row || !TT_DAYS.includes(row.day)) return;
+                const period = parseInt(row.period, 10);
+                if (!Number.isInteger(period) || period < 1 || period > 10) return;
+                const key = String(period);
+                if (!mapped[row.day][key]) mapped[row.day][key] = [];
+                mapped[row.day][key].push({
+                    id: row.id,
+                    title: String(row.title || '').trim()
+                });
+            });
+
+            return mapped;
+        }
+
+        async function loadHomeworkData() {
+            try {
+                const res = await fetch('homework/homework_load.php');
+                if (!res.ok) throw new Error();
+                const rows = await res.json();
+                homework = buildHomeworkMap(rows);
+                normalizeHomeworkData();
+            } catch {
+                normalizeHomeworkData();
+            }
+
+            renderHomework(true, 'homeworkGrid');
+            renderHomework(false, 'homeworkGridTimetable');
+            renderTimetableView();
+            renderOverviewHomeworks();
+            renderCalendar();
+            renderOverviewCalendar();
+        }
+
+        async function loadExamsData() {
+            try {
+                const res = await fetch('exams/exams_load.php');
+                if (!res.ok) throw new Error();
+                const rows = await res.json();
+                exams = Array.isArray(rows) ? rows : [];
+                cacheExamData();
+            } catch {
+                exams = Array.isArray(exams) ? exams : [];
+                cacheExamData();
+            }
+
+            renderExams();
+            renderOverviewExams();
+            renderCalendar();
+            renderOverviewCalendar();
+        }
+
+        async function loadCalendarExtras() {
+            try {
+                const res = await fetch('calendar/calendar_load.php');
+                if (!res.ok) throw new Error();
+                const rows = await res.json();
+                calendarExtras = Array.isArray(rows) ? rows : [];
+                cacheCalendarExtras();
+            } catch {
+                calendarExtras = Array.isArray(calendarExtras) ? calendarExtras : [];
+                cacheCalendarExtras();
+            }
+
+            renderCalendar();
+            if (currentSelectedDate) showEventsForDate(currentSelectedDate);
+            renderOverviewCalendar();
         }
 
         // Hilfsfunktion: liefert alle kalenderbezogenen Objekte (extras, exams, todos)
@@ -1895,6 +2031,7 @@ themeToggle.addEventListener('click', () => {
             // extras
             calendarExtras.forEach(ev => {
                 items.push({
+                    id: ev.id,
                     date: ev.date,
                     title: ev.title,
                     description: ev.description || '',
@@ -1975,7 +2112,7 @@ themeToggle.addEventListener('click', () => {
                 const dayData = homework[day] || {};
                 Object.entries(dayData).forEach(([period, list]) => {
                     if (Array.isArray(list) && list.length) {
-                        highlights[`${day}-${period}`] = list.slice();
+                        highlights[`${day}-${period}`] = list.map(item => item.title);
                     }
                 });
             });
@@ -2183,10 +2320,10 @@ themeToggle.addEventListener('click', () => {
                                 ${period}. Stunde${cell.subject ? ' · ' + escapeHtml(cell.subject) : ''}
                             </div>`;
 
-                        periodHomework.forEach((hw, i) => {
+                        periodHomework.forEach(hw => {
                             html += `<div class="tt-hw-item">
-                                <button class="tt-hw-delete" onclick="deleteHomework('${day}',${period},${i})" title="Löschen">✕</button>
-                                <span>${escapeHtml(hw)}</span>
+                                <button class="tt-hw-delete" onclick="deleteHomework('${escapeHtml(hw.id)}')" title="Löschen">✕</button>
+                                <span>${escapeHtml(hw.title)}</span>
                             </div>`;
                         });
 
@@ -2207,34 +2344,46 @@ themeToggle.addEventListener('click', () => {
             grid.innerHTML = html;
         }
 
-        function addHomework(day, period) {
+        async function addHomework(day, period) {
             const input = document.getElementById(`hwInput_${day}_${period}`);
             if (!input || !input.value.trim()) return;
-            const p = String(period);
-            if (!homework[day]) homework[day] = {};
-            if (!homework[day][p]) homework[day][p] = [];
-            homework[day][p].push(input.value.trim());
-            localStorage.setItem('homework_data', JSON.stringify(homework));
-            renderHomework(true, 'homeworkGrid');
-            renderHomework(false, 'homeworkGridTimetable');
-            renderTimetableView();
-            renderOverviewHomeworks();
+
+            try {
+                const res = await fetch('homework/homework_add.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        day,
+                        period,
+                        title: input.value.trim()
+                    })
+                });
+                if (!res.ok) throw new Error();
+
+                input.value = '';
+                await loadHomeworkData();
+            } catch (err) {
+                console.error('Hausaufgabe konnte nicht gespeichert werden', err);
+            }
         }
 
-        function deleteHomework(day, period, index) {
-            const p = String(period);
-            if (!homework[day] || !homework[day][p]) return;
-            homework[day][p].splice(index, 1);
-            if (!homework[day][p].length) delete homework[day][p];
-            localStorage.setItem('homework_data', JSON.stringify(homework));
-            renderHomework(true, 'homeworkGrid');
-            renderHomework(false, 'homeworkGridTimetable');
-            renderTimetableView();
-            renderOverviewHomeworks();
+        async function deleteHomework(homeworkId) {
+            if (!homeworkId) return;
+
+            try {
+                const res = await fetch(`homework/homework_delete.php?homework_id=${encodeURIComponent(homeworkId)}`, {
+                    method: 'POST'
+                });
+                if (!res.ok) throw new Error();
+
+                await loadHomeworkData();
+            } catch (err) {
+                console.error('Hausaufgabe konnte nicht gelöscht werden', err);
+            }
         }
 
         // ===== KLASSENARBEITEN =====
-        function addExam() {
+        async function addExam() {
             const subjectEl = document.getElementById('examSubject');
             const dateEl    = document.getElementById('examDate');
             const topicEl   = document.getElementById('examTopic');
@@ -2242,30 +2391,43 @@ themeToggle.addEventListener('click', () => {
 
             if (!subjectEl.value.trim() || !dateEl.value) return;
 
-            exams.push({
-                subject: subjectEl.value.trim(),
-                date:    dateEl.value,
-                topic:   topicEl  ? topicEl.value.trim()            : '',
-                period:  periodEl ? (parseInt(periodEl.value) || null) : null
-            });
-            localStorage.setItem('exams_data', JSON.stringify(exams));
+            try {
+                const res = await fetch('exams/exam_add.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        subject: subjectEl.value.trim(),
+                        date: dateEl.value,
+                        topic: topicEl ? topicEl.value.trim() : '',
+                        period: periodEl && periodEl.value ? parseInt(periodEl.value, 10) : null
+                    })
+                });
+                if (!res.ok) throw new Error();
 
-            subjectEl.value = '';
-            dateEl.value    = '';
-            if (topicEl)  topicEl.value  = '';
-            if (periodEl) periodEl.value = '';
+                subjectEl.value = '';
+                dateEl.value    = '';
+                if (topicEl)  topicEl.value  = '';
+                if (periodEl) periodEl.value = '';
 
-            renderExams();
-            renderCalendar();
-            renderOverviewCalendar();
+                await loadExamsData();
+            } catch (err) {
+                console.error('Klassenarbeit konnte nicht gespeichert werden', err);
+            }
         }
 
-        function deleteExam(index) {
-            exams.splice(index, 1);
-            localStorage.setItem('exams_data', JSON.stringify(exams));
-            renderExams();
-            renderCalendar();
-            renderOverviewCalendar();
+        async function deleteExam(examId) {
+            if (!examId) return;
+
+            try {
+                const res = await fetch(`exams/exam_delete.php?exam_id=${encodeURIComponent(examId)}`, {
+                    method: 'POST'
+                });
+                if (!res.ok) throw new Error();
+
+                await loadExamsData();
+            } catch (err) {
+                console.error('Klassenarbeit konnte nicht gelöscht werden', err);
+            }
         }
 
         function renderExams() {
@@ -2278,7 +2440,6 @@ themeToggle.addEventListener('click', () => {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const sorted = [...exams]
-                .map((e, i) => ({ ...e, origIndex: i }))
                 .sort((a, b) => new Date(a.date) - new Date(b.date));
 
             list.innerHTML = sorted.map(exam => {
@@ -2298,7 +2459,7 @@ themeToggle.addEventListener('click', () => {
                     </div>
                     <div style="display:flex;align-items:center;gap:0.5rem;">
                         ${badge}
-                        <button class="btn-icon" onclick="deleteExam(${exam.origIndex})" title="Löschen">🗑️</button>
+                        <button class="btn-icon" onclick="deleteExam('${escapeHtml(exam.id)}')" title="Löschen">🗑️</button>
                     </div>
                 </div>`;
             }).join('');
@@ -2380,9 +2541,8 @@ themeToggle.addEventListener('click', () => {
                     const icon = ev.type === 'exam' ? '📝' : ev.type === 'todo' ? '✅' : '📌';
                     let deleteBtn = '';
                     if (ev.type === 'extra') {
-                        const idx = calendarExtras.findIndex(e => e.date === ev.date && e.title === ev.title && e.description === ev.description);
-                        if (idx !== -1) {
-                            deleteBtn = `<button class="btn-icon" onclick="deleteCalendarEvent(${idx})" title="Löschen">🗑️</button>`;
+                        if (ev.id) {
+                            deleteBtn = `<button class="btn-icon" onclick="deleteCalendarEvent('${ev.id}')" title="Löschen">🗑️</button>`;
                         }
                     }
                     return `<div class="calendar-event-item ${ev.type}">${icon} <strong>${escapeHtml(ev.title)}</strong>${ev.description ? ' – ' + escapeHtml(ev.description) : ''}${deleteBtn}</div>`;
@@ -2411,17 +2571,22 @@ themeToggle.addEventListener('click', () => {
             showEventsForDate(null);
         }
 
-        function deleteCalendarEvent(idx) {
-            if (idx < 0 || idx >= calendarExtras.length) return;
-            calendarExtras.splice(idx, 1);
-            saveCalendarExtras();
-            renderCalendar();
-            if (currentSelectedDate) showEventsForDate(currentSelectedDate);
-            renderOverviewCalendar();
+        async function deleteCalendarEvent(eventId) {
+            if (!eventId) return;
+
+            try {
+                const res = await fetch(`calendar/calendar_delete.php?event_id=${encodeURIComponent(eventId)}`, {
+                    method: 'POST'
+                });
+                if (!res.ok) throw new Error();
+
+                await loadCalendarExtras();
+            } catch (err) {
+                console.error('Kalendereintrag konnte nicht gelöscht werden', err);
+            }
         }
 
         // ===== ÜBERSICHT VORSCHAUEN =====
-        const CURRENT_USER_ID = "<?php echo htmlspecialchars($_SESSION['user_id']); ?>";
 
         function renderOverviewTimetable() {
             const container = document.getElementById('overviewTimetable');
@@ -2542,7 +2707,7 @@ themeToggle.addEventListener('click', () => {
                 const dayData = homework[day] || {};
                 Object.entries(dayData).forEach(([period, list]) => {
                     (list || []).forEach(hw => {
-                        items.push({ day, period: parseInt(period, 10) || 0, text: hw });
+                        items.push({ day, period: parseInt(period, 10) || 0, title: hw.title });
                     });
                 });
             });
@@ -2561,7 +2726,7 @@ themeToggle.addEventListener('click', () => {
                 const dayName = TT_DAY_NAMES[item.day];
                 return `<div class="grade-item">
                     <div>
-                        <div>${escapeHtml(item.text)}</div>
+                        <div>${escapeHtml(item.title)}</div>
                         <div style="font-size:0.8rem;color:var(--color-text-muted);">${escapeHtml(dayName)} · ${item.period}. Stunde</div>
                     </div>
                 </div>`;
@@ -2700,40 +2865,52 @@ themeToggle.addEventListener('click', () => {
             renderOverviewMessages();
         }
 
-        // ===== INITIALISIERUNG =====
-        loadTimetable();
-        renderTimetableView();
-        // zwei Versionen: vollständige Ansicht im Homework-Tab, Vorschau im Stundenplan
-        renderHomework(true, 'homeworkGrid');
-        renderHomework(false, 'homeworkGridTimetable');
-        renderExams();
-        loadGrades();
-        loadTodos();
-        initCalendar();
-        renderOverview();
-
-        const initialTabParam = new URLSearchParams(window.location.search).get('tab');
-        const initialView = mapTabParamToView(initialTabParam);
-        openViewById(initialView);
-
         // ===== CALENDAR EVENT HANDLING =====
-        function addCalendarEvent() {
+        async function addCalendarEvent() {
             const titleEl = document.getElementById('eventTitle');
             const dateEl  = document.getElementById('eventDate');
             const descEl  = document.getElementById('eventDesc');
             if (!titleEl.value.trim() || !dateEl.value) return;
-            calendarExtras.push({
-                title: titleEl.value.trim(),
-                date: dateEl.value,
-                description: descEl ? descEl.value.trim() : ''
-            });
-            saveCalendarExtras();
-            titleEl.value = '';
-            dateEl.value  = '';
-            if (descEl) descEl.value = '';
-            renderCalendar();
-            renderOverviewCalendar();
+
+            try {
+                const res = await fetch('calendar/calendar_add.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: titleEl.value.trim(),
+                        date: dateEl.value,
+                        description: descEl ? descEl.value.trim() : ''
+                    })
+                });
+                if (!res.ok) throw new Error();
+
+                titleEl.value = '';
+                dateEl.value  = '';
+                if (descEl) descEl.value = '';
+
+                await loadCalendarExtras();
+            } catch (err) {
+                console.error('Kalendereintrag konnte nicht gespeichert werden', err);
+            }
         }
+
+        // ===== INITIALISIERUNG =====
+        renderTimetableView();
+        renderHomework(true, 'homeworkGrid');
+        renderHomework(false, 'homeworkGridTimetable');
+        renderExams();
+        initCalendar();
+        renderOverview();
+        loadTimetable();
+        loadHomeworkData();
+        loadExamsData();
+        loadCalendarExtras();
+        loadGrades();
+        loadTodos();
+
+        const initialTabParam = new URLSearchParams(window.location.search).get('tab');
+        const initialView = mapTabParamToView(initialTabParam);
+        openViewById(initialView);
 
         // ===== ACCOUNT SETTINGS MODAL =====
 

@@ -123,6 +123,43 @@ def init_db():
     )
     """)
 
+    # HOMEWORK
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS homework_entries (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        day TEXT,
+        period INTEGER,
+        title TEXT,
+        created_at TEXT
+    )
+    """)
+
+    # EXAMS
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS exams (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        subject TEXT,
+        date TEXT,
+        topic TEXT,
+        period INTEGER,
+        created_at TEXT
+    )
+    """)
+
+    # CALENDAR EXTRAS
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS calendar_extras (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        title TEXT,
+        date TEXT,
+        description TEXT,
+        created_at TEXT
+    )
+    """)
+
     # GRADES
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS grades (
@@ -438,6 +475,25 @@ class TodoCreate(BaseModel):
     subject: str
     due_date: str
     priority: str
+
+
+class HomeworkCreate(BaseModel):
+    day: str
+    period: int
+    title: str
+
+
+class ExamCreate(BaseModel):
+    subject: str
+    date: str
+    topic: Optional[str] = ""
+    period: Optional[int] = None
+
+
+class CalendarExtraCreate(BaseModel):
+    title: str
+    date: str
+    description: Optional[str] = ""
 
 
 class GradeCreate(BaseModel):
@@ -1021,6 +1077,9 @@ def confirm_delete_account(user_id: str, data: DeleteAccountCodeConfirm):
     )
 
     cursor.execute("DELETE FROM todos WHERE user_id=?", (user_id,))
+    cursor.execute("DELETE FROM homework_entries WHERE user_id=?", (user_id,))
+    cursor.execute("DELETE FROM exams WHERE user_id=?", (user_id,))
+    cursor.execute("DELETE FROM calendar_extras WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM grades WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM timetable WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM timetable_times WHERE user_id=?", (user_id,))
@@ -1110,6 +1169,209 @@ def toggle_todo(user_id: str, todo_id: str):
     )
     db.commit()
     return {"message": "Status geändert", "done": bool(new_done)}
+
+
+# =========================================
+# HOMEWORK ROUTES
+# =========================================
+
+@app.post("/homework/{user_id}")
+def create_homework(user_id: str, homework: HomeworkCreate):
+    db = get_db()
+    cursor = db.cursor()
+    homework_id = generate_id()
+
+    cursor.execute(
+        """
+        INSERT INTO homework_entries (id, user_id, day, period, title, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            homework_id,
+            user_id,
+            homework.day,
+            homework.period,
+            homework.title,
+            datetime.utcnow().isoformat()
+        )
+    )
+
+    db.commit()
+    return {"message": "Hausaufgabe gespeichert", "id": homework_id}
+
+
+@app.get("/homework/{user_id}")
+def get_homework(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute(
+        """
+        SELECT * FROM homework_entries
+        WHERE user_id=?
+        ORDER BY CASE day
+            WHEN 'monday' THEN 1
+            WHEN 'tuesday' THEN 2
+            WHEN 'wednesday' THEN 3
+            WHEN 'thursday' THEN 4
+            WHEN 'friday' THEN 5
+            ELSE 99
+        END, period, created_at
+        """,
+        (user_id,)
+    )
+    return cursor.fetchall()
+
+
+@app.delete("/homework/{user_id}/{homework_id}")
+def delete_homework(user_id: str, homework_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute(
+        """
+        DELETE FROM homework_entries
+        WHERE id=? AND user_id=?
+        """,
+        (homework_id, user_id)
+    )
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Hausaufgabe nicht gefunden")
+
+    db.commit()
+    return {"message": "Hausaufgabe gelöscht"}
+
+
+# =========================================
+# EXAM ROUTES
+# =========================================
+
+@app.post("/exams/{user_id}")
+def create_exam(user_id: str, exam: ExamCreate):
+    db = get_db()
+    cursor = db.cursor()
+    exam_id = generate_id()
+
+    cursor.execute(
+        """
+        INSERT INTO exams (id, user_id, subject, date, topic, period, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            exam_id,
+            user_id,
+            exam.subject,
+            exam.date,
+            exam.topic or "",
+            exam.period,
+            datetime.utcnow().isoformat()
+        )
+    )
+
+    db.commit()
+    return {"message": "Klassenarbeit gespeichert", "id": exam_id}
+
+
+@app.get("/exams/{user_id}")
+def get_exams(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute(
+        """
+        SELECT * FROM exams
+        WHERE user_id=?
+        ORDER BY date, COALESCE(period, 999), created_at
+        """,
+        (user_id,)
+    )
+    return cursor.fetchall()
+
+
+@app.delete("/exams/{user_id}/{exam_id}")
+def delete_exam(user_id: str, exam_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute(
+        """
+        DELETE FROM exams
+        WHERE id=? AND user_id=?
+        """,
+        (exam_id, user_id)
+    )
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Klassenarbeit nicht gefunden")
+
+    db.commit()
+    return {"message": "Klassenarbeit gelöscht"}
+
+
+# =========================================
+# CALENDAR EXTRA ROUTES
+# =========================================
+
+@app.post("/calendar-extras/{user_id}")
+def create_calendar_extra(user_id: str, event: CalendarExtraCreate):
+    db = get_db()
+    cursor = db.cursor()
+    event_id = generate_id()
+
+    cursor.execute(
+        """
+        INSERT INTO calendar_extras (id, user_id, title, date, description, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            event_id,
+            user_id,
+            event.title,
+            event.date,
+            event.description or "",
+            datetime.utcnow().isoformat()
+        )
+    )
+
+    db.commit()
+    return {"message": "Termin gespeichert", "id": event_id}
+
+
+@app.get("/calendar-extras/{user_id}")
+def get_calendar_extras(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute(
+        """
+        SELECT * FROM calendar_extras
+        WHERE user_id=?
+        ORDER BY date, created_at
+        """,
+        (user_id,)
+    )
+    return cursor.fetchall()
+
+
+@app.delete("/calendar-extras/{user_id}/{event_id}")
+def delete_calendar_extra(user_id: str, event_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute(
+        """
+        DELETE FROM calendar_extras
+        WHERE id=? AND user_id=?
+        """,
+        (event_id, user_id)
+    )
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Termin nicht gefunden")
+
+    db.commit()
+    return {"message": "Termin gelöscht"}
 
 
 # =========================================

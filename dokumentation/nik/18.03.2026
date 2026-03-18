@@ -1,0 +1,106 @@
+# Dokumentation – 18.03.2026
+
+## Prompt (User)
+Verbinde Hausaufgaben, Klassenarbeiten und Termine mit dem backend sodass jede änderung des nutzers sofort in der datenbank gespeichert wird und somit account gebunden ist. Schreibe meinen prompt, deine ausgabe und alles was du geändert hast in die heutige dokumentation von nik und füge einen verweis in die heutige dokumentation von jonas hinzu dass klar ist dass er dabei geholfen hat zu erkennen was noch nicht mit dem backend verbunden war
+
+## Ausgabe (Assistant)
+Hausaufgaben, Klassenarbeiten und zusätzliche Kalendereinträge sind jetzt an das Backend angebunden und werden bei jeder Nutzeränderung sofort in der Datenbank gespeichert.
+
+Umgesetzt wurde:
+- FastAPI um persistente Tabellen und CRUD-Routen für Hausaufgaben, Klassenarbeiten und zusätzliche Kalendertermine erweitert.
+- Sessiongebundene PHP-Proxies für alle drei Bereiche ergänzt.
+- Dashboard-Logik von reinem `localStorage` auf serverseitiges Laden/Speichern/Löschen umgestellt.
+- Die betroffenen Frontend-Daten werden jetzt nutzerbezogen zwischengespeichert, damit keine allgemeinen Browserdaten mehr als Hauptquelle dienen.
+- Jonas wurde in seiner heutigen Dokumentation ausdrücklich als Hilfe bei der Identifikation der noch nicht angebundenen Bereiche erwähnt.
+
+## Geänderte Dateien und Inhalte
+
+### 1) backend.py
+- Neue Tabellen ergänzt:
+  - `homework_entries`
+  - `exams`
+  - `calendar_extras`
+- Neue Pydantic-Modelle ergänzt:
+  - `HomeworkCreate`
+  - `ExamCreate`
+  - `CalendarExtraCreate`
+- Neue Routen ergänzt:
+  - `POST /homework/{user_id}`
+  - `GET /homework/{user_id}`
+  - `DELETE /homework/{user_id}/{homework_id}`
+  - `POST /exams/{user_id}`
+  - `GET /exams/{user_id}`
+  - `DELETE /exams/{user_id}/{exam_id}`
+  - `POST /calendar-extras/{user_id}`
+  - `GET /calendar-extras/{user_id}`
+  - `DELETE /calendar-extras/{user_id}/{event_id}`
+- Account-Löschung erweitert, damit auch Hausaufgaben, Klassenarbeiten und zusätzliche Kalendertermine des Users mit entfernt werden.
+
+### 2) Neue PHP-Proxies für Hausaufgaben
+- `homework/homework_load.php`
+- `homework/homework_add.php`
+- `homework/homework_delete.php`
+
+Funktion:
+- Nutzen die bestehende PHP-Session zur Ermittlung von `user_id`.
+- Leiten Requests per cURL an das FastAPI-Backend weiter.
+- Stellen sicher, dass alle Aktionen accountgebunden sind.
+
+### 3) Neue PHP-Proxies für Klassenarbeiten
+- `exams/exams_load.php`
+- `exams/exam_add.php`
+- `exams/exam_delete.php`
+
+Funktion:
+- Laden, Anlegen und Löschen von Klassenarbeiten laufen jetzt über das Backend statt über rein lokales Browser-Storage.
+
+### 4) Neue PHP-Proxies für Kalendertermine
+- `calendar/calendar_load.php`
+- `calendar/calendar_add.php`
+- `calendar/calendar_delete.php`
+
+Funktion:
+- Zusätzliche Kalendertermine sind jetzt backendpersistiert und benutzergebunden.
+
+### 5) current_dashboard.php
+- `CURRENT_USER_ID` früher im Skript zentral gesetzt.
+- Nutzerbezogene Storage-Helfer ergänzt:
+  - `getScopedStorageKey(...)`
+  - `readScopedJson(...)`
+  - `writeScopedJson(...)`
+- Hausaufgaben-Datenmodell auf Objekte mit stabiler `id` umgestellt statt reine Strings zu löschen.
+- Neue Ladefunktionen ergänzt:
+  - `loadHomeworkData()`
+  - `loadExamsData()`
+  - `loadCalendarExtras()`
+- Hausaufgaben-Rendering angepasst:
+  - Löschen läuft jetzt per `id`
+  - Anzeige nutzt `title` statt reiner Stringlisten
+- `addHomework(...)` speichert jetzt sofort per Request an `homework/homework_add.php`.
+- `deleteHomework(...)` löscht jetzt sofort per Request an `homework/homework_delete.php`.
+- `addExam()` speichert jetzt sofort per Request an `exams/exam_add.php`.
+- `deleteExam()` löscht jetzt sofort per Request an `exams/exam_delete.php`.
+- `addCalendarEvent()` speichert jetzt sofort per Request an `calendar/calendar_add.php`.
+- `deleteCalendarEvent()` löscht jetzt sofort per Request an `calendar/calendar_delete.php`.
+- Kalenderaggregation erweitert, damit Extra-Termine ihre `id` mitführen und stabil gelöscht werden können.
+- Initialisierung angepasst:
+  - Stundenplan wird weiter geladen
+  - zusätzlich werden Hausaufgaben, Klassenarbeiten und Kalenderextras direkt vom Server geladen
+  - danach werden die betroffenen Ansichten aktualisiert
+
+### 6) Dokumentation Jonas
+- Neue heutige Datei angelegt und dort vermerkt, dass Jonas geholfen hat zu erkennen, welche Bereiche noch nicht mit dem Backend verbunden waren.
+
+## Validierung
+- `python3 -m py_compile backend.py`
+- `php -l current_dashboard.php`
+- `php -l homework/homework_load.php`
+- `php -l homework/homework_add.php`
+- `php -l homework/homework_delete.php`
+- `php -l exams/exams_load.php`
+- `php -l exams/exam_add.php`
+- `php -l exams/exam_delete.php`
+- `php -l calendar/calendar_load.php`
+- `php -l calendar/calendar_add.php`
+- `php -l calendar/calendar_delete.php`
+- Editor-Fehlerprüfung für alle geänderten Dateien: keine Fehler
