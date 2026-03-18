@@ -104,3 +104,40 @@ Funktion:
 - `php -l calendar/calendar_add.php`
 - `php -l calendar/calendar_delete.php`
 - Editor-Fehlerprüfung für alle geänderten Dateien: keine Fehler
+
+---
+
+## Zusatzprompt (User)
+Wenn man am ende des links ?tab=grades eingibt kommt man ja auf den Noten tab. Wenn man aber nun selber auf den dateien tab geht, soll aus ?tab=dateien eben das andere werden. Außerdem laden die karteikarten nicht wenn man über ?tab=flashcards draufgeht. fixe das
+schreibe meinen prompt, deine ausgabe und alles was du geänderrt hast in die heutige dokumentation von nik
+
+## Zusatzausgabe (Assistant)
+Die Tab-URL wird jetzt beim Wechsel mit dem aktuell geöffneten Bereich synchronisiert, und der Flashcards-Tab lädt seine Stapel auch dann zuverlässig, wenn er direkt über `?tab=flashcards` geöffnet wird.
+
+Umgesetzt wurde:
+- Zentrale Zuordnung von View-ID zu URL-Parameter ergänzt.
+- Beim Wechsel eines Tabs wird `?tab=...` jetzt sofort auf den aktuell geöffneten Bereich aktualisiert.
+- Der Flashcards-Tab bekommt beim Öffnen eine zentrale Aktualisierung, sodass die Stapel auch bei Direktaufruf geladen werden.
+
+## Zusatzänderungen
+
+### current_dashboard.php
+- Neue Funktion `mapViewToTabParam(viewId)` ergänzt:
+  - erzeugt den kanonischen URL-Parameter für jeden Tab
+  - setzt für Dateien explizit `dateien`
+- Neue Funktion `syncTabParam(viewId)` ergänzt:
+  - aktualisiert die Browser-URL mit `history.replaceState(...)`
+  - verhindert, dass nach Tabwechsel ein alter `tab`-Wert in der URL stehen bleibt
+- Neue Funktion `refreshViewState(viewId)` ergänzt:
+  - bündelt das tab-spezifische Nachladen/Aktualisieren
+  - enthält jetzt auch den Fall `flashcards`
+- Navigation angepasst:
+  - jeder Klick auf einen Seiten-Tab ruft jetzt `syncTabParam(viewId)` auf
+  - anschließend wird `refreshViewState(viewId)` ausgeführt
+- Flashcards-Direktlink gefixt:
+  - beim Öffnen des Flashcards-Tabs wird jetzt zentral `fcShowDecksView()` bzw. fallback `fcLoadDecks()` ausgelöst
+  - dadurch laden die Karteikarten-Stapel auch bei Start mit `?tab=flashcards`
+
+## Zusatzvalidierung
+- `php -l current_dashboard.php`
+- Editor-Fehlerprüfung für `current_dashboard.php`: keine Fehler

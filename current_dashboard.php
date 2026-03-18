@@ -1513,6 +1513,47 @@ themeToggle.addEventListener('click', () => {
             return tabMap[normalized] || 'overview';
         }
 
+        function mapViewToTabParam(viewId) {
+            const viewMap = {
+                overview: 'overview',
+                timetable: 'stundenplan',
+                grades: 'grades',
+                todos: 'todos',
+                exams: 'klassenarbeiten',
+                homework: 'hausaufgaben',
+                calendar: 'kalender',
+                flashcards: 'flashcards',
+                files: 'dateien',
+                'admin-messages': 'admin-messages',
+                admin: 'admin'
+            };
+
+            return viewMap[viewId] || 'overview';
+        }
+
+        function syncTabParam(viewId) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', mapViewToTabParam(viewId));
+            window.history.replaceState({}, '', url);
+        }
+
+        function refreshViewState(viewId) {
+            if (viewId === 'overview') {
+                renderOverview();
+            } else if (viewId === 'calendar') {
+                renderCalendar();
+            } else if (viewId === 'timetable') {
+                renderTimetableView();
+                renderHomework(false, 'homeworkGridTimetable');
+            } else if (viewId === 'flashcards') {
+                if (typeof fcShowDecksView === 'function') {
+                    fcShowDecksView();
+                } else if (typeof fcLoadDecks === 'function') {
+                    fcLoadDecks();
+                }
+            }
+        }
+
         function openViewById(viewId) {
             const targetNav = document.querySelector(`.nav-item[data-view="${viewId}"]`);
             if (targetNav) {
@@ -1540,16 +1581,8 @@ themeToggle.addEventListener('click', () => {
                     targetView.style.display = 'block';
                 }
 
-                if (viewId === 'overview') {
-                    renderOverview();
-                } else if (viewId === 'calendar') {
-                    // ensure calendar is up to date whenever user opens tab
-                    renderCalendar();
-                } else if (viewId === 'timetable') {
-                    // refresh timetable grid and homework preview when visiting timetable
-                    renderTimetableView();
-                    renderHomework(false, 'homeworkGridTimetable');
-                }
+                syncTabParam(viewId);
+                refreshViewState(viewId);
             });
         });
         
