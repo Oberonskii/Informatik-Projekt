@@ -337,6 +337,24 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             font-size: 1rem;
         }
 
+        #overview .content-header-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        #overview .overview-customize-btn {
+            margin-left: auto;
+        }
+
+        #overview .overview-customize-btn.active {
+            background-color: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
         /* Bento Grid Layout */
         .dashboard-grid {
             display: grid;
@@ -357,6 +375,40 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         .widget:hover {
             box-shadow: var(--shadow-md);
             transform: translateY(-2px);
+        }
+
+        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id] {
+            cursor: grab;
+        }
+
+        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id].widget-dragging {
+            opacity: 0.55;
+            cursor: grabbing;
+        }
+
+        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id] {
+            position: relative;
+        }
+
+        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id].drop-before::before,
+        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id].drop-after::after {
+            content: '';
+            position: absolute;
+            left: 8px;
+            right: 8px;
+            height: 2px;
+            background-color: #1f6fff;
+            border-radius: 2px;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id].drop-before::before {
+            top: -8px;
+        }
+
+        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id].drop-after::after {
+            bottom: -8px;
         }
 
         .widget-header {
@@ -950,6 +1002,10 @@ $is_admin = strtolower((string)$user_role) === 'admin';
 
             .dashboard-grid {
                 grid-template-columns: 1fr;
+            }
+
+            #overview .overview-customize-btn {
+                width: 100%;
             }
         }
 
@@ -3393,6 +3449,179 @@ themeToggle.addEventListener('click', () => {
             });
         }
 
+        const OVERVIEW_WIDGET_ORDER_KEY = 'overview_widget_order';
+        let draggingOverviewWidget = null;
+        let overviewDropTarget = null;
+        let overviewCustomizeMode = false;
+        let overviewDragMouseButton = 0;
+
+        function saveOverviewWidgetOrder() {
+            const grid = document.getElementById('overviewWidgetGrid');
+            if (!grid) return;
+
+            const order = Array.from(grid.querySelectorAll('.widget[data-widget-id]'))
+                .map(widget => widget.dataset.widgetId)
+                .filter(Boolean);
+
+            writeScopedJson(OVERVIEW_WIDGET_ORDER_KEY, order);
+        }
+
+        function applyOverviewWidgetOrder() {
+            const grid = document.getElementById('overviewWidgetGrid');
+            if (!grid) return;
+
+            const savedOrder = readScopedJson(OVERVIEW_WIDGET_ORDER_KEY, [], true);
+            if (!Array.isArray(savedOrder) || !savedOrder.length) return;
+
+            const widgets = Array.from(grid.querySelectorAll('.widget[data-widget-id]'));
+            const widgetMap = new Map(
+                widgets.map(widget => [widget.dataset.widgetId, widget])
+            );
+
+            savedOrder.forEach(widgetId => {
+                const widget = widgetMap.get(widgetId);
+                if (!widget) return;
+                grid.appendChild(widget);
+                widgetMap.delete(widgetId);
+            });
+
+            widgetMap.forEach(widget => {
+                grid.appendChild(widget);
+            });
+        }
+
+        function getOverviewDropTarget(grid, clientX, clientY) {
+            const hovered = document.elementFromPoint(clientX, clientY);
+            if (!hovered) return null;
+
+            const target = hovered.closest('.widget[data-widget-id]');
+            if (!target || target === draggingOverviewWidget || target.parentElement !== grid) {
+                return null;
+            }
+
+            const rect = target.getBoundingClientRect();
+            const insertAfter = clientY > rect.top + rect.height / 2;
+            return { target, insertAfter };
+        }
+
+        function clearOverviewDropIndicator() {
+            const grid = document.getElementById('overviewWidgetGrid');
+            if (!grid) return;
+
+            grid.querySelectorAll('.widget[data-widget-id].drop-before, .widget[data-widget-id].drop-after').forEach(widget => {
+                widget.classList.remove('drop-before', 'drop-after');
+            });
+        }
+
+        function renderOverviewDropIndicator(dropTarget) {
+            clearOverviewDropIndicator();
+            if (!dropTarget || !dropTarget.target) return;
+
+            dropTarget.target.classList.add(dropTarget.insertAfter ? 'drop-after' : 'drop-before');
+        }
+
+        function updateOverviewCustomizeButton() {
+            const btn = document.getElementById('overviewCustomizeToggle');
+            if (!btn) return;
+
+            btn.textContent = overviewCustomizeMode ? 'Anpassen beenden' : 'Dashbord anpassen';
+            btn.classList.toggle('active', overviewCustomizeMode);
+        }
+
+        function setOverviewCustomizeMode(enabled) {
+            overviewCustomizeMode = !!enabled;
+
+            const grid = document.getElementById('overviewWidgetGrid');
+            if (grid) {
+                grid.classList.toggle('widget-customize-mode', overviewCustomizeMode);
+                grid.querySelectorAll('.widget[data-widget-id]').forEach(widget => {
+                    widget.setAttribute('draggable', overviewCustomizeMode ? 'true' : 'false');
+                });
+            }
+
+            if (!overviewCustomizeMode) {
+                clearOverviewDropIndicator();
+                if (draggingOverviewWidget) {
+                    draggingOverviewWidget.classList.remove('widget-dragging');
+                }
+                draggingOverviewWidget = null;
+                overviewDropTarget = null;
+            }
+
+            updateOverviewCustomizeButton();
+        }
+
+        function initOverviewWidgetReordering() {
+            const grid = document.getElementById('overviewWidgetGrid');
+            if (!grid) return;
+
+            const widgets = Array.from(grid.querySelectorAll('.widget[data-widget-id]'));
+            if (widgets.length < 2) return;
+
+            applyOverviewWidgetOrder();
+
+            widgets.forEach(widget => {
+                widget.setAttribute('draggable', 'false');
+
+                widget.addEventListener('mousedown', event => {
+                    overviewDragMouseButton = event.button;
+                });
+
+                widget.addEventListener('dragstart', event => {
+                    if (!overviewCustomizeMode || overviewDragMouseButton !== 0) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    draggingOverviewWidget = widget;
+                    widget.classList.add('widget-dragging');
+
+                    if (event.dataTransfer) {
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', widget.dataset.widgetId || 'widget');
+                    }
+                });
+
+                widget.addEventListener('dragend', () => {
+                    widget.classList.remove('widget-dragging');
+                    clearOverviewDropIndicator();
+                    draggingOverviewWidget = null;
+                    overviewDropTarget = null;
+                });
+            });
+
+            grid.addEventListener('dragover', event => {
+                if (!draggingOverviewWidget) return;
+                event.preventDefault();
+                overviewDropTarget = getOverviewDropTarget(grid, event.clientX, event.clientY);
+                renderOverviewDropIndicator(overviewDropTarget);
+            });
+
+            grid.addEventListener('drop', event => {
+                if (!draggingOverviewWidget) return;
+                event.preventDefault();
+
+                if (overviewDropTarget && overviewDropTarget.target) {
+                    if (overviewDropTarget.insertAfter) {
+                        grid.insertBefore(draggingOverviewWidget, overviewDropTarget.target.nextSibling);
+                    } else {
+                        grid.insertBefore(draggingOverviewWidget, overviewDropTarget.target);
+                    }
+                }
+
+                saveOverviewWidgetOrder();
+            });
+
+            const toggleBtn = document.getElementById('overviewCustomizeToggle');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    setOverviewCustomizeMode(!overviewCustomizeMode);
+                });
+            }
+
+            setOverviewCustomizeMode(false);
+        }
+
         function renderOverview() {
             renderOverviewTimetable();
             renderOverviewTodos();
@@ -3439,6 +3668,7 @@ themeToggle.addEventListener('click', () => {
         renderHomework(false, 'homeworkGridTimetable');
         renderExams();
         initCalendar();
+        initOverviewWidgetReordering();
         renderOverview();
         loadTimetable();
         loadHomeworkData();

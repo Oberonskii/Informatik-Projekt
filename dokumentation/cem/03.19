@@ -41,3 +41,24 @@ User:
 Assistent:
 - Neue Dokumentationsdatei dokumentation/cem/03.19 erstellt.
 - Commit und Push fuer Bugfix + Doku ausgefuehrt.
+
+---
+
+7. Chat-Verlauf: Dashboard-Widgets anpassen (19.03.2026)
+
+Prompts (User):
+1) "erstelle oben rechts einen butten mit \"dashbord anpassen\". sobald man darauf klickt sollen die widgets grabbar sein. die verschiebung soll erst mit dem loslassen der linken maustaste erfolgen, dass es nicht herum lagt. die neue postition soll mit einer duennen blauen linie zwischen den widget dargestellt werden, damit der user weiss wohin die verschiebung stattfinden wuerde."
+2) "commite und pushe die veraenderungen in unseren code und schreibe diesen chat in die dokumtation cem 03.19 mit promps antworten und kurze zusammenfassung"
+
+Antworten und umgesetzte Schritte (Assistent):
+- Dashboard-Header in der Uebersicht erweitert und den Button "Dashbord anpassen" oben rechts eingefuegt.
+- Anpassungsmodus fuer Widgets umgesetzt: Widgets sind nur im aktiven Modus ziehbar.
+- Drag-and-Drop-Verhalten geaendert: keine direkte Umordnung waehrend des Ziehens, sondern erst beim Drop (Loslassen der linken Maustaste).
+- Visuelle Vorschau hinzugefuegt: duenne blaue Linie zeigt die geplante Einfuegeposition zwischen Widgets.
+- Reorder-Persistenz beibehalten: neue Reihenfolge wird weiterhin gespeichert.
+- Dateien geprueft: keine neuen Syntax-/Editor-Fehler in den geaenderten Dateien.
+
+Kurze Zusammenfassung:
+- Das Dashboard hat jetzt einen echten Bearbeitungsmodus fuer die Widget-Reihenfolge.
+- Die Interaktion fuehlt sich fluessiger an, weil die Verschiebung erst beim Loslassen erfolgt.
+- Eine duenne blaue Linie zeigt klar, wo das Widget einsortiert wird.
