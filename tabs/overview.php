@@ -1,13 +1,18 @@
                 <!-- Overview Content -->
                 <div id="overview" class="view-content">
                     <div class="content-header">
-                        <h1>Willkommen zurück! 👋</h1>
-                        <p>Hier ist deine Lernübersicht für heute</p>
+                        <div class="content-header-toolbar">
+                            <div>
+                                <h1>Willkommen zurück! 👋</h1>
+                                <p>Hier ist deine Lernübersicht für heute</p>
+                            </div>
+                            <button class="btn-secondary overview-customize-btn" id="overviewCustomizeToggle" type="button">Dashbord anpassen</button>
+                        </div>
                     </div>
 
-                    <div class="dashboard-grid">
+                    <div class="dashboard-grid" id="overviewWidgetGrid">
                         <!-- Stundenplan Widget -->
-                        <div class="widget">
+                        <div class="widget" data-widget-id="timetable">
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">📅</span>
@@ -21,7 +26,7 @@
                         </div>
 
                         <!-- Noten Widget -->
-                        <div class="widget">
+                        <div class="widget" data-widget-id="grades">
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">📝</span>
@@ -35,7 +40,7 @@
                         </div>
 
                         <!-- To-Do Widget -->
-                        <div class="widget">
+                        <div class="widget" data-widget-id="todos">
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">✅</span>
@@ -49,7 +54,7 @@
                         </div>
 
                         <!-- Hausaufgaben Widget -->
-                        <div class="widget">
+                        <div class="widget" data-widget-id="homeworks">
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">📚</span>
@@ -63,7 +68,7 @@
                         </div>
 
                         <!-- Klassenarbeiten Widget -->
-                        <div class="widget">
+                        <div class="widget" data-widget-id="exams">
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">📝</span>
@@ -77,7 +82,7 @@
                         </div>
 
                         <!-- Kalender Widget -->
-                        <div class="widget">
+                        <div class="widget" data-widget-id="calendar">
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">📆</span>
@@ -92,7 +97,7 @@
 
 
                         <!-- Karteikarten Widget -->
-                        <div class="widget">
+                        <div class="widget" data-widget-id="flashcards">
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">🎴</span>
@@ -117,7 +122,7 @@
                         </div>
 
                         <!-- Dateien Widget -->
-                        <div class="widget">
+                        <div class="widget" data-widget-id="files">
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">📁</span>
@@ -131,7 +136,7 @@
                         </div>
 
                         <!-- Admin Nachrichten Widget -->
-                        <div class="widget">
+                        <div class="widget" data-widget-id="messages">
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">💬</span>
@@ -148,7 +153,7 @@
 
                         <?php if (!empty($is_admin)): ?>
                         <!-- Admin Panel Widget -->
-                        <div class="widget">
+                        <div class="widget" data-widget-id="admin-panel">
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">⚙️</span>
