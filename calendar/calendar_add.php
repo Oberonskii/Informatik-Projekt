@@ -20,6 +20,7 @@ $backend_url = "http://127.0.0.1:8000/calendar-extras/$user_id";
 $payload = json_encode([
     'title' => $input['title'],
     'date' => $input['date'],
+    'recurrence' => $input['recurrence'] ?? 'none',
     'description' => $input['description'] ?? ''
 ]);
 

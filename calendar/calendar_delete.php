@@ -15,7 +15,15 @@ if (!isset($_GET['event_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $event_id = $_GET['event_id'];
-$backend_url = "http://127.0.0.1:8000/calendar-extras/$user_id/$event_id";
+$delete_scope = $_GET['delete_scope'] ?? 'series';
+$occurrence_date = $_GET['occurrence_date'] ?? null;
+
+$query = http_build_query(array_filter([
+    'delete_scope' => $delete_scope,
+    'occurrence_date' => $occurrence_date,
+], static fn ($value) => $value !== null && $value !== ''));
+
+$backend_url = "http://127.0.0.1:8000/calendar-extras/$user_id/$event_id" . ($query ? "?$query" : '');
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $backend_url);

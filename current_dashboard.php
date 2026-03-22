@@ -1363,7 +1363,7 @@ $is_admin = strtolower((string)$user_role) === 'admin';
 
         #calendarGrid td.cal-today {
             background-color: #2166f0;
-            border-color: #c0c0c0;
+            border-color: #4852e4;
         }
 
         #calendarGrid td.cal-today .cal-day-number {
@@ -1381,7 +1381,7 @@ $is_admin = strtolower((string)$user_role) === 'admin';
 
         #calendarGrid td.cal-today.cal-selected {
             background-color: #0049da;
-            border-color: #c0c0c0;
+            border-color: #2848af;
         }
 
         #calendarGrid td.cal-today.cal-selected .cal-day-number {
@@ -1394,18 +1394,30 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             font-size: 0.85rem;
         }
 
+        .event-dots {
+            position: absolute;
+            right: 4px;
+            bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            max-width: calc(100% - 8px);
+        }
+
         .event-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background-color: var(--color-primary);
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
+            background-color: var(--event-dot-color, var(--color-primary));
+            flex: 0 0 auto;
         }
 
         #calendarGrid td.cal-today .event-dot {
-            background-color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        #calendarGrid td.cal-selected .event-dot {
+            border: 1px solid rgba(31, 41, 55, 0.25);
         }
 
         #calendarDayEvents {
@@ -1422,6 +1434,125 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         #calendarEventList .calendar-event-item {
             padding: 0.5rem;
             border-bottom: 1px solid var(--color-border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        #calendarEventList .calendar-event-content {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            min-width: 0;
+        }
+
+        #calendarEventList .calendar-event-text {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        #calendarEventList .calendar-event-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--event-dot-color, var(--color-primary));
+            flex: 0 0 auto;
+        }
+
+        .calendar-title-input-row {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .calendar-title-input-row input {
+            margin-bottom: 0;
+        }
+
+        .calendar-title-preview-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--event-dot-color, var(--color-primary));
+            border: 2px solid color-mix(in srgb, var(--color-bg-secondary) 55%, transparent);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-border) 75%, transparent);
+            flex: 0 0 auto;
+        }
+
+        .calendar-title-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            min-height: 0;
+        }
+
+        .calendar-title-suggestions:empty {
+            display: none;
+        }
+
+        .calendar-title-suggestion {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.7rem;
+            border-radius: 999px;
+            border: 1px solid var(--color-border);
+            background: var(--color-bg-hover);
+            color: var(--color-text-primary);
+            cursor: pointer;
+            transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .calendar-title-suggestion:hover,
+        .calendar-title-suggestion.active {
+            border-color: var(--event-dot-color, var(--color-primary));
+            background: color-mix(in srgb, var(--event-dot-color, var(--color-primary)) 12%, var(--color-bg-secondary));
+            transform: translateY(-1px);
+        }
+
+        .calendar-title-suggestion-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background-color: var(--event-dot-color, var(--color-primary));
+            flex: 0 0 auto;
+        }
+
+        .calendar-repeat-label {
+            display: block;
+            margin-bottom: 0.35rem;
+            color: var(--color-text-secondary);
+            font-size: 0.92rem;
+        }
+
+        .calendar-repeat-select {
+            width: 100%;
+            padding: 0.6rem 0.85rem;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            font-size: 0.9rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .calendar-repeat-select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        #calendarDeleteModal .modal-footer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0.6rem;
+        }
+
+        #calendarDeleteModal .modal-btn-close {
+            margin-left: 0;
         }
 
         @media (max-width: 1024px) {
@@ -1437,6 +1568,7 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         #calendarEventList .calendar-event-item.exam { background-color: var(--color-info)33; }
         #calendarEventList .calendar-event-item.todo { background-color: var(--color-success)33; }
         #calendarEventList .calendar-event-item.extra { background-color: var(--color-primary)33; }
+        #calendarEventList .calendar-event-item.holiday { background-color: rgba(185, 28, 28, 0.12); }
 
         /* Scrollbar Styling */
         ::-webkit-scrollbar {
@@ -1759,7 +1891,7 @@ themeToggle.addEventListener('click', () => {
             } else if (viewId === 'subjects') {
                 loadSubjects();
             } else if (viewId === 'calendar') {
-                renderCalendar();
+                initCalendar();
             } else if (viewId === 'timetable') {
                 renderTimetableView();
                 renderHomework(false, 'homeworkGridTimetable');
@@ -2205,6 +2337,243 @@ themeToggle.addEventListener('click', () => {
             writeScopedJson('calendar_extras', calendarExtras);
         }
 
+        function normalizeCalendarExtraEntry(entry) {
+            if (!entry || typeof entry !== 'object') return null;
+
+            const title = String(entry.title || '').trim();
+            const date = String(entry.date || '').trim();
+            if (!title || !date) return null;
+
+            return {
+                ...entry,
+                id: entry.id || null,
+                title,
+                date,
+                description: String(entry.description || '').trim(),
+                recurrence: normalizeCalendarRecurrence(entry),
+                exception_dates: normalizeCalendarExceptionDates(entry.exception_dates)
+            };
+        }
+
+        function normalizeCalendarRecurrence(entry) {
+            const recurrence = String(entry?.recurrence || '').trim().toLowerCase();
+            if (recurrence === 'weekly' || recurrence === 'monthly') return recurrence;
+            if (entry?.repeat_weekly === true || entry?.repeat_weekly === 1 || entry?.repeat_weekly === '1') {
+                return 'weekly';
+            }
+            return 'none';
+        }
+
+        function normalizeCalendarExceptionDates(value) {
+            let parsed = value;
+            if (typeof value === 'string') {
+                try {
+                    parsed = JSON.parse(value || '[]');
+                } catch {
+                    parsed = [];
+                }
+            }
+
+            if (!Array.isArray(parsed)) return [];
+            return parsed
+                .map(item => String(item || '').trim())
+                .filter(Boolean)
+                .sort();
+        }
+
+        function parseDateOnly(dateStr) {
+            const [year, month, day] = String(dateStr || '').split('-').map(part => parseInt(part, 10));
+            if (!year || !month || !day) return null;
+            return new Date(year, month - 1, day);
+        }
+
+        function addDaysToDateStr(dateStr, days) {
+            const date = parseDateOnly(dateStr);
+            if (!date) return '';
+            date.setDate(date.getDate() + days);
+            return toDateStr(date);
+        }
+
+        function getDaysInMonth(year, monthIndex) {
+            return new Date(year, monthIndex + 1, 0).getDate();
+        }
+
+        function addMonthsToDateStr(baseDateStr, monthOffset) {
+            const baseDate = parseDateOnly(baseDateStr);
+            if (!baseDate) return '';
+
+            const baseDay = baseDate.getDate();
+            const targetMonthIndex = (baseDate.getMonth() + monthOffset);
+            const targetYear = baseDate.getFullYear() + Math.floor(targetMonthIndex / 12);
+            const normalizedMonthIndex = ((targetMonthIndex % 12) + 12) % 12;
+            const targetDay = Math.min(baseDay, getDaysInMonth(targetYear, normalizedMonthIndex));
+
+            return toDateStr(new Date(targetYear, normalizedMonthIndex, targetDay));
+        }
+
+        function getMonthDifference(startDateStr, endDateStr) {
+            const start = parseDateOnly(startDateStr);
+            const end = parseDateOnly(endDateStr);
+            if (!start || !end) return NaN;
+
+            return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+        }
+
+        function getYearsInDateRange(startDateStr = null, endDateStr = null) {
+            const today = new Date();
+            const fallbackStart = startDateStr || `${today.getFullYear()}-01-01`;
+            const fallbackEnd = endDateStr || `${today.getFullYear()}-12-31`;
+            const startYear = parseInt(String(fallbackStart).slice(0, 4), 10);
+            const endYear = parseInt(String(fallbackEnd).slice(0, 4), 10);
+            if (!Number.isInteger(startYear) || !Number.isInteger(endYear)) {
+                return [today.getFullYear()];
+            }
+
+            const years = [];
+            const minYear = Math.min(startYear, endYear);
+            const maxYear = Math.max(startYear, endYear);
+            for (let year = minYear; year <= maxYear; year++) {
+                years.push(year);
+            }
+            return years;
+        }
+
+        function getEasterSunday(year) {
+            const a = year % 19;
+            const b = Math.floor(year / 100);
+            const c = year % 100;
+            const d = Math.floor(b / 4);
+            const e = b % 4;
+            const f = Math.floor((b + 8) / 25);
+            const g = Math.floor((b - f + 1) / 3);
+            const h = (19 * a + b - d - g + 15) % 30;
+            const i = Math.floor(c / 4);
+            const k = c % 4;
+            const l = (32 + 2 * e + 2 * i - h - k) % 7;
+            const m = Math.floor((a + 11 * h + 22 * l) / 451);
+            const month = Math.floor((h + l - 7 * m + 114) / 31);
+            const day = ((h + l - 7 * m + 114) % 31) + 1;
+            return toDateStr(new Date(year, month - 1, day));
+        }
+
+        function buildGermanHolidayItems(startDateStr = null, endDateStr = null) {
+            const items = [];
+
+            getYearsInDateRange(startDateStr, endDateStr).forEach(year => {
+                const easterSunday = getEasterSunday(year);
+                const holidays = [
+                    { date: `${year}-01-01`, title: 'Neujahr' },
+                    { date: addDaysToDateStr(easterSunday, -2), title: 'Karfreitag' },
+                    { date: addDaysToDateStr(easterSunday, 1), title: 'Ostermontag' },
+                    { date: `${year}-05-01`, title: 'Tag der Arbeit' },
+                    { date: addDaysToDateStr(easterSunday, 39), title: 'Christi Himmelfahrt' },
+                    { date: addDaysToDateStr(easterSunday, 50), title: 'Pfingstmontag' },
+                    { date: `${year}-10-03`, title: 'Tag der Deutschen Einheit' },
+                    { date: `${year}-12-25`, title: '1. Weihnachtstag' },
+                    { date: `${year}-12-26`, title: '2. Weihnachtstag' }
+                ];
+
+                holidays.forEach(holiday => {
+                    if (!isDateWithinRange(holiday.date, startDateStr, endDateStr)) return;
+                    items.push({
+                        date: holiday.date,
+                        title: holiday.title,
+                        description: 'Deutscher Feiertag',
+                        type: 'holiday'
+                    });
+                });
+            });
+
+            return items;
+        }
+
+        function dateDiffInDays(startDateStr, endDateStr) {
+            const start = parseDateOnly(startDateStr);
+            const end = parseDateOnly(endDateStr);
+            if (!start || !end) return NaN;
+            const msPerDay = 1000 * 60 * 60 * 24;
+            return Math.round((end.getTime() - start.getTime()) / msPerDay);
+        }
+
+        function isDateWithinRange(dateStr, startDateStr, endDateStr) {
+            if (startDateStr && dateStr < startDateStr) return false;
+            if (endDateStr && dateStr > endDateStr) return false;
+            return true;
+        }
+
+        function buildCalendarExtraItems(startDateStr = null, endDateStr = null) {
+            const items = [];
+
+            calendarExtras.forEach(entry => {
+                const ev = normalizeCalendarExtraEntry(entry);
+                if (!ev) return;
+
+                if (ev.recurrence === 'none') {
+                    if (isDateWithinRange(ev.date, startDateStr, endDateStr)) {
+                        items.push({
+                            id: ev.id,
+                            date: ev.date,
+                            title: ev.title,
+                            description: ev.description,
+                            type: 'extra',
+                            recurrence: 'none',
+                            exception_dates: ev.exception_dates
+                        });
+                    }
+                    return;
+                }
+
+                const rangeEnd = endDateStr || addDaysToDateStr(ev.date, 365);
+                const rangeStart = startDateStr && startDateStr > ev.date ? startDateStr : ev.date;
+
+                const pushOccurrence = (occurrenceDate) => {
+                    if (!occurrenceDate || ev.exception_dates.includes(occurrenceDate)) return;
+                    items.push({
+                        id: ev.id,
+                        date: occurrenceDate,
+                        title: ev.title,
+                        description: ev.description,
+                        type: 'extra',
+                        recurrence: ev.recurrence,
+                        exception_dates: ev.exception_dates,
+                        base_date: ev.date
+                    });
+                };
+
+                if (ev.recurrence === 'weekly') {
+                    const diffFromBase = dateDiffInDays(ev.date, rangeStart);
+                    const offsetDays = Number.isNaN(diffFromBase) ? 0 : ((diffFromBase % 7) + 7) % 7;
+                    let occurrenceDate = offsetDays === 0 ? rangeStart : addDaysToDateStr(rangeStart, 7 - offsetDays);
+
+                    if (occurrenceDate < ev.date) {
+                        occurrenceDate = ev.date;
+                    }
+
+                    while (occurrenceDate && occurrenceDate <= rangeEnd) {
+                        pushOccurrence(occurrenceDate);
+                        occurrenceDate = addDaysToDateStr(occurrenceDate, 7);
+                    }
+                    return;
+                }
+
+                const monthStartOffset = Math.max(0, Number.isNaN(getMonthDifference(ev.date, rangeStart)) ? 0 : getMonthDifference(ev.date, rangeStart));
+                let monthOffset = monthStartOffset;
+                let occurrenceDate = addMonthsToDateStr(ev.date, monthOffset);
+                while (occurrenceDate && occurrenceDate < rangeStart) {
+                    monthOffset += 1;
+                    occurrenceDate = addMonthsToDateStr(ev.date, monthOffset);
+                }
+
+                while (occurrenceDate && occurrenceDate <= rangeEnd) {
+                    pushOccurrence(occurrenceDate);
+                    monthOffset += 1;
+                    occurrenceDate = addMonthsToDateStr(ev.date, monthOffset);
+                }
+            });
+
+            return items;
+        }
+
         function buildHomeworkMap(rows) {
             const mapped = {};
             TT_DAYS.forEach(day => {
@@ -2268,12 +2637,18 @@ themeToggle.addEventListener('click', () => {
                 const res = await fetch('calendar/calendar_load.php');
                 if (!res.ok) throw new Error();
                 const rows = await res.json();
-                calendarExtras = Array.isArray(rows) ? rows : [];
+                calendarExtras = Array.isArray(rows)
+                    ? rows.map(normalizeCalendarExtraEntry).filter(Boolean)
+                    : [];
                 cacheCalendarExtras();
             } catch {
-                calendarExtras = Array.isArray(calendarExtras) ? calendarExtras : [];
+                calendarExtras = Array.isArray(calendarExtras)
+                    ? calendarExtras.map(normalizeCalendarExtraEntry).filter(Boolean)
+                    : [];
                 cacheCalendarExtras();
             }
+
+            updateCalendarTitleSuggestions();
 
             renderCalendar();
             if (currentSelectedDate) showEventsForDate(currentSelectedDate, false);
@@ -2281,20 +2656,14 @@ themeToggle.addEventListener('click', () => {
         }
 
         // Hilfsfunktion: liefert alle kalenderbezogenen Objekte (extras, exams, todos)
-        function getAllCalendarItems() {
+        function getAllCalendarItems(startDateStr = null, endDateStr = null) {
             let items = [];
+            items.push(...buildGermanHolidayItems(startDateStr, endDateStr));
             // extras
-            calendarExtras.forEach(ev => {
-                items.push({
-                    id: ev.id,
-                    date: ev.date,
-                    title: ev.title,
-                    description: ev.description || '',
-                    type: 'extra'
-                });
-            });
+            items.push(...buildCalendarExtraItems(startDateStr, endDateStr));
             // exams
             exams.forEach(ev => {
+                if (!isDateWithinRange(ev.date, startDateStr, endDateStr)) return;
                 items.push({
                     date: ev.date,
                     title: ev.subject,
@@ -2306,6 +2675,7 @@ themeToggle.addEventListener('click', () => {
             if (todosData) {
                 todosData.forEach(td => {
                     if (td.due_date) {
+                        if (!isDateWithinRange(td.due_date, startDateStr, endDateStr)) return;
                         items.push({
                             date: td.due_date,
                             title: td.title,
@@ -2816,9 +3186,145 @@ themeToggle.addEventListener('click', () => {
         let currentCalMonth;
         let currentCalYear;
         let currentSelectedDate = null; // für Anzeige der Tagesereignisse
+        let pendingCalendarDelete = null;
+        const CALENDAR_TITLE_COLORS = ['#e11d48', '#f97316', '#ca8a04', '#65a30d', '#0f766e', '#0284c7', '#1d4ed8', '#7c3aed', '#c026d3', '#db2777', '#dc2626', '#0891b2', '#4f46e5', '#059669', '#d97706', '#4338ca'];
 
         function toDateStr(dateObj) {
             return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+        }
+
+        function normalizeCalendarTitle(title) {
+            return String(title || '').trim().toLocaleLowerCase('de-DE');
+        }
+
+        function getUniqueCalendarTitleEntries(titles) {
+            const titleMap = new Map();
+
+            titles.forEach(title => {
+                const displayTitle = String(title || '').trim();
+                const normalizedTitle = normalizeCalendarTitle(displayTitle);
+                if (!normalizedTitle) return;
+
+                const existing = titleMap.get(normalizedTitle);
+                if (existing) {
+                    existing.count += 1;
+                    return;
+                }
+
+                titleMap.set(normalizedTitle, {
+                    normalizedTitle,
+                    displayTitle,
+                    count: 1
+                });
+            });
+
+            return Array.from(titleMap.values()).sort((a, b) => {
+                if (b.count !== a.count) return b.count - a.count;
+                return a.displayTitle.localeCompare(b.displayTitle, 'de');
+            });
+        }
+
+        function generateCalendarColorFallback(index, total) {
+            const hue = Math.round((index * 360) / Math.max(total, 1));
+            const saturation = 72 - ((index % 3) * 6);
+            const lightness = 50 + ((index % 2) * 6);
+            return `hsl(${hue} ${saturation}% ${lightness}%)`;
+        }
+
+        function getCalendarTitleColorMap() {
+            const titles = getUniqueCalendarTitleEntries([
+                ...calendarExtras.map(item => item?.title),
+                ...exams.map(item => item?.subject),
+                ...(Array.isArray(todosData) ? todosData.map(item => item?.title) : [])
+            ]);
+            const colorMap = new Map();
+
+            titles.forEach((entry, index) => {
+                const color = CALENDAR_TITLE_COLORS[index] || generateCalendarColorFallback(index, titles.length);
+                colorMap.set(entry.normalizedTitle, color);
+            });
+
+            return colorMap;
+        }
+
+        function getCalendarTitleColor(title) {
+            const normalizedTitle = normalizeCalendarTitle(title);
+            if (!normalizedTitle) return 'var(--color-primary)';
+
+            return getCalendarTitleColorMap().get(normalizedTitle) || 'var(--color-primary)';
+        }
+
+        function getCalendarItemColor(item) {
+            if (item?.type === 'holiday') return '#b91c1c';
+            return getCalendarTitleColor(item?.title || '');
+        }
+
+        function getStoredCalendarTitles() {
+            return getUniqueCalendarTitleEntries(calendarExtras.map(ev => ev?.title)).map(entry => entry.displayTitle);
+        }
+
+        function getCalendarRecurrenceLabel(recurrence) {
+            if (recurrence === 'weekly') return 'wöchentlich';
+            if (recurrence === 'monthly') return 'monatlich';
+            return '';
+        }
+
+        function updateCalendarTitlePreview(title) {
+            const preview = document.getElementById('calendarTitleColorPreview');
+            if (!preview) return;
+            preview.style.setProperty('--event-dot-color', getCalendarTitleColor(title));
+        }
+
+        function updateCalendarTitleSuggestions(filterText = '') {
+            const container = document.getElementById('calendarTitleSuggestions');
+            if (!container) return;
+
+            const normalizedFilter = normalizeCalendarTitle(filterText);
+            const exactMatch = normalizedFilter && getStoredCalendarTitles().some(title => normalizeCalendarTitle(title) === normalizedFilter);
+            const matchingTitles = getStoredCalendarTitles().filter(title => {
+                if (!normalizedFilter) return true;
+                return normalizeCalendarTitle(title).includes(normalizedFilter);
+            });
+
+            updateCalendarTitlePreview(filterText);
+
+            if (!matchingTitles.length || exactMatch) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = matchingTitles.slice(0, 8).map(title => {
+                const normalizedTitle = normalizeCalendarTitle(title);
+                const isActive = normalizedFilter && normalizedTitle === normalizedFilter;
+                return `<button type="button" class="calendar-title-suggestion${isActive ? ' active' : ''}" style="--event-dot-color:${getCalendarTitleColor(title)}" data-title="${escapeHtml(title)}" onclick="selectCalendarTitleSuggestion(this.dataset.title)"><span class="calendar-title-suggestion-dot"></span><span>${escapeHtml(title)}</span></button>`;
+            }).join('');
+        }
+
+        function selectCalendarTitleSuggestion(title) {
+            const titleEl = document.getElementById('quickEventTitle');
+            if (!titleEl) return;
+
+            titleEl.value = title;
+            updateCalendarTitleSuggestions(title);
+            titleEl.focus();
+            titleEl.setSelectionRange(title.length, title.length);
+        }
+
+        function renderCalendarDots(events) {
+            const uniqueItems = [];
+            const seenKeys = new Set();
+
+            events.forEach(event => {
+                const normalizedTitle = normalizeCalendarTitle(event.title);
+                const uniqueKey = `${event.type || 'default'}:${normalizedTitle}`;
+                if (!normalizedTitle || seenKeys.has(uniqueKey)) return;
+                seenKeys.add(uniqueKey);
+                uniqueItems.push(event);
+            });
+
+            if (!uniqueItems.length) return '';
+
+            return `<div class="event-dots">${uniqueItems.slice(0, 4).map(event => `<span class="event-dot" style="--event-dot-color:${getCalendarItemColor(event)}"></span>`).join('')}</div>`;
         }
 
         function getMonthPrefix(year, month) {
@@ -2863,6 +3369,9 @@ themeToggle.addEventListener('click', () => {
 
             let day = 1;
             const todayStr = toDateStr(new Date());
+            const monthStart = `${currentCalYear}-${String(currentCalMonth + 1).padStart(2,'0')}-01`;
+            const monthEnd = `${currentCalYear}-${String(currentCalMonth + 1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
+            const monthItems = getAllCalendarItems(monthStart, monthEnd);
             for (let week = 0; week < 6; week++) {
                 html += '<tr>';
                 for (let w = 0; w < 7; w++) {
@@ -2875,9 +3384,9 @@ themeToggle.addEventListener('click', () => {
                         dateStr = `${currentCalYear}-${String(currentCalMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                         content = `<div class="cal-day-number">${d}</div>`;
                         // event indicator
-                        const events = getAllCalendarItems().filter(ev => ev.date === dateStr);
+                        const events = monthItems.filter(ev => ev.date === dateStr);
                         if (events.length) {
-                            content += '<div class="event-dot"></div>';
+                            content += renderCalendarDots(events);
                         }
                         day++;
                     }
@@ -2913,19 +3422,21 @@ themeToggle.addEventListener('click', () => {
             const selectedText = d.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month:'2-digit', year:'numeric' });
             label.textContent = selectedText;
             if (selectedHint) selectedHint.textContent = `Ausgewählt: ${selectedText}`;
-            const events = getAllCalendarItems().filter(ev => ev.date === dateStr);
+            const events = getAllCalendarItems(dateStr, dateStr).filter(ev => ev.date === dateStr);
             if (!events.length) {
                 listEl.innerHTML = '<p style="color:var(--color-text-muted)">Keine Ereignisse</p>';
             } else {
                 listEl.innerHTML = events.map(ev => {
-                    const icon = ev.type === 'exam' ? '📝' : ev.type === 'todo' ? '✅' : '📌';
+                    const icon = ev.type === 'exam' ? '📝' : ev.type === 'todo' ? '✅' : ev.type === 'holiday' ? '🎉' : '📌';
                     let deleteBtn = '';
                     if (ev.type === 'extra') {
                         if (ev.id) {
-                            deleteBtn = `<button class="btn-icon" onclick="deleteCalendarEvent('${ev.id}')" title="Löschen">🗑️</button>`;
+                            deleteBtn = `<button class="btn-icon" onclick="deleteCalendarEvent('${ev.id}', '${ev.date}', '${ev.recurrence || 'none'}')" title="${ev.recurrence && ev.recurrence !== 'none' ? 'Termin oder Serie löschen' : 'Löschen'}">🗑️</button>`;
                         }
                     }
-                    return `<div class="calendar-event-item ${ev.type}">${icon} <strong>${escapeHtml(ev.title)}</strong>${ev.description ? ' – ' + escapeHtml(ev.description) : ''}${deleteBtn}</div>`;
+                    const recurringLabel = getCalendarRecurrenceLabel(ev.recurrence);
+                    const recurringText = recurringLabel ? ` · ${recurringLabel}` : '';
+                    return `<div class="calendar-event-item ${ev.type}"><div class="calendar-event-content"><span class="calendar-event-dot" style="--event-dot-color:${getCalendarItemColor(ev)}"></span><span>${icon}</span><span class="calendar-event-text"><strong>${escapeHtml(ev.title)}</strong>${recurringText}${ev.description ? ' – ' + escapeHtml(ev.description) : ''}</span></div>${deleteBtn}</div>`;
                 }).join('');
             }
             wrapper.style.display = 'block';
@@ -2938,11 +3449,6 @@ themeToggle.addEventListener('click', () => {
                 currentCalYear--;
             }
 
-            const monthPrefix = getMonthPrefix(currentCalYear, currentCalMonth);
-            if (!currentSelectedDate || !currentSelectedDate.startsWith(monthPrefix)) {
-                currentSelectedDate = getVisibleDefaultDate();
-            }
-
             renderCalendar();
             showEventsForDate(currentSelectedDate, false);
         }
@@ -2953,20 +3459,65 @@ themeToggle.addEventListener('click', () => {
                 currentCalYear++;
             }
 
-            const monthPrefix = getMonthPrefix(currentCalYear, currentCalMonth);
-            if (!currentSelectedDate || !currentSelectedDate.startsWith(monthPrefix)) {
-                currentSelectedDate = getVisibleDefaultDate();
-            }
-
             renderCalendar();
             showEventsForDate(currentSelectedDate, false);
         }
 
-        async function deleteCalendarEvent(eventId) {
+        async function deleteCalendarEvent(eventId, occurrenceDate = '', recurrence = 'none') {
             if (!eventId) return;
 
+            if (recurrence && recurrence !== 'none') {
+                pendingCalendarDelete = { eventId, occurrenceDate, recurrence };
+                openCalendarDeleteModal();
+                return;
+            }
+
+            await performCalendarDelete(eventId, 'series', occurrenceDate);
+        }
+
+        function openCalendarDeleteModal() {
+            const modal = document.getElementById('calendarDeleteModal');
+            const textEl = document.getElementById('calendarDeleteModalText');
+            if (!modal || !pendingCalendarDelete) return;
+
+            const recurringLabel = getCalendarRecurrenceLabel(pendingCalendarDelete.recurrence);
+            if (textEl) {
+                textEl.textContent = recurringLabel
+                    ? `Dieser Termin wiederholt sich ${recurringLabel}. Soll nur dieses Vorkommen oder die komplette Serie gelöscht werden?`
+                    : 'Wie soll der Termin gelöscht werden?';
+            }
+
+            modal.classList.add('open');
+        }
+
+        function closeCalendarDeleteModal() {
+            const modal = document.getElementById('calendarDeleteModal');
+            if (!modal) return;
+            modal.classList.remove('open');
+            pendingCalendarDelete = null;
+        }
+
+        async function confirmCalendarDelete(deleteScope) {
+            if (!pendingCalendarDelete) return;
+
+            const { eventId, occurrenceDate } = pendingCalendarDelete;
+            closeCalendarDeleteModal();
+            await performCalendarDelete(eventId, deleteScope, occurrenceDate);
+        }
+
+        async function performCalendarDelete(eventId, deleteScope = 'series', occurrenceDate = '') {
+            if (!eventId) return;
+
+            const params = new URLSearchParams({
+                event_id: eventId,
+                delete_scope: deleteScope || 'series'
+            });
+            if (occurrenceDate) {
+                params.set('occurrence_date', occurrenceDate);
+            }
+
             try {
-                const res = await fetch(`calendar/calendar_delete.php?event_id=${encodeURIComponent(eventId)}`, {
+                const res = await fetch(`calendar/calendar_delete.php?${params.toString()}`, {
                     method: 'POST'
                 });
                 if (!res.ok) throw new Error();
@@ -3460,9 +4011,11 @@ themeToggle.addEventListener('click', () => {
         function renderOverviewCalendar() {
             const container = document.getElementById('overviewCalendar');
             if (!container) return;
-            const items = getAllCalendarItems();
             const today = new Date();
             today.setHours(0,0,0,0);
+            const todayStr = toDateStr(today);
+            const rangeEnd = addDaysToDateStr(todayStr, 180);
+            const items = getAllCalendarItems(todayStr, rangeEnd);
             const upcoming = items
                 .filter(ev => new Date(ev.date + 'T00:00:00') >= today)
                 .sort((a,b) => new Date(a.date) - new Date(b.date))
@@ -3477,10 +4030,13 @@ themeToggle.addEventListener('click', () => {
                 let icon = '📌';
                 if (ev.type === 'exam') icon = '📝';
                 if (ev.type === 'todo') icon = '✅';
+                if (ev.type === 'holiday') icon = '🎉';
+                const recurringLabel = getCalendarRecurrenceLabel(ev.recurrence);
+                const recurringText = recurringLabel ? ` · ${recurringLabel}` : '';
                 return `<div class="grade-item">
                     <div>
                         <div>${icon} ${escapeHtml(ev.title)}</div>
-                        <div style="font-size:0.8rem;color:var(--color-text-muted);">${dateStr}${ev.description ? ' · ' + escapeHtml(ev.description) : ''}</div>
+                        <div style="font-size:0.8rem;color:var(--color-text-muted);">${dateStr}${recurringText}${ev.description ? ' · ' + escapeHtml(ev.description) : ''}</div>
                     </div>
                 </div>`;
             }).join('');
@@ -3802,6 +4358,7 @@ themeToggle.addEventListener('click', () => {
             const dateLabel = document.getElementById('calendarQuickAddDateLabel');
             const titleEl = document.getElementById('quickEventTitle');
             const descEl = document.getElementById('quickEventDesc');
+            const recurrenceEl = document.getElementById('quickEventRecurrence');
             if (!modal || !dateLabel) return;
 
             const selectedDate = currentSelectedDate || getVisibleDefaultDate();
@@ -3819,6 +4376,9 @@ themeToggle.addEventListener('click', () => {
 
             if (titleEl) titleEl.value = '';
             if (descEl) descEl.value = '';
+            if (recurrenceEl) recurrenceEl.value = 'none';
+
+            updateCalendarTitleSuggestions();
 
             modal.classList.add('open');
             if (titleEl) titleEl.focus();
@@ -3833,6 +4393,7 @@ themeToggle.addEventListener('click', () => {
         async function submitCalendarQuickAdd() {
             const titleEl = document.getElementById('quickEventTitle');
             const descEl = document.getElementById('quickEventDesc');
+            const recurrenceEl = document.getElementById('quickEventRecurrence');
             const selectedDate = currentSelectedDate || getVisibleDefaultDate();
             if (!titleEl || !selectedDate) return;
 
@@ -3849,6 +4410,7 @@ themeToggle.addEventListener('click', () => {
                     body: JSON.stringify({
                         title,
                         date: selectedDate,
+                        recurrence: recurrenceEl ? recurrenceEl.value : 'none',
                         description: descEl ? descEl.value.trim() : ''
                     })
                 });

@@ -34,12 +34,36 @@
                             <div class="modal-section">
                                 <h3>Ausgewählter Tag</h3>
                                 <p id="calendarQuickAddDateLabel" style="color:var(--color-text-secondary); margin-bottom:0.4rem;">-</p>
-                                <input type="text" id="quickEventTitle" placeholder="Titel...">
+                                <div class="calendar-title-input-row">
+                                    <span id="calendarTitleColorPreview" class="calendar-title-preview-dot"></span>
+                                    <input type="text" id="quickEventTitle" placeholder="Titel..." autocomplete="off" oninput="updateCalendarTitleSuggestions(this.value)" onfocus="updateCalendarTitleSuggestions(this.value)">
+                                </div>
+                                <div id="calendarTitleSuggestions" class="calendar-title-suggestions"></div>
                                 <input type="text" id="quickEventDesc" placeholder="Beschreibung (optional)...">
+                                <label class="calendar-repeat-label" for="quickEventRecurrence">Wiederholung</label>
+                                <select id="quickEventRecurrence" class="calendar-repeat-select">
+                                    <option value="none">Keine</option>
+                                    <option value="weekly">Wöchentlich</option>
+                                    <option value="monthly">Monatlich</option>
+                                </select>
                             </div>
                             <div class="modal-footer">
                                 <button class="modal-btn modal-btn-primary" onclick="submitCalendarQuickAdd()">Speichern</button>
                                 <button class="modal-btn modal-btn-close" onclick="closeCalendarQuickAddModal()">Abbrechen</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-overlay" id="calendarDeleteModal">
+                        <div class="modal-box" style="max-width: 460px;">
+                            <h2>🗑️ Wiederkehrenden Termin löschen</h2>
+                            <div class="modal-section">
+                                <p id="calendarDeleteModalText" style="color:var(--color-text-secondary); margin:0;">Wie soll der Termin gelöscht werden?</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="modal-btn modal-btn-primary" onclick="confirmCalendarDelete('occurrence')">Nur diesen Termin</button>
+                                <button class="modal-btn modal-btn-danger" onclick="confirmCalendarDelete('series')">Ganze Serie</button>
+                                <button class="modal-btn modal-btn-close" onclick="closeCalendarDeleteModal()">Abbrechen</button>
                             </div>
                         </div>
                     </div>

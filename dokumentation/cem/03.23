@@ -1,0 +1,172 @@
+Datum: 23.03.2026
+Autor: Cem (Dokumentation durch Copilot)
+
+Chat-Dokumentation
+
+1. Thema und Ziel
+- Erweiterung und Verfeinerung der Kalenderfunktion im LearnHub-Dashboard.
+- Fokus auf bessere Bedienung, konsistente Farben, Wiederholungen, Feiertage und ein sauberes Navigationsverhalten.
+
+2. Kurzfassung
+- Die Farbe des aktuellen Tages im Kalender wurde lokalisiert und erklaert.
+- Die Erstellung von Kalendereintraegen wurde verbessert: vorhandene Titel koennen erneut ausgewaehlt werden, neue Titel bleiben weiterhin als Freitext moeglich.
+- Eintraege mit gleichem Titel bekommen dieselbe Punktfarbe im Kalender.
+- Die Vorschlagsliste fuer Titel wurde visuell mit Farbpunkten ausgebaut und nach Haeufigkeit sortiert.
+- Wiederkehrende Termine wurden zuerst woechentlich, danach allgemein mit den Optionen keine, woechentlich und monatlich umgesetzt.
+- Beim Loeschen wiederkehrender Termine kann nun zwischen einem einzelnen Vorkommen und der gesamten Serie unterschieden werden.
+- Bundesweite deutsche Feiertage werden automatisch in den Kalender eingetragen.
+- Das Kalenderverhalten wurde so angepasst, dass beim Oeffnen immer der heutige Tag ausgewaehlt wird, waehrend ein Monatswechsel die ausgewaehlte Tagesauswahl nicht mehr veraendert.
+
+3. Umgesetzte technische Aenderungen
+- Analyse und Dokumentation der heutigen Tagesmarkierung und ihrer CSS-Farben im Kalender.
+- Kalender-Modal erweitert:
+  - vorhandene Titel als Vorschlaege
+  - Farbpunkte fuer Vorschlaege
+  - Farbvorschau fuer den aktuell eingegebenen Titel
+  - Priorisierung haeufig verwendeter Titel
+- Farbzuordnung ueberarbeitet:
+  - gleiche Titel erhalten dieselbe Farbe
+  - Feiertage erhalten eine eigene feste Farbe
+- Wiederholungslogik umgesetzt:
+  - zunaechst woechentlich
+  - spaeter allgemeines recurrence-Modell mit none, weekly, monthly
+  - Ausnahme-Daten fuer geloeschte Einzelvorkommen
+- Loeschlogik erweitert:
+  - nur ein einzelnes Vorkommen loeschen
+  - oder ganze Serie loeschen
+- Deutsche Feiertage automatisch berechnet:
+  - feste Feiertage
+  - bewegliche Feiertage ueber Osterberechnung
+- Kalendernavigation angepasst:
+  - beim Oeffnen des Kalenders immer heute selektieren
+  - beim Monatswechsel aktuelle Auswahl nicht automatisch aendern
+
+4. Betroffene Dateien
+- current_dashboard.php
+- tabs/calendar.php
+- backend.py
+- calendar/calendar_add.php
+- calendar/calendar_delete.php
+
+5. Ergebnis
+- Der Kalender ist funktional deutlich erweitert und konsistenter in der Bedienung.
+- Titelvorschlaege und Farblogik sind nachvollziehbar und visuell klarer.
+- Wiederkehrende Termine und Feiertage erscheinen automatisch in Monatsansicht, Tagesansicht und Uebersicht.
+- Das Navigationsverhalten des Kalenders entspricht jetzt dem vom User gewuenschten Verhalten.
+
+6. Prompts und Antworten
+
+Prompt 1 (User):
+"wo ist die farbe des aktuellen tages im kalender"
+
+Antwort (Assistent):
+- Analyse der Kalenderansicht und Suche nach der CSS-Klasse fuer den heutigen Tag.
+- Ergebnis: Die Farbe des heutigen Tages wurde in current_dashboard.php identifiziert.
+- Zusaetzlich wurde gezeigt, wo die cal-today-Klasse vergeben wird.
+
+Prompt 2 (User):
+"wenn man davor schon titel eingegeben hat soll man die erneut als auswahl waehlenkoennen aber auch weiterhin neue titel schreiben. alle ereignisse mit dem selben titel sollen im kalender den selben punkt also die selbe farbe haben"
+
+Antwort (Assistent):
+- Kalender-Modal und Lade-/Renderlogik analysiert.
+- Vorschlagslogik fuer vorhandene Titel eingebaut.
+- Freitext-Eingabe beibehalten.
+- Punktfarbe titelbasiert vereinheitlicht, damit gleiche Titel dieselbe Farbe erhalten.
+- Tagesansicht und Monatsansicht mit derselben Farblogik verknuepft.
+
+Prompt 3 (User):
+"es soll nicht zweimal eine aehnliche farbe existieren. wenn man die davorigen hinzufuegt soll auch die farbe in der auswahl visualisiert werden"
+
+Antwort (Assistent):
+- Datalist durch eine visuelle Vorschlagsliste ersetzt.
+- Vorschlaege mit Farbpunkten versehen.
+- Farbverteilung auf eine eindeutiger getrennte Palette umgestellt.
+- Vorschaupunkt fuer den aktuellen Titel ergaenzt.
+
+Prompt 4 (User):
+"wie viele vorauswahlen werden maximal angezeigt?"
+
+Antwort (Assistent):
+- Rueckmeldung: Maximal 8 Vorschlaege werden angezeigt.
+
+Prompt 5 (User):
+"es sollen immer die bevorzugt werden die am oeftesten im kalender sind"
+
+Antwort (Assistent):
+- Sortierlogik der Vorschlaege angepasst.
+- Titel werden jetzt gezaehlt und nach Haeufigkeit priorisiert.
+- Bei gleicher Anzahl erfolgt alphabetische Sortierung.
+
+Prompt 6 (User):
+"man soll auch sagen hinzufuegen die sich woechentlich wiederholen zb fussballtraining"
+
+Antwort (Assistent):
+- Backend und Frontend erweitert um ein Feld fuer woechentliche Wiederholung.
+- Woechentliche Serien werden nicht einzeln gespeichert, sondern im Frontend fuer relevante Zeitraeume erzeugt.
+- Serien erscheinen in Monatsansicht, Tagesansicht und Uebersicht.
+
+Prompt 7 (User):
+"es sollen immer die bevorzugt werden die am oeftesten im kalender sind"
+
+Antwort (Assistent):
+- Bereits vorhandene Titelvorschlaege werden nach Nutzungs-Haeufigkeit im Kalender geordnet.
+- Haeufige Eintraege erscheinen zuerst in den maximal 8 Vorschlaegen.
+
+Prompt 8 (User):
+"Ich kann als Naechstes noch eine Option ergaenzen, ob beim Loeschen nur ein einzelnes Vorkommen oder die komplette Serie geloescht werden soll. Ich kann zusaetzlich monatliche Wiederholungen einbauen, falls du mehr als nur woechentlich brauchst. tu das"
+
+Antwort (Assistent):
+- Wiederholungsmodell von einer simplen Wochen-Checkbox auf recurrence umgestellt.
+- Neue Optionen: none, weekly, monthly.
+- Backend erweitert um recurrence und exception_dates.
+- Loesch-Dialog eingebaut mit den Optionen:
+  - Nur dieses Vorkommen
+  - Ganze Serie
+- Einzelne geloeschte Wiederholungen werden als Ausnahme-Datum gespeichert.
+
+Prompt 9 (User):
+"wo steht die farbe wo steht \"nur dieses...\""
+
+Antwort (Assistent):
+- Fundstelle des Buttons "Nur dieses Vorkommen" in tabs/calendar.php genannt.
+- CSS-Klasse modal-btn-primary in current_dashboard.php als Farbquelle identifiziert.
+
+Prompt 10 (User):
+"was ist die primary colour?"
+
+Antwort (Assistent):
+- Rueckmeldung zur CSS-Variable --color-primary.
+- Light Mode: #0d6efd.
+- Dark Mode: #38bdf8.
+
+Prompt 11 (User):
+"die deutschen feiertage sollen alle automatisch eingetragen sein"
+
+Antwort (Assistent):
+- Automatische Feiertagsberechnung in die Kalenderlogik eingebaut.
+- Umgesetzt wurden bundesweite Feiertage:
+  - Neujahr
+  - Karfreitag
+  - Ostermontag
+  - Tag der Arbeit
+  - Christi Himmelfahrt
+  - Pfingstmontag
+  - Tag der Deutschen Einheit
+  - 1. Weihnachtstag
+  - 2. Weihnachtstag
+- Feiertage erscheinen mit eigener Farbe und eigenem Icon.
+
+Prompt 12 (User):
+"wenn man auf den kalender clickt soll immer der heutige tag ausgwaehlt sein. aendert man den, monat soll immer noch der selbe tag ausgewaehlt sein, also wird kein tag im monat angezeigt, da er nicht zu sehen ist. verstehst du was ich meine? also wenn man auf den pfeil klickt soll nichts mit dem ausgewaehlten tag sich aendern."
+
+Antwort (Assistent):
+- Kalender-View so angepasst, dass beim Oeffnen immer heute ausgewaehlt wird.
+- Monatswechsel aendern die gewaehlte Auswahl nicht mehr automatisch.
+- Wenn der ausgewaehlte Tag im neuen Monat nicht sichtbar ist, bleibt intern dieselbe Auswahl bestehen, es wird aber im Raster kein Tag markiert.
+
+Prompt 13 (User):
+"genau so perfekt"
+
+Antwort (Assistent):
+- Rueckmeldung akzeptiert.
+- Zusatzvorschlag gemacht, bei Bedarf die ausgewaehlte Tagesanzeige noch deutlicher sichtbar zu machen.

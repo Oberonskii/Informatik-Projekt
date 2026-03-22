@@ -156,10 +156,33 @@ def init_db():
         user_id TEXT,
         title TEXT,
         date TEXT,
+        repeat_weekly INTEGER DEFAULT 0,
+        recurrence TEXT DEFAULT 'none',
+        exception_dates TEXT DEFAULT '[]',
         description TEXT,
         created_at TEXT
     )
     """)
+
+    try:
+        cursor.execute("ALTER TABLE calendar_extras ADD COLUMN repeat_weekly INTEGER DEFAULT 0")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE calendar_extras ADD COLUMN recurrence TEXT DEFAULT 'none'")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE calendar_extras ADD COLUMN exception_dates TEXT DEFAULT '[]'")
+    except Exception:
+        pass
+    cursor.execute(
+        """
+        UPDATE calendar_extras
+        SET recurrence='weekly'
+        WHERE repeat_weekly=1 AND (recurrence IS NULL OR recurrence='' OR recurrence='none')
+        """
+    )
 
     # GRADES
     cursor.execute("""
@@ -595,6 +618,7 @@ class ExamCreate(BaseModel):
 class CalendarExtraCreate(BaseModel):
     title: str
     date: str
+    recurrence: str = "none"
     description: Optional[str] = ""
 
 
@@ -1616,17 +1640,23 @@ def create_calendar_extra(user_id: str, event: CalendarExtraCreate):
     db = get_db()
     cursor = db.cursor()
     event_id = generate_id()
+    recurrence = (event.recurrence or "none").strip().lower()
+    if recurrence not in {"none", "weekly", "monthly"}:
+        raise HTTPException(status_code=400, detail="Ungültige Wiederholung")
 
     cursor.execute(
         """
-        INSERT INTO calendar_extras (id, user_id, title, date, description, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO calendar_extras (id, user_id, title, date, repeat_weekly, recurrence, exception_dates, description, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             event_id,
             user_id,
             event.title,
             event.date,
+            1 if recurrence == "weekly" else 0,
+            recurrence,
+            "[]",
             event.description or "",
             datetime.utcnow().isoformat()
         )
@@ -1653,9 +1683,58 @@ def get_calendar_extras(user_id: str):
 
 
 @app.delete("/calendar-extras/{user_id}/{event_id}")
-def delete_calendar_extra(user_id: str, event_id: str):
+def delete_calendar_extra(
+    user_id: str,
+    event_id: str,
+    delete_scope: str = "series",
+    occurrence_date: Optional[str] = None,
+):
     db = get_db()
     cursor = db.cursor()
+    delete_scope = (delete_scope or "series").strip().lower()
+    if delete_scope not in {"series", "occurrence"}:
+        raise HTTPException(status_code=400, detail="Ungültiger Löschmodus")
+
+    cursor.execute(
+        """
+        SELECT recurrence, exception_dates, repeat_weekly
+        FROM calendar_extras
+        WHERE id=? AND user_id=?
+        """,
+        (event_id, user_id)
+    )
+    row = cursor.fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Termin nicht gefunden")
+
+    recurrence = str(row["recurrence"] or "none").strip().lower()
+    if recurrence not in {"none", "weekly", "monthly"}:
+        recurrence = "weekly" if row["repeat_weekly"] == 1 else "none"
+
+    if delete_scope == "occurrence" and recurrence in {"weekly", "monthly"}:
+        if not occurrence_date:
+            raise HTTPException(status_code=400, detail="occurrence_date fehlt")
+
+        try:
+            parsed = json.loads(row["exception_dates"] or "[]")
+            exception_dates = [str(value) for value in parsed if str(value)] if isinstance(parsed, list) else []
+        except Exception:
+            exception_dates = []
+
+        if occurrence_date not in exception_dates:
+            exception_dates.append(occurrence_date)
+            exception_dates.sort()
+
+        cursor.execute(
+            """
+            UPDATE calendar_extras
+            SET exception_dates=?
+            WHERE id=? AND user_id=?
+            """,
+            (json.dumps(exception_dates), event_id, user_id)
+        )
+        db.commit()
+        return {"message": "Vorkommen gelöscht"}
 
     cursor.execute(
         """
