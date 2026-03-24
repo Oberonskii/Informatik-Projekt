@@ -21,7 +21,8 @@ $payload = json_encode([
     'subject' => $input['subject'],
     'date' => $input['date'],
     'topic' => $input['topic'] ?? '',
-    'period' => isset($input['period']) && $input['period'] !== '' ? (int)$input['period'] : null
+    'period' => isset($input['period']) && $input['period'] !== '' ? (int)$input['period'] : null,
+    'period_end' => isset($input['period_end']) && $input['period_end'] !== '' ? (int)$input['period_end'] : null
 ]);
 
 $ch = curl_init();

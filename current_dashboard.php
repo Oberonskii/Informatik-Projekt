@@ -1097,13 +1097,16 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         }
 
         .tt-subject-cell.has-exam {
-            background-color: rgba(220, 53, 69, 0.1);
-            border-color: rgba(220, 53, 69, 0.4);
+            background-color: rgba(220, 53, 69, 0.12);
+            border-color: var(--color-danger);
+            border-width: 1px;
+            box-shadow: inset 0 0 0 1px rgba(220, 53, 69, 0.12);
         }
 
         .tt-subject-cell.has-exam.today-col {
-            background-color: rgba(220, 53, 69, 0.15);
+            background-color: rgba(220, 53, 69, 0.16);
             border-color: var(--color-danger);
+            border-width: 1px;
         }
 
         .tt-exam-badge {
@@ -2838,8 +2841,16 @@ themeToggle.addEventListener('click', () => {
                 const examDate = new Date(exam.date + 'T00:00:00');
                 if (examDate >= monday && examDate <= friday) {
                     const dayKey = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][examDate.getDay()];
-                    if (exam.period) {
-                        const key = `${dayKey}-${exam.period}`;
+                    const start = parseInt(exam.period, 10);
+                    if (!Number.isInteger(start) || start < 1 || start > 10) return;
+
+                    let end = parseInt(exam.end_period, 10);
+                    if (!Number.isInteger(end)) end = start;
+                    if (end < start) end = start;
+                    end = Math.min(end, 10);
+
+                    for (let p = start; p <= end; p++) {
+                        const key = `${dayKey}-${p}`;
                         if (!highlights[key]) highlights[key] = [];
                         highlights[key].push(exam);
                     }
@@ -2895,25 +2906,23 @@ themeToggle.addEventListener('click', () => {
                     const examKey  = `${day}-${p}`;
                     const hwKey    = `${day}-${p}`;
                     const hasExam  = !!examHighlights[examKey];
-                    const examList = hasExam ? examHighlights[examKey] : [];
                     const hwList   = homeworkHighlights[hwKey] || [];
 
                     let cls = 'tt-subject-cell';
                     if (isToday) cls += ' today-col';
                     if (hasExam) cls += ' has-exam';
-                    if (hwList.length) cls += ' has-homework';
+                    if (!hasExam && hwList.length) cls += ' has-homework';
 
                     html += `<div class="${cls}">`;
                     if (subject) {
                         html += `<span class="tt-subject-name">${escapeHtml(subject)}</span>`;
                         if (room) html += `<span class="tt-room">${escapeHtml(room)}</span>`;
                     }
-                    examList.forEach(ex => {
-                        html += `<span class="tt-exam-badge">📝 ${escapeHtml(ex.subject)}</span>`;
-                    });
-                    hwList.forEach(hw => {
-                        html += `<span class="tt-homework-badge">📚 ${escapeHtml(hw)}</span>`;
-                    });
+                    if (!hasExam) {
+                        hwList.forEach(hw => {
+                            html += `<span class="tt-homework-badge">📚 ${escapeHtml(hw)}</span>`;
+                        });
+                    }
                     html += '</div>';
                 });
             }
@@ -3052,20 +3061,20 @@ themeToggle.addEventListener('click', () => {
                 const isToday = day === todayKey;
                 const dayHw   = homework[day] || {};
                 const periods = getScheduledPeriodsForDay(day);
+                const hasHomework = Object.values(dayHw).some(list => Array.isArray(list) && list.length > 0);
                 html += `<div class="tt-hw-day ${isToday ? 'today' : ''}">
                     <div class="tt-hw-day-title">${TT_DAY_NAMES[day]}</div>`;
 
                 if (!periods.length) {
-                    html += '<p style="font-size:0.82rem;color:var(--color-text-muted);">Keine Stunden eingetragen</p>';
+                    html += '<p style="font-size:0.82rem;color:var(--color-text-muted);">Keine Hausaufgaben</p>';
+                } else if (!editable && !hasHomework) {
+                    html += '<p style="font-size:0.82rem;color:var(--color-text-muted);">Keine Hausaufgaben</p>';
                 } else {
                     periods.forEach(period => {
                         const key = String(period);
                         const periodHomework = dayHw[key] || [];
-                        const cell = (timetableData[day] || {})[period] || {};
                         html += `<div style="margin-bottom:0.65rem;">
-                            <div style="font-size:0.78rem;color:var(--color-text-muted);margin-bottom:0.25rem;">
-                                ${period}. Stunde${cell.subject ? ' · ' + escapeHtml(cell.subject) : ''}
-                            </div>`;
+                            ${editable ? `<div style="font-size:0.78rem;color:var(--color-text-muted);margin-bottom:0.25rem;">${period}. Stunde</div>` : ''}`;
 
                         periodHomework.forEach(hw => {
                             html += `<div class="tt-hw-item">
@@ -3130,13 +3139,40 @@ themeToggle.addEventListener('click', () => {
         }
 
         // ===== KLASSENARBEITEN =====
+        function updateExamPeriodRangeOptions() {
+            const periodEl = document.getElementById('examPeriod');
+            const periodEndEl = document.getElementById('examPeriodEnd');
+            if (!periodEl || !periodEndEl) return;
+
+            const start = parseInt(periodEl.value, 10);
+            if (!Number.isInteger(start) || start < 1 || start > 10) {
+                periodEndEl.innerHTML = '<option value="">bis zur ...</option>';
+                periodEndEl.value = '';
+                periodEndEl.style.display = 'none';
+                return;
+            }
+
+            let options = '<option value="">bis zur ...</option>';
+            for (let p = start; p <= 10; p++) {
+                options += `<option value="${p}">${p}. Stunde</option>`;
+            }
+            periodEndEl.innerHTML = options;
+            periodEndEl.value = '';
+            periodEndEl.style.display = '';
+        }
+
         async function addExam() {
             const subjectEl = document.getElementById('examSubject');
             const dateEl    = document.getElementById('examDate');
             const topicEl   = document.getElementById('examTopic');
             const periodEl  = document.getElementById('examPeriod');
+            const periodEndEl = document.getElementById('examPeriodEnd');
 
             if (!subjectEl.value.trim() || !dateEl.value) return;
+
+            const period = periodEl && periodEl.value ? parseInt(periodEl.value, 10) : null;
+            const periodEndRaw = periodEndEl && periodEndEl.value ? parseInt(periodEndEl.value, 10) : null;
+            const periodEnd = period && periodEndRaw && periodEndRaw >= period ? periodEndRaw : null;
 
             try {
                 const res = await fetch('exams/exam_add.php', {
@@ -3146,7 +3182,8 @@ themeToggle.addEventListener('click', () => {
                         subject: subjectEl.value.trim(),
                         date: dateEl.value,
                         topic: topicEl ? topicEl.value.trim() : '',
-                        period: periodEl && periodEl.value ? parseInt(periodEl.value, 10) : null
+                        period: period,
+                        period_end: periodEnd
                     })
                 });
                 if (!res.ok) throw new Error();
@@ -3155,11 +3192,25 @@ themeToggle.addEventListener('click', () => {
                 dateEl.value    = '';
                 if (topicEl)  topicEl.value  = '';
                 if (periodEl) periodEl.value = '';
+                updateExamPeriodRangeOptions();
 
                 await loadExamsData();
             } catch (err) {
                 console.error('Klassenarbeit konnte nicht gespeichert werden', err);
             }
+        }
+
+        function formatExamPeriod(exam) {
+            const start = parseInt(exam.period, 10);
+            if (!Number.isInteger(start) || start < 1 || start > 10) return '';
+
+            let end = parseInt(exam.end_period, 10);
+            if (!Number.isInteger(end) || end < start) end = start;
+            end = Math.min(end, 10);
+
+            return end > start
+                ? ` · ${start}. bis ${end}. Stunde`
+                : ` · ${start}. Stunde`;
         }
 
         async function deleteExam(examId) {
@@ -3273,7 +3324,7 @@ themeToggle.addEventListener('click', () => {
                 const d       = new Date(exam.date + 'T00:00:00');
                 const dateStr = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
                 const isPast  = d < today;
-                const period  = exam.period ? ` · ${exam.period}. Stunde` : '';
+                const period  = formatExamPeriod(exam);
                 const topic   = exam.topic  ? ` · ${escapeHtml(exam.topic)}` : '';
                 const gradeDisplay = exam.grade !== null && exam.grade !== undefined 
                     ? `<span style="font-size:0.9rem;color:var(--color-success);font-weight:600;">${exam.grade}</span>`

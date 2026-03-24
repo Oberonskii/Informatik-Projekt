@@ -143,3 +143,84 @@ Antwort / Umsetzung:
 Zusammenfassung der neu betroffenen Dateien:
 - current_dashboard.php (Sidebar-Modulreihenfolge und individuelle Icons)
 - dokumentation/cem/03.24 (Ergaenzung der Chat-Dokumentation)
+
+---
+
+Prompt 14:
+"wenn im stundenplan klassenarbeiten angezeigt werden soll nicht das fach dort stehen sondern das feld soll vollständig rot markiert sein."
+
+Antwort / Umsetzung:
+- Die Klassenarbeits-Zellen im Stundenplan wurden auf rote Markierung umgestellt.
+- Initial wurde der Fachtext in diesen Zellen ausgeblendet.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 15:
+"es soll weiterhin das fach und raum stehen so wie in allen anderen feldern"
+
+Antwort / Umsetzung:
+- Die Darstellung wurde angepasst, sodass bei Klassenarbeiten wieder Fach und Raum in der Zelle angezeigt werden.
+- Die rote Klassenarbeits-Markierung bleibt weiterhin erhalten.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 16:
+"kannst du es mehr so umranden wie bei dem aktuellen tag"
+
+Antwort / Umsetzung:
+- Klassenarbeits-Zellen wurden visuell von voller Flaechenfarbe auf eine umrandete Hervorhebung umgestellt.
+- Es wurde ein roter Rand mit leichter roter Hintergrundtoenung gesetzt.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 17:
+"der rand soll dünner sein"
+
+Antwort / Umsetzung:
+- Die Rahmenstaerke der Klassenarbeits-Markierung wurde von 2px auf 1px reduziert.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 18:
+"wenn man bei klassenarbeiten auf 3.stunde z.b klickt soll eine verkettete option kommen mit bis zur ..."
+
+Antwort / Umsetzung:
+- Im Klassenarbeiten-Formular wurde eine verknuepfte Endstunden-Auswahl eingefuehrt ("bis zur ...").
+- Die Endstunde wird als `period_end` an den PHP-Endpoint und dann ans Backend uebergeben.
+- Im Backend wurde `end_period` in Modell, DB-Schema/Migration und Insert-Logik ergaenzt.
+- Die Stundenplan-Hervorhebung fuer Klassenarbeiten markiert jetzt den gesamten Bereich von Start- bis Endstunde.
+- In der Klassenarbeiten-Liste wird der Zeitraum als "x. bis y. Stunde" angezeigt.
+- Betroffene Dateien: tabs/exams.php, exams/exam_add.php, backend.py, current_dashboard.php
+
+---
+
+Prompt 19:
+"im stunen plan bei den hausaufgaben sollen nicht die stunden angegeben werden, wann die hausaufgaben eingetragen wurden , sondern nur die hausaufgabe selbst."
+
+Antwort / Umsetzung:
+- In der Stundenplan-Hausaufgabenansicht wurde die Stundenzeile ausgeblendet, sodass nur die Hausaufgaben-Texte angezeigt werden.
+- Im bearbeitbaren Modus bleibt die Eingabelogik erhalten.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 20:
+"wenn keine hausaufgaben eingetragen sind soll dort stehen: \"keine Hausaufgaben\", und es soll nicht stehen \"keine Stunden eingetragen"
+
+Antwort / Umsetzung:
+- Der Leerzustandstext wurde von "Keine Stunden eingetragen" auf "Keine Hausaufgaben" geaendert.
+- Der Hinweis "Keine Hausaufgaben" wird auch dann angezeigt, wenn Stunden existieren, aber keine Hausaufgaben vorliegen.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Zusammenfassung der zusaetzlich betroffenen Dateien:
+- current_dashboard.php (Klassenarbeiten-Markierung, Bereichslogik, Hausaufgabenanzeige, Leerzustaende)
+- tabs/exams.php (UI fuer Start-/Endstunde bei Klassenarbeiten)
+- exams/exam_add.php (Weitergabe von period_end)
+- backend.py (Schema-/Modell-Erweiterung um end_period)
+- dokumentation/cem/03.24 (laufende Chat-Dokumentation)

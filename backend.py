@@ -144,6 +144,7 @@ def init_db():
         date TEXT,
         topic TEXT,
         period INTEGER,
+        end_period INTEGER,
         grade REAL,
         created_at TEXT
     )
@@ -221,6 +222,12 @@ def init_db():
     # Add grade column to exams if it doesn't exist yet (migration path for existing DBs)
     try:
         cursor.execute("ALTER TABLE exams ADD COLUMN grade REAL")
+    except Exception:
+        pass  # column already present
+
+    # Add end_period column to exams if it doesn't exist yet (migration path for existing DBs)
+    try:
+        cursor.execute("ALTER TABLE exams ADD COLUMN end_period INTEGER")
     except Exception:
         pass  # column already present
 
@@ -642,6 +649,7 @@ class ExamCreate(BaseModel):
     date: str
     topic: Optional[str] = ""
     period: Optional[int] = None
+    period_end: Optional[int] = None
 
 
 class CalendarExtraCreate(BaseModel):
@@ -1584,8 +1592,8 @@ def create_exam(user_id: str, exam: ExamCreate):
 
     cursor.execute(
         """
-        INSERT INTO exams (id, user_id, subject, date, topic, period, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO exams (id, user_id, subject, date, topic, period, end_period, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             exam_id,
@@ -1594,6 +1602,7 @@ def create_exam(user_id: str, exam: ExamCreate):
             exam.date,
             exam.topic or "",
             exam.period,
+            exam.period_end,
             datetime.utcnow().isoformat()
         )
     )
