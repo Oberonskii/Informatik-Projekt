@@ -95,3 +95,51 @@ Antwort / Umsetzung:
 Zusammenfassung der betroffenen Dateien:
 - current_dashboard.php (Dashboard Customize-Modus Overlay, Widget-Hervorhebung, Farbpunkt-Styling, Zeit-Layout)
 - tabs/calendar.php (Farbpunkt-Position, Uhrzeit-Label)
+
+---
+
+Prompt 10:
+"kannst du links die module nach dieser reihenfolge ordnen: Stundenplan, Hausaufgaben, Fächer, Noten, Klassenarbeiten, Kalender, To Dos, Karteikarten, Dateien,..."
+
+Antwort / Umsetzung:
+- Die Modul-Navigation in der linken Sidebar wurde in die gewuenschte Reihenfolge gebracht.
+- Die Reihenfolge wurde direkt im Sidebar-Block angepasst.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 11:
+"und bitte für jedes Modul ein individuelles icon hinzufügen die doppelt vorkommen"
+
+Antwort / Umsetzung:
+- Doppelte Modul-Icons wurden durch individuelle Symbole ersetzt.
+- Hausaufgaben wurde von 📚 auf ✏️ geaendert.
+- Noten wurde von 📝 auf 📈 geaendert.
+- Klassenarbeiten wurde voruebergehend von 📝 auf 🧪 geaendert.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 12:
+"lass klassenarbeiten wie es war"
+
+Antwort / Umsetzung:
+- Das Icon fuer Klassenarbeiten wurde wieder auf den urspruenglichen Zustand gesetzt.
+- Klassenarbeiten nutzt wieder 📝.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 13:
+"und ändere stundenplan noch um"
+
+Antwort / Umsetzung:
+- Das Icon fuer Stundenplan wurde zusaetzlich angepasst.
+- Stundenplan nutzt jetzt 🕒 statt 📅.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Zusammenfassung der neu betroffenen Dateien:
+- current_dashboard.php (Sidebar-Modulreihenfolge und individuelle Icons)
+- dokumentation/cem/03.24 (Ergaenzung der Chat-Dokumentation)

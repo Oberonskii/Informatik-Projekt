@@ -1697,33 +1697,33 @@ $is_admin = strtolower((string)$user_role) === 'admin';
 
                 <div class="nav-section">
                     <div class="nav-section-title">Module</div>
+                    <a class="nav-item" data-view="timetable">
+                        <span class="nav-icon">🕒</span>
+                        <span>Stundenplan</span>
+                    </a>
+                    <a class="nav-item" data-view="homework">
+                        <span class="nav-icon">✏️</span>
+                        <span>Hausaufgaben</span>
+                    </a>
                     <a class="nav-item" data-view="subjects">
                         <span class="nav-icon">📚</span>
                         <span>Fächer</span>
                     </a>
-                    <a class="nav-item" data-view="timetable">
-                        <span class="nav-icon">📅</span>
-                        <span>Stundenplan</span>
-                    </a>
                     <a class="nav-item" data-view="grades">
-                        <span class="nav-icon">📝</span>
+                        <span class="nav-icon">📈</span>
                         <span>Noten</span>
-                    </a>
-                    <a class="nav-item" data-view="todos">
-                        <span class="nav-icon">✅</span>
-                        <span>To-Dos</span>
                     </a>
                     <a class="nav-item" data-view="exams">
                         <span class="nav-icon">📝</span>
                         <span>Klassenarbeiten</span>
                     </a>
-                    <a class="nav-item" data-view="homework">
-                        <span class="nav-icon">📚</span>
-                        <span>Hausaufgaben</span>
-                    </a>
                     <a class="nav-item" data-view="calendar">
                         <span class="nav-icon">📆</span>
                         <span>Kalender</span>
+                    </a>
+                    <a class="nav-item" data-view="todos">
+                        <span class="nav-icon">✅</span>
+                        <span>To Dos</span>
                     </a>
                     <a class="nav-item" data-view="flashcards">
                         <span class="nav-icon">🎴</span>
