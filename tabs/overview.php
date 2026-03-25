@@ -1,3 +1,5 @@
+<!-- Dateizweck: Tab-Template "overview" fuer die Dashboard-Ansicht. -->
+<!-- Hinweis: Enthält primär HTML-Struktur und UI-Bausteine fuer diesen Bereich. -->
                 <!-- Overview Content -->
                 <div id="overview" class="view-content">
                     <div class="content-header">

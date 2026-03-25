@@ -1,4 +1,8 @@
 <?php
+/**
+ * Dateizweck: Endpoint oder Seite "todo_add" im Modul "todos".
+ * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
+ */
 session_start();
 
 if (!isset($_SESSION['user_id'])) {

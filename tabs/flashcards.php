@@ -1,3 +1,5 @@
+<!-- Dateizweck: Tab-Template "flashcards" fuer die Dashboard-Ansicht. -->
+<!-- Hinweis: Enthält primär HTML-Struktur und UI-Bausteine fuer diesen Bereich. -->
 <!-- =============================================
      Karteikarten Tab
      ============================================= -->

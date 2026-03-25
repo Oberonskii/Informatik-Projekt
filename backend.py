@@ -1,3 +1,5 @@
+# Dateizweck: Modul "backend" im Bereich "root".
+# Hinweis: Zentrale Logik fuer LearnHub-Funktionen.
 # =========================================
 # LearnHub Backend
 # Autor: Backend-Team
@@ -24,6 +26,7 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
+# Funktion: load_local_env_files - verarbeitet die zugehoerige Backend-Operation.
 def load_local_env_files():
     env_paths = [".venv/.env", ".env"]
     for env_path in env_paths:
@@ -75,12 +78,14 @@ VERIFICATION_TTL_MINUTES = 10
 # DATABASE SETUP
 # =========================================
 
+# Funktion: get_db - verarbeitet die zugehoerige Backend-Operation.
 def get_db():
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     return conn
 
 
+# Funktion: init_db - verarbeitet die zugehoerige Backend-Operation.
 def init_db():
     db = get_db()
     cursor = db.cursor()
@@ -418,14 +423,17 @@ init_db()
 # HILFSFUNKTIONEN
 # =========================================
 
+# Funktion: hash_password - verarbeitet die zugehoerige Backend-Operation.
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 
+# Funktion: generate_id - verarbeitet die zugehoerige Backend-Operation.
 def generate_id() -> str:
     return str(uuid.uuid4())
 
 
+# Funktion: is_valid_email - verarbeitet die zugehoerige Backend-Operation.
 def is_valid_email(email: str) -> bool:
     if not email or "@" not in email:
         return False
@@ -433,6 +441,7 @@ def is_valid_email(email: str) -> bool:
     return bool(local and domain and "." in domain)
 
 
+# Funktion: normalize_hex_color - verarbeitet die zugehoerige Backend-Operation.
 def normalize_hex_color(value: Optional[str], default: str = "#0d6efd") -> str:
     color = str(value or "").strip()
     if re.fullmatch(r"#[0-9a-fA-F]{6}", color):
@@ -440,6 +449,7 @@ def normalize_hex_color(value: Optional[str], default: str = "#0d6efd") -> str:
     return default
 
 
+# Funktion: normalize_time_value - verarbeitet die zugehoerige Backend-Operation.
 def normalize_time_value(value: Optional[str]) -> str:
     time_value = str(value or "").strip()
     if re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", time_value):
@@ -447,10 +457,12 @@ def normalize_time_value(value: Optional[str]) -> str:
     return ""
 
 
+# Funktion: hash_verification_code - verarbeitet die zugehoerige Backend-Operation.
 def hash_verification_code(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
 
 
+# Funktion: log_login_attempt - verarbeitet die zugehoerige Backend-Operation.
 def log_login_attempt(db, username: str, success: bool, user_id: Optional[str] = None):
     cursor = db.cursor()
     cursor.execute(
@@ -468,6 +480,7 @@ def log_login_attempt(db, username: str, success: bool, user_id: Optional[str] =
     db.commit()
 
 
+# Funktion: log_user_activity - verarbeitet die zugehoerige Backend-Operation.
 def log_user_activity(db, user_id: str, event_type: str):
     cursor = db.cursor()
     cursor.execute(
@@ -484,6 +497,7 @@ def log_user_activity(db, user_id: str, event_type: str):
     db.commit()
 
 
+# Funktion: require_admin_user - verarbeitet die zugehoerige Backend-Operation.
 def require_admin_user(cursor, user_id: str):
     cursor.execute("SELECT id, role FROM users WHERE id=?", (user_id,))
     user_row = cursor.fetchone()
@@ -493,6 +507,7 @@ def require_admin_user(cursor, user_id: str):
         raise HTTPException(status_code=403, detail="Nur Admins haben Zugriff")
 
 
+# Funktion: send_verification_email - verarbeitet die zugehoerige Backend-Operation.
 def send_verification_email(receiver_email: str, code: str, purpose: str):
     sender_email = os.getenv("LEARNHUB_SMTP_EMAIL")
     sender_password = os.getenv("LEARNHUB_SMTP_PASSWORD")
@@ -526,6 +541,7 @@ def send_verification_email(receiver_email: str, code: str, purpose: str):
         server.send_message(message)
 
 
+# Funktion: cleanup_expired_verifications - verarbeitet die zugehoerige Backend-Operation.
 def cleanup_expired_verifications(db):
     cursor = db.cursor()
     cursor.execute(
@@ -534,6 +550,7 @@ def cleanup_expired_verifications(db):
     )
 
 
+# Funktion: create_verification - verarbeitet die zugehoerige Backend-Operation.
 def create_verification(db, user_id: Optional[str], email: str, purpose: str, payload: dict):
     cleanup_expired_verifications(db)
     cursor = db.cursor()
@@ -561,6 +578,7 @@ def create_verification(db, user_id: Optional[str], email: str, purpose: str, pa
     return verification_id
 
 
+# Funktion: consume_verification - verarbeitet die zugehoerige Backend-Operation.
 def consume_verification(db, verification_id: str, code: str, purpose: str, user_id: Optional[str]):
     cleanup_expired_verifications(db)
     cursor = db.cursor()
@@ -588,49 +606,59 @@ def consume_verification(db, verification_id: str, code: str, purpose: str, user
 # Pydantic MODELS (Request / Response)
 # =========================================
 
+# Datenmodell: ChangeUsername - definiert den erwarteten Request-Body.
 class ChangeUsername(BaseModel):
     new_username: str
 
 
+# Datenmodell: ChangePassword - definiert den erwarteten Request-Body.
 class ChangePassword(BaseModel):
     old_password: str
     new_password: str
 
 
+# Datenmodell: ChangeEmail - definiert den erwarteten Request-Body.
 class ChangeEmail(BaseModel):
     new_email: str
 
 
+# Datenmodell: UserRegister - definiert den erwarteten Request-Body.
 class UserRegister(BaseModel):
     username: str
     email: str
     password: str
 
 
+# Datenmodell: RegisterCodeConfirm - definiert den erwarteten Request-Body.
 class RegisterCodeConfirm(BaseModel):
     verification_id: str
     code: str
 
 
+# Datenmodell: ChangeEmailCodeConfirm - definiert den erwarteten Request-Body.
 class ChangeEmailCodeConfirm(BaseModel):
     verification_id: str
     code: str
 
 
+# Datenmodell: DeleteAccountRequest - definiert den erwarteten Request-Body.
 class DeleteAccountRequest(BaseModel):
     password: str
 
 
+# Datenmodell: DeleteAccountCodeConfirm - definiert den erwarteten Request-Body.
 class DeleteAccountCodeConfirm(BaseModel):
     verification_id: str
     code: str
 
 
+# Datenmodell: UserLogin - definiert den erwarteten Request-Body.
 class UserLogin(BaseModel):
     username: str
     password: str
 
 
+# Datenmodell: TodoCreate - definiert den erwarteten Request-Body.
 class TodoCreate(BaseModel):
     title: str
     subject: str
@@ -638,12 +666,14 @@ class TodoCreate(BaseModel):
     priority: str
 
 
+# Datenmodell: HomeworkCreate - definiert den erwarteten Request-Body.
 class HomeworkCreate(BaseModel):
     day: str
     period: int
     title: str
 
 
+# Datenmodell: ExamCreate - definiert den erwarteten Request-Body.
 class ExamCreate(BaseModel):
     subject: str
     date: str
@@ -652,6 +682,7 @@ class ExamCreate(BaseModel):
     period_end: Optional[int] = None
 
 
+# Datenmodell: CalendarExtraCreate - definiert den erwarteten Request-Body.
 class CalendarExtraCreate(BaseModel):
     title: str
     date: str
@@ -662,16 +693,19 @@ class CalendarExtraCreate(BaseModel):
     end_time: Optional[str] = None
 
 
+# Datenmodell: AdminMessageCreate - definiert den erwarteten Request-Body.
 class AdminMessageCreate(BaseModel):
     title: str
     body: str
     recipient_user_id: Optional[str] = None
 
 
+# Datenmodell: AdminRoleUpdate - definiert den erwarteten Request-Body.
 class AdminRoleUpdate(BaseModel):
     role: str
 
 
+# Datenmodell: GradeCreate - definiert den erwarteten Request-Body.
 class GradeCreate(BaseModel):
     subject: str
     value: float
@@ -679,11 +713,13 @@ class GradeCreate(BaseModel):
     description: Optional[str] = ""
 
 
+# Datenmodell: SubjectCreate - definiert den erwarteten Request-Body.
 class SubjectCreate(BaseModel):
     name: str
     color: str
 
     
+# Datenmodell: FlashcardCreate - definiert den erwarteten Request-Body.
 class FlashcardCreate(BaseModel):
     subject: str
     front: str
@@ -691,6 +727,7 @@ class FlashcardCreate(BaseModel):
     public: bool = False
 
 
+# Datenmodell: FlashcardDeckCreate - definiert den erwarteten Request-Body.
 class FlashcardDeckCreate(BaseModel):
     name: str
     subject: Optional[str] = ""
@@ -698,6 +735,7 @@ class FlashcardDeckCreate(BaseModel):
     public: bool = False
 
 
+# Datenmodell: FlashcardDeckUpdate - definiert den erwarteten Request-Body.
 class FlashcardDeckUpdate(BaseModel):
     name: Optional[str] = None
     subject: Optional[str] = None
@@ -705,11 +743,13 @@ class FlashcardDeckUpdate(BaseModel):
     public: Optional[bool] = None
 
 
+# Datenmodell: FlashcardCardCreate - definiert den erwarteten Request-Body.
 class FlashcardCardCreate(BaseModel):
     front: str
     back: str
 
 
+# Datenmodell: TimetableCreate - definiert den erwarteten Request-Body.
 class TimetableCreate(BaseModel):
     day: str       # monday, tuesday, ...
     period: int    # 1..10 (Stunde im Raster)
@@ -718,6 +758,7 @@ class TimetableCreate(BaseModel):
     room: Optional[str] = ""
 
 
+# Datenmodell: TimetableBulk - definiert den erwarteten Request-Body.
 class TimetableBulk(BaseModel):
     entries: List[TimetableCreate] = []
     times: Optional[dict] = {}
@@ -727,7 +768,9 @@ class TimetableBulk(BaseModel):
 # AUTH ROUTES
 # =========================================
 
+# Endpoint: POST /auth/register - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/auth/register")
+# Funktion: register - verarbeitet die zugehoerige Backend-Operation.
 def register(user: UserRegister):
     db = get_db()
     cursor = db.cursor()
@@ -758,7 +801,9 @@ def register(user: UserRegister):
     }
 
 
+# Endpoint: POST /auth/register/confirm - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/auth/register/confirm")
+# Funktion: register_confirm - verarbeitet die zugehoerige Backend-Operation.
 def register_confirm(data: RegisterCodeConfirm):
     db = get_db()
     cursor = db.cursor()
@@ -797,7 +842,9 @@ def register_confirm(data: RegisterCodeConfirm):
 
     return {"message": "Registrierung erfolgreich"}
 
+# Endpoint: PUT /auth/change-username/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.put("/auth/change-username/{user_id}")
+# Funktion: change_username - verarbeitet die zugehoerige Backend-Operation.
 def change_username(user_id: str, data: ChangeUsername):
     db = get_db()
     cursor = db.cursor()
@@ -823,7 +870,9 @@ def change_username(user_id: str, data: ChangeUsername):
     return {"message": "Username erfolgreich geändert"}
 
 
+# Endpoint: PUT /auth/change-password/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.put("/auth/change-password/{user_id}")
+# Funktion: change_password - verarbeitet die zugehoerige Backend-Operation.
 def change_password(user_id: str, data: ChangePassword):
     db = get_db()
     cursor = db.cursor()
@@ -849,7 +898,9 @@ def change_password(user_id: str, data: ChangePassword):
     return {"message": "Passwort erfolgreich geändert"}
 
 
+# Endpoint: PUT /auth/change-email/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.put("/auth/change-email/{user_id}")
+# Funktion: change_email - verarbeitet die zugehoerige Backend-Operation.
 def change_email(user_id: str, data: ChangeEmail):
     db = get_db()
     cursor = db.cursor()
@@ -876,7 +927,9 @@ def change_email(user_id: str, data: ChangeEmail):
     }
 
 
+# Endpoint: PUT /auth/change-email/confirm/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.put("/auth/change-email/confirm/{user_id}")
+# Funktion: change_email_confirm - verarbeitet die zugehoerige Backend-Operation.
 def change_email_confirm(user_id: str, data: ChangeEmailCodeConfirm):
     db = get_db()
     cursor = db.cursor()
@@ -908,7 +961,9 @@ def change_email_confirm(user_id: str, data: ChangeEmailCodeConfirm):
 # Timetable routes
 # =========================================
 
+# Endpoint: GET /timetable/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/timetable/{user_id}")
+# Funktion: get_timetable - verarbeitet die zugehoerige Backend-Operation.
 def get_timetable(user_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -932,7 +987,9 @@ def get_timetable(user_id: str):
 
 
 
+# Endpoint: POST /timetable/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/timetable/{user_id}")
+# Funktion: add_timetable_entry - verarbeitet die zugehoerige Backend-Operation.
 def add_timetable_entry(user_id: str, entry: TimetableCreate):
     db = get_db()
     cursor = db.cursor()
@@ -956,7 +1013,9 @@ def add_timetable_entry(user_id: str, entry: TimetableCreate):
 
 
 
+# Endpoint: PUT /timetable/{user_id}/{entry_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.put("/timetable/{user_id}/{entry_id}")
+# Funktion: update_timetable_entry - verarbeitet die zugehoerige Backend-Operation.
 def update_timetable_entry(
     user_id: str,
     entry_id: str,
@@ -986,7 +1045,9 @@ def update_timetable_entry(
     return {"message": "Stunde aktualisiert"}
 
 
+# Endpoint: DELETE /timetable/{user_id}/{entry_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.delete("/timetable/{user_id}/{entry_id}")
+# Funktion: delete_timetable_entry - verarbeitet die zugehoerige Backend-Operation.
 def delete_timetable_entry(user_id: str, entry_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1004,7 +1065,9 @@ def delete_timetable_entry(user_id: str, entry_id: str):
 
 
 # bulk replace all timetable entries for a user (used when the entire plan is saved)
+# Endpoint: GET /timetable_times/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/timetable_times/{user_id}")
+# Funktion: get_timetable_times - verarbeitet die zugehoerige Backend-Operation.
 def get_timetable_times(user_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1013,7 +1076,9 @@ def get_timetable_times(user_id: str):
     return {str(r["period"]): r["time"] for r in rows}
 
 
+# Endpoint: POST /timetable/{user_id}/bulk - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/timetable/{user_id}/bulk")
+# Funktion: bulk_update_timetable - verarbeitet die zugehoerige Backend-Operation.
 def bulk_update_timetable(user_id: str, bulk: TimetableBulk):
     db = get_db()
     cursor = db.cursor()
@@ -1052,7 +1117,9 @@ def bulk_update_timetable(user_id: str, bulk: TimetableBulk):
 # FILE UPLOAD ROUTES
 # =========================================
 
+# Endpoint: DELETE /files/{user_id}/{file_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.delete("/files/{user_id}/{file_id}")
+# Funktion: delete_file - verarbeitet die zugehoerige Backend-Operation.
 def delete_file(user_id: str, file_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1075,7 +1142,9 @@ def delete_file(user_id: str, file_id: str):
 
     return {"message": "Datei gelöscht"}
 
+# Endpoint: GET /files/download/{user_id}/{file_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/files/download/{user_id}/{file_id}")
+# Funktion: download_file - verarbeitet die zugehoerige Backend-Operation.
 def download_file(user_id: str, file_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1104,7 +1173,9 @@ def download_file(user_id: str, file_id: str):
 
 
 
+# Endpoint: GET /files/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/files/{user_id}")
+# Funktion: get_user_files - verarbeitet die zugehoerige Backend-Operation.
 def get_user_files(user_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1119,7 +1190,9 @@ def get_user_files(user_id: str):
 ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "docx", "txt"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
+# Endpoint: POST /files/upload/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/files/upload/{user_id}")
+# Funktion: upload_file - verarbeitet die zugehoerige Backend-Operation.
 async def upload_file(
     user_id: str,
     subject: str = Form(...),
@@ -1193,7 +1266,9 @@ async def upload_file(
 
     return {"message": "Datei erfolgreich hochgeladen"}
 
+# Endpoint: POST /auth/login - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/auth/login")
+# Funktion: login - verarbeitet die zugehoerige Backend-Operation.
 def login(user: UserLogin):
     db = get_db()
     cursor = db.cursor()
@@ -1218,7 +1293,9 @@ def login(user: UserLogin):
     }
 
 
+# Endpoint: POST /auth/delete-account/request-code/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/auth/delete-account/request-code/{user_id}")
+# Funktion: request_delete_account_code - verarbeitet die zugehoerige Backend-Operation.
 def request_delete_account_code(user_id: str, data: DeleteAccountRequest):
     db = get_db()
     cursor = db.cursor()
@@ -1247,7 +1324,9 @@ def request_delete_account_code(user_id: str, data: DeleteAccountRequest):
     }
 
 
+# Endpoint: POST /auth/delete-account/confirm/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/auth/delete-account/confirm/{user_id}")
+# Funktion: confirm_delete_account - verarbeitet die zugehoerige Backend-Operation.
 def confirm_delete_account(user_id: str, data: DeleteAccountCodeConfirm):
     db = get_db()
     cursor = db.cursor()
@@ -1297,7 +1376,9 @@ def confirm_delete_account(user_id: str, data: DeleteAccountCodeConfirm):
 # ADMIN MESSAGE ROUTES
 # =========================================
 
+# Endpoint: GET /messages/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/messages/{user_id}")
+# Funktion: get_admin_messages - verarbeitet die zugehoerige Backend-Operation.
 def get_admin_messages(user_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1333,7 +1414,9 @@ def get_admin_messages(user_id: str):
     ]
 
 
+# Endpoint: GET /admin/messages/{requester_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/admin/messages/{requester_id}")
+# Funktion: get_admin_message_management - verarbeitet die zugehoerige Backend-Operation.
 def get_admin_message_management(requester_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1381,7 +1464,9 @@ def get_admin_message_management(requester_id: str):
     }
 
 
+# Endpoint: POST /admin/messages/{requester_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/admin/messages/{requester_id}")
+# Funktion: create_admin_message - verarbeitet die zugehoerige Backend-Operation.
 def create_admin_message(requester_id: str, payload: AdminMessageCreate):
     db = get_db()
     cursor = db.cursor()
@@ -1427,7 +1512,9 @@ def create_admin_message(requester_id: str, payload: AdminMessageCreate):
     }
 
 
+# Endpoint: DELETE /admin/messages/{requester_id}/{message_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.delete("/admin/messages/{requester_id}/{message_id}")
+# Funktion: delete_admin_message - verarbeitet die zugehoerige Backend-Operation.
 def delete_admin_message(requester_id: str, message_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1443,7 +1530,9 @@ def delete_admin_message(requester_id: str, message_id: str):
     return {"message": "Nachricht gelöscht"}
 
 
+# Endpoint: GET /admin/users/{requester_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/admin/users/{requester_id}")
+# Funktion: get_admin_users - verarbeitet die zugehoerige Backend-Operation.
 def get_admin_users(requester_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1463,7 +1552,9 @@ def get_admin_users(requester_id: str):
     return {"users": users}
 
 
+# Endpoint: PUT /admin/users/{requester_id}/{target_user_id}/role - API-Route mit Validierung und Datenverarbeitung.
 @app.put("/admin/users/{requester_id}/{target_user_id}/role")
+# Funktion: update_admin_user_role - verarbeitet die zugehoerige Backend-Operation.
 def update_admin_user_role(requester_id: str, target_user_id: str, payload: AdminRoleUpdate):
     db = get_db()
     cursor = db.cursor()
@@ -1518,7 +1609,9 @@ def update_admin_user_role(requester_id: str, target_user_id: str, payload: Admi
 # TODO ROUTES
 # =========================================
 
+# Endpoint: POST /todos/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/todos/{user_id}")
+# Funktion: create_todo - verarbeitet die zugehoerige Backend-Operation.
 def create_todo(user_id: str, todo: TodoCreate):
     db = get_db()
     cursor = db.cursor()
@@ -1539,7 +1632,9 @@ def create_todo(user_id: str, todo: TodoCreate):
     return {"message": "To-Do erstellt"}
 
 
+# Endpoint: GET /todos/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/todos/{user_id}")
+# Funktion: get_todos - verarbeitet die zugehoerige Backend-Operation.
 def get_todos(user_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1547,7 +1642,9 @@ def get_todos(user_id: str):
     cursor.execute("SELECT * FROM todos WHERE user_id=?", (user_id,))
     return cursor.fetchall()
 
+# Endpoint: DELETE /todos/{user_id}/{todo_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.delete("/todos/{user_id}/{todo_id}")
+# Funktion: delete_todo - verarbeitet die zugehoerige Backend-Operation.
 def delete_todo(user_id: str, todo_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1564,7 +1661,9 @@ def delete_todo(user_id: str, todo_id: str):
     return {"message": "To-Do gelöscht"}
 
 
+# Endpoint: PATCH /todos/{user_id}/{todo_id}/toggle - API-Route mit Validierung und Datenverarbeitung.
 @app.patch("/todos/{user_id}/{todo_id}/toggle")
+# Funktion: toggle_todo - verarbeitet die zugehoerige Backend-Operation.
 def toggle_todo(user_id: str, todo_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1587,7 +1686,9 @@ def toggle_todo(user_id: str, todo_id: str):
 # HOMEWORK ROUTES
 # =========================================
 
+# Endpoint: POST /homework/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/homework/{user_id}")
+# Funktion: create_homework - verarbeitet die zugehoerige Backend-Operation.
 def create_homework(user_id: str, homework: HomeworkCreate):
     db = get_db()
     cursor = db.cursor()
@@ -1612,7 +1713,9 @@ def create_homework(user_id: str, homework: HomeworkCreate):
     return {"message": "Hausaufgabe gespeichert", "id": homework_id}
 
 
+# Endpoint: GET /homework/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/homework/{user_id}")
+# Funktion: get_homework - verarbeitet die zugehoerige Backend-Operation.
 def get_homework(user_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1635,7 +1738,9 @@ def get_homework(user_id: str):
     return cursor.fetchall()
 
 
+# Endpoint: DELETE /homework/{user_id}/{homework_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.delete("/homework/{user_id}/{homework_id}")
+# Funktion: delete_homework - verarbeitet die zugehoerige Backend-Operation.
 def delete_homework(user_id: str, homework_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1659,7 +1764,9 @@ def delete_homework(user_id: str, homework_id: str):
 # EXAM ROUTES
 # =========================================
 
+# Endpoint: POST /exams/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/exams/{user_id}")
+# Funktion: create_exam - verarbeitet die zugehoerige Backend-Operation.
 def create_exam(user_id: str, exam: ExamCreate):
     db = get_db()
     cursor = db.cursor()
@@ -1686,7 +1793,9 @@ def create_exam(user_id: str, exam: ExamCreate):
     return {"message": "Klassenarbeit gespeichert", "id": exam_id}
 
 
+# Endpoint: GET /exams/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/exams/{user_id}")
+# Funktion: get_exams - verarbeitet die zugehoerige Backend-Operation.
 def get_exams(user_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1702,7 +1811,9 @@ def get_exams(user_id: str):
     return cursor.fetchall()
 
 
+# Endpoint: DELETE /exams/{user_id}/{exam_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.delete("/exams/{user_id}/{exam_id}")
+# Funktion: delete_exam - verarbeitet die zugehoerige Backend-Operation.
 def delete_exam(user_id: str, exam_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1722,7 +1833,9 @@ def delete_exam(user_id: str, exam_id: str):
     return {"message": "Klassenarbeit gelöscht"}
 
 
+# Endpoint: PUT /exams/{user_id}/{exam_id}/grade - API-Route mit Validierung und Datenverarbeitung.
 @app.put("/exams/{user_id}/{exam_id}/grade")
+# Funktion: set_exam_grade - verarbeitet die zugehoerige Backend-Operation.
 def set_exam_grade(user_id: str, exam_id: str, grade_data: dict):
     db = get_db()
     cursor = db.cursor()
@@ -1751,7 +1864,9 @@ def set_exam_grade(user_id: str, exam_id: str, grade_data: dict):
 # CALENDAR EXTRA ROUTES
 # =========================================
 
+# Endpoint: POST /calendar-extras/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/calendar-extras/{user_id}")
+# Funktion: create_calendar_extra - verarbeitet die zugehoerige Backend-Operation.
 def create_calendar_extra(user_id: str, event: CalendarExtraCreate):
     db = get_db()
     cursor = db.cursor()
@@ -1792,7 +1907,9 @@ def create_calendar_extra(user_id: str, event: CalendarExtraCreate):
     return {"message": "Termin gespeichert", "id": event_id}
 
 
+# Endpoint: GET /calendar-extras/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/calendar-extras/{user_id}")
+# Funktion: get_calendar_extras - verarbeitet die zugehoerige Backend-Operation.
 def get_calendar_extras(user_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1808,7 +1925,9 @@ def get_calendar_extras(user_id: str):
     return cursor.fetchall()
 
 
+# Endpoint: DELETE /calendar-extras/{user_id}/{event_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.delete("/calendar-extras/{user_id}/{event_id}")
+# Funktion: delete_calendar_extra - verarbeitet die zugehoerige Backend-Operation.
 def delete_calendar_extra(
     user_id: str,
     event_id: str,
@@ -1881,7 +2000,9 @@ def delete_calendar_extra(
 # GRADES ROUTES
 # =========================================
 
+# Endpoint: POST /grades/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/grades/{user_id}")
+# Funktion: add_grade - verarbeitet die zugehoerige Backend-Operation.
 def add_grade(user_id: str, grade: GradeCreate):
     db = get_db()
     cursor = db.cursor()
@@ -1902,7 +2023,9 @@ def add_grade(user_id: str, grade: GradeCreate):
     return {"message": "Note gespeichert"}
 
 
+# Endpoint: GET /grades/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/grades/{user_id}")
+# Funktion: get_grades - verarbeitet die zugehoerige Backend-Operation.
 def get_grades(user_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1911,7 +2034,9 @@ def get_grades(user_id: str):
     return cursor.fetchall()
 
 
+# Endpoint: DELETE /grades/{user_id}/{grade_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.delete("/grades/{user_id}/{grade_id}")
+# Funktion: delete_grade - verarbeitet die zugehoerige Backend-Operation.
 def delete_grade(user_id: str, grade_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1932,7 +2057,9 @@ def delete_grade(user_id: str, grade_id: str):
 # SUBJECTS ROUTES (Fächer)
 # =========================================
 
+# Endpoint: POST /subjects/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/subjects/{user_id}")
+# Funktion: add_subject - verarbeitet die zugehoerige Backend-Operation.
 def add_subject(user_id: str, subject: SubjectCreate):
     db = get_db()
     cursor = db.cursor()
@@ -1951,7 +2078,9 @@ def add_subject(user_id: str, subject: SubjectCreate):
     return {"message": "Fach gespeichert"}
 
 
+# Endpoint: GET /subjects/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/subjects/{user_id}")
+# Funktion: get_subjects - verarbeitet die zugehoerige Backend-Operation.
 def get_subjects(user_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1960,7 +2089,9 @@ def get_subjects(user_id: str):
     return cursor.fetchall()
 
 
+# Endpoint: DELETE /subjects/{user_id}/{subject_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.delete("/subjects/{user_id}/{subject_id}")
+# Funktion: delete_subject - verarbeitet die zugehoerige Backend-Operation.
 def delete_subject(user_id: str, subject_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -1981,7 +2112,9 @@ def delete_subject(user_id: str, subject_id: str):
 # FLASHCARD DECK ROUTES
 # =========================================
 
+# Endpoint: GET /flashcard-decks/explore - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/flashcard-decks/explore")
+# Funktion: explore_public_decks - verarbeitet die zugehoerige Backend-Operation.
 def explore_public_decks():
     db = get_db()
     cursor = db.cursor()
@@ -1999,7 +2132,9 @@ def explore_public_decks():
     return [dict(r) for r in rows]
 
 
+# Endpoint: GET /flashcard-decks/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/flashcard-decks/{user_id}")
+# Funktion: get_user_decks - verarbeitet die zugehoerige Backend-Operation.
 def get_user_decks(user_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -2015,7 +2150,9 @@ def get_user_decks(user_id: str):
     return [dict(r) for r in rows]
 
 
+# Endpoint: POST /flashcard-decks/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/flashcard-decks/{user_id}")
+# Funktion: create_deck - verarbeitet die zugehoerige Backend-Operation.
 def create_deck(user_id: str, deck: FlashcardDeckCreate):
     db = get_db()
     cursor = db.cursor()
@@ -2036,7 +2173,9 @@ def create_deck(user_id: str, deck: FlashcardDeckCreate):
     return {"message": "Stapel erstellt", "id": deck_id}
 
 
+# Endpoint: PUT /flashcard-decks/{user_id}/{deck_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.put("/flashcard-decks/{user_id}/{deck_id}")
+# Funktion: update_deck - verarbeitet die zugehoerige Backend-Operation.
 def update_deck(user_id: str, deck_id: str, deck: FlashcardDeckUpdate):
     db = get_db()
     cursor = db.cursor()
@@ -2057,7 +2196,9 @@ def update_deck(user_id: str, deck_id: str, deck: FlashcardDeckUpdate):
     return {"message": "Stapel aktualisiert"}
 
 
+# Endpoint: DELETE /flashcard-decks/{user_id}/{deck_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.delete("/flashcard-decks/{user_id}/{deck_id}")
+# Funktion: delete_deck - verarbeitet die zugehoerige Backend-Operation.
 def delete_deck(user_id: str, deck_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -2070,7 +2211,9 @@ def delete_deck(user_id: str, deck_id: str):
     return {"message": "Stapel gelöscht"}
 
 
+# Endpoint: POST /flashcard-decks/{user_id}/copy/{source_deck_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/flashcard-decks/{user_id}/copy/{source_deck_id}")
+# Funktion: copy_deck - verarbeitet die zugehoerige Backend-Operation.
 def copy_deck(user_id: str, source_deck_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -2104,7 +2247,9 @@ def copy_deck(user_id: str, source_deck_id: str):
 # FLASHCARD CARD ROUTES
 # =========================================
 
+# Endpoint: GET /flashcard-cards/deck/{deck_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/flashcard-cards/deck/{deck_id}")
+# Funktion: get_deck_cards - verarbeitet die zugehoerige Backend-Operation.
 def get_deck_cards(deck_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -2116,7 +2261,9 @@ def get_deck_cards(deck_id: str):
     return [dict(r) for r in rows]
 
 
+# Endpoint: POST /flashcard-cards/{user_id}/deck/{deck_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/flashcard-cards/{user_id}/deck/{deck_id}")
+# Funktion: add_card_to_deck - verarbeitet die zugehoerige Backend-Operation.
 def add_card_to_deck(user_id: str, deck_id: str, card: FlashcardCardCreate):
     db = get_db()
     cursor = db.cursor()
@@ -2131,7 +2278,9 @@ def add_card_to_deck(user_id: str, deck_id: str, card: FlashcardCardCreate):
     return {"message": "Karte hinzugefügt"}
 
 
+# Endpoint: DELETE /flashcard-cards/{user_id}/{card_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.delete("/flashcard-cards/{user_id}/{card_id}")
+# Funktion: delete_card - verarbeitet die zugehoerige Backend-Operation.
 def delete_card(user_id: str, card_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -2147,7 +2296,9 @@ def delete_card(user_id: str, card_id: str):
 # FLASHCARDS ROUTES (legacy)
 # =========================================
 
+# Endpoint: POST /flashcards/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.post("/flashcards/{user_id}")
+# Funktion: create_flashcard - verarbeitet die zugehoerige Backend-Operation.
 def create_flashcard(user_id: str, card: FlashcardCreate):
     db = get_db()
     cursor = db.cursor()
@@ -2168,7 +2319,9 @@ def create_flashcard(user_id: str, card: FlashcardCreate):
     return {"message": "Karteikarte erstellt"}
 
 
+# Endpoint: GET /flashcards/{user_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/flashcards/{user_id}")
+# Funktion: get_flashcards - verarbeitet die zugehoerige Backend-Operation.
 def get_flashcards(user_id: str):
     db = get_db()
     cursor = db.cursor()
@@ -2185,7 +2338,9 @@ def get_flashcards(user_id: str):
 # ADMIN ROUTES
 # =========================================
 
+# Endpoint: GET /admin/stats/{requester_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.get("/admin/stats/{requester_id}")
+# Funktion: admin_stats - verarbeitet die zugehoerige Backend-Operation.
 def admin_stats(requester_id: str):
     db = get_db()
     cursor = db.cursor()

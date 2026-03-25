@@ -1,4 +1,8 @@
 <?php
+/**
+ * Dateizweck: Endpoint oder Seite "grades_load" im Modul "grades".
+ * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
+ */
 session_start();
 
 if (!isset($_SESSION['user_id'])) {

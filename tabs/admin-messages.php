@@ -1,3 +1,5 @@
+<!-- Dateizweck: Tab-Template "admin-messages" fuer die Dashboard-Ansicht. -->
+<!-- Hinweis: Enthält primär HTML-Struktur und UI-Bausteine fuer diesen Bereich. -->
                 <!-- Admin Nachrichten Detail View -->
                 <div id="admin-messages" class="view-content" style="display: none;">
                     <div class="content-header">

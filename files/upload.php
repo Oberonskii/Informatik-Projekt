@@ -1,4 +1,8 @@
 <?php
+/**
+ * Dateizweck: Endpoint oder Seite "upload" im Modul "files".
+ * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
+ */
 session_start();
 
 $filesTabRedirect = "Location: ../current_dashboard.php?tab=dateien";

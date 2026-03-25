@@ -1,4 +1,8 @@
 <?php
+/**
+ * Dateizweck: Endpoint oder Seite "exam_grade_set" im Modul "exams".
+ * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
+ */
 session_start();
 
 if (!isset($_SESSION['user_id'])) {

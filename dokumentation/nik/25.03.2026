@@ -6,6 +6,8 @@ Heute wurde die Admin-Benutzerverwaltung end-to-end umgesetzt und anschliessend 
 - Testbenutzer in die Datenbank eingefuegt
 - Layout-Korrektur gegen Ueberlagerung von Nutzername und Status
 - Suchfunktion in der Benutzerverwaltung
+- Projektweite Basiskommentierung in allen relevanten Code-Dateien
+- Vollstaendige `#`-Bemerkungen im Backend vor Funktionen, Datenmodellen und Endpunkten
 
 ---
 
@@ -131,6 +133,45 @@ Datei: current_dashboard.php
 
 ---
 
+## Prompt 5 (User)
+kommentiere unseren gesamten code
+
+## Ausgabe 5 (Assistant)
+Der gesamte relevante Codebestand wurde mit Dateikopf-Kommentaren versehen, ohne Logikaenderungen.
+
+## Aenderungen zu Prompt 5
+
+### Umfang
+- 61 Dateien angepasst
+- Schwerpunkt: PHP-Endpoints/Seiten, Tab-Templates sowie `backend.py`
+
+### Inhalt der Kommentierung
+- Einheitliche Dateikopf-Kommentare mit `Dateizweck` und Kurz-Hinweis
+- Fuer reine Tab-Templates (ohne `<?php` am Dateianfang): HTML-Kopfkommentare
+
+### Qualitaetssicherung
+- Vollstaendigkeitspruefung: alle PHP- und PY-Dateien kommentiert
+- Problempruefung: keine neuen Fehler gemeldet
+
+---
+
+## Prompt 6 (User)
+ich meine bemerkungen mit # davor
+
+## Ausgabe 6 (Assistant)
+In `backend.py` wurden zusaetzlich systematisch `#`-Bemerkungen vor allen Funktionen, Datenmodellen und API-Endpunkten ergaenzt.
+
+## Aenderungen zu Prompt 6
+
+Datei: `backend.py`
+
+- Vor jeder Funktion: `# Funktion: ...`
+- Vor jedem Pydantic-Model: `# Datenmodell: ...`
+- Vor jedem FastAPI-Endpoint: `# Endpoint: METHOD /path ...`
+- Python-Syntaxpruefung erfolgreich (`python -m py_compile backend.py`)
+
+---
+
 ## Geaenderte Dateien gesamt (heute)
 - backend.py
 - current_dashboard.php
@@ -138,6 +179,7 @@ Datei: current_dashboard.php
 - admin/users_manage.php (neu)
 - admin/user_role_update.php (neu)
 - learnhub.db (Daten geaendert)
+- zusaetzlich: projektweite Kommentierung in nahezu allen API-/Tab-Dateien (insgesamt 61 geaenderte Dateien)
 
 ---
 
@@ -152,3 +194,5 @@ Durchgefuehrte Pruefungen:
     - admin/user_role_update.php
 - SQL-Verifikation der Testnutzer in `learnhub.db`
   - Ergebnis: Datensaetze vorhanden
+- Syntaxcheck `backend.py` nach finaler `#`-Kommentierung
+  - Ergebnis: erfolgreich kompiliert, keine Fehler

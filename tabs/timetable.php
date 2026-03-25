@@ -1,3 +1,5 @@
+<!-- Dateizweck: Tab-Template "timetable" fuer die Dashboard-Ansicht. -->
+<!-- Hinweis: Enthält primär HTML-Struktur und UI-Bausteine fuer diesen Bereich. -->
                 <!-- Stundenplan Detail View -->
                 <div id="timetable" class="view-content" style="display: none;">
                     <div class="content-header">

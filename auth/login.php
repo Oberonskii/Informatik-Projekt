@@ -1,4 +1,8 @@
 <?php
+/**
+ * Dateizweck: Endpoint oder Seite "login" im Modul "auth".
+ * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
+ */
 // Einfache Session-Startung
 session_start();
 if (isset($_SESSION['user_id'])) {

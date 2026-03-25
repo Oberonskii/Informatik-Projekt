@@ -1,4 +1,8 @@
 <?php
+/**
+ * Dateizweck: Endpoint oder Seite "deck_copy" im Modul "flashcards".
+ * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
+ */
 session_start();
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);

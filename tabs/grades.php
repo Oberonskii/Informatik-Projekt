@@ -1,3 +1,5 @@
+<!-- Dateizweck: Tab-Template "grades" fuer die Dashboard-Ansicht. -->
+<!-- Hinweis: Enthält primär HTML-Struktur und UI-Bausteine fuer diesen Bereich. -->
                 <!-- Noten Detail View -->
                 <div id="grades" class="view-content" style="display: none;">
                     <div class="content-header">

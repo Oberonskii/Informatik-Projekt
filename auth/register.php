@@ -1,4 +1,8 @@
 <?php
+/**
+ * Dateizweck: Endpoint oder Seite "register" im Modul "auth".
+ * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
+ */
 // Fehlernachricht (falls vorhanden)
 $error_message = '';
 $success_message = '';

@@ -1,3 +1,5 @@
+<!-- Dateizweck: Tab-Template "calendar" fuer die Dashboard-Ansicht. -->
+<!-- Hinweis: Enthält primär HTML-Struktur und UI-Bausteine fuer diesen Bereich. -->
                 <!-- Calendar Detail View -->
                 <div id="calendar" class="view-content" style="display: none;">
                     <div class="content-header">

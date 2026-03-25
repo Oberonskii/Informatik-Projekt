@@ -1,3 +1,5 @@
+<!-- Dateizweck: Tab-Template "homework" fuer die Dashboard-Ansicht. -->
+<!-- Hinweis: Enthält primär HTML-Struktur und UI-Bausteine fuer diesen Bereich. -->
                 <!-- Hausaufgaben Detail View -->
                 <div id="homework" class="view-content" style="display: none;">
                     <div class="content-header">

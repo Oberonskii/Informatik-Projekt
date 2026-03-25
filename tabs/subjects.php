@@ -1,3 +1,5 @@
+<!-- Dateizweck: Tab-Template "subjects" fuer die Dashboard-Ansicht. -->
+<!-- Hinweis: Enthält primär HTML-Struktur und UI-Bausteine fuer diesen Bereich. -->
                 <!-- Fächer Detail View -->
                 <div id="subjects" class="view-content" style="display: none;">
                     <div class="content-header">

@@ -1,3 +1,5 @@
+<!-- Dateizweck: Tab-Template "exams" fuer die Dashboard-Ansicht. -->
+<!-- Hinweis: Enthält primär HTML-Struktur und UI-Bausteine fuer diesen Bereich. -->
                 <!-- Klassenarbeiten Detail View -->
                 <div id="exams" class="view-content" style="display: none;">
                     <div class="content-header">

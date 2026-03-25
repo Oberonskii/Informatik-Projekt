@@ -1,3 +1,5 @@
+<!-- Dateizweck: Tab-Template "todos" fuer die Dashboard-Ansicht. -->
+<!-- Hinweis: Enthält primär HTML-Struktur und UI-Bausteine fuer diesen Bereich. -->
                 <!-- To-Dos Detail View -->
                 <div id="todos" class="view-content" style="display: none;">
                     <div class="content-header">
