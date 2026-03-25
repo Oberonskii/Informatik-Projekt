@@ -5375,14 +5375,26 @@ themeToggle.addEventListener('click', () => {
             document.getElementById('detailsModal').style.display = 'none';
         }
 
-        // Add event listener to close modal when clicking outside
+        // Add event listener to close modals when clicking outside
         document.addEventListener('DOMContentLoaded', function() {
             const detailsModal = document.getElementById('detailsModal');
-            detailsModal.addEventListener('click', function(event) {
-                if (event.target === detailsModal) {
-                    closeDetailsModal();
-                }
-            });
+            const colorModal = document.getElementById('colorModal');
+
+            if (detailsModal) {
+                detailsModal.addEventListener('click', function(event) {
+                    if (event.target === detailsModal) {
+                        closeDetailsModal();
+                    }
+                });
+            }
+
+            if (colorModal) {
+                colorModal.addEventListener('click', function(event) {
+                    if (event.target === colorModal) {
+                        closeColorModal();
+                    }
+                });
+            }
         });
 
         // Update all subject dropdowns
