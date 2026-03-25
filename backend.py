@@ -668,6 +668,10 @@ class AdminMessageCreate(BaseModel):
     recipient_user_id: Optional[str] = None
 
 
+class AdminRoleUpdate(BaseModel):
+    role: str
+
+
 class GradeCreate(BaseModel):
     subject: str
     value: float
@@ -1437,6 +1441,77 @@ def delete_admin_message(requester_id: str, message_id: str):
     db.commit()
     db.close()
     return {"message": "Nachricht gelöscht"}
+
+
+@app.get("/admin/users/{requester_id}")
+def get_admin_users(requester_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    require_admin_user(cursor, requester_id)
+
+    cursor.execute(
+        """
+        SELECT id, username, email, role, created_at
+        FROM users
+        ORDER BY lower(username) ASC
+        """
+    )
+    users = [dict(row) for row in cursor.fetchall()]
+
+    db.close()
+    return {"users": users}
+
+
+@app.put("/admin/users/{requester_id}/{target_user_id}/role")
+def update_admin_user_role(requester_id: str, target_user_id: str, payload: AdminRoleUpdate):
+    db = get_db()
+    cursor = db.cursor()
+
+    require_admin_user(cursor, requester_id)
+
+    new_role = (payload.role or "").strip().lower()
+    if new_role not in {"admin", "user"}:
+        raise HTTPException(status_code=400, detail="Ungültige Rolle")
+
+    cursor.execute("SELECT id, username, role FROM users WHERE id=?", (target_user_id,))
+    target_user = cursor.fetchone()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Nutzer nicht gefunden")
+
+    current_role = (target_user["role"] or "user").strip().lower()
+    if current_role == new_role:
+        db.close()
+        return {
+            "message": "Rolle unverändert",
+            "user": {
+                "id": target_user["id"],
+                "username": target_user["username"],
+                "role": current_role
+            }
+        }
+
+    if current_role == "admin" and new_role != "admin":
+        cursor.execute("SELECT COUNT(*) AS total FROM users WHERE lower(role)='admin'")
+        admin_total = cursor.fetchone()["total"]
+        if admin_total <= 1:
+            raise HTTPException(status_code=400, detail="Mindestens ein Admin muss bestehen bleiben")
+
+    cursor.execute(
+        "UPDATE users SET role=? WHERE id=?",
+        (new_role, target_user_id)
+    )
+    db.commit()
+    db.close()
+
+    return {
+        "message": "Rolle aktualisiert",
+        "user": {
+            "id": target_user["id"],
+            "username": target_user["username"],
+            "role": new_role
+        }
+    }
 
 
 # =========================================

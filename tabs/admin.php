@@ -77,6 +77,27 @@
                         </div>
                         <div class="widget">
                             <div class="widget-header">
+                                <div class="widget-title">Benutzerverwaltung</div>
+                                <button class="btn-primary" onclick="loadAdminUsers()">Aktualisieren</button>
+                            </div>
+                            <p style="margin-bottom:0.75rem;color:var(--color-text-secondary);font-size:0.9rem;">
+                                Admin-Rechte vergeben oder entziehen.
+                            </p>
+                            <div class="input-group" style="margin-top:0;margin-bottom:0.75rem;">
+                                <input
+                                    type="text"
+                                    id="adminUsersSearch"
+                                    placeholder="Nutzer suchen (Name, E-Mail, Rolle)"
+                                    oninput="filterAdminUsers()"
+                                >
+                            </div>
+                            <div id="adminUsersList" class="messages-list">
+                                <p class="message-empty">Nutzer werden geladen…</p>
+                            </div>
+                            <p id="adminUsersStatus" class="form-status"></p>
+                        </div>
+                        <div class="widget">
+                            <div class="widget-header">
                                 <div class="widget-title">Gesendete Admin-Nachrichten</div>
                                 <button class="btn-primary" onclick="loadAdminMessageManagement()">Aktualisieren</button>
                             </div>

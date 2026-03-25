@@ -901,6 +901,43 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             gap: 0.5rem;
         }
 
+        .admin-user-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: flex-start;
+            gap: 0.75rem 1rem;
+        }
+
+        .admin-user-main {
+            min-width: 0;
+        }
+
+        .admin-user-title,
+        .admin-user-meta {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .admin-user-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            max-width: 240px;
+        }
+
+        @media (max-width: 900px) {
+            .admin-user-row {
+                grid-template-columns: 1fr;
+            }
+
+            .admin-user-actions {
+                justify-content: flex-start;
+                max-width: none;
+            }
+        }
+
         .message-empty {
             color: var(--color-text-muted);
             text-align: center;
@@ -1989,6 +2026,7 @@ themeToggle.addEventListener('click', () => {
             } else if (viewId === 'admin') {
                 loadAdminPanel();
                 loadAdminMessageManagement();
+                loadAdminUsers();
             } else if (viewId === 'flashcards') {
                 if (typeof fcShowDecksView === 'function') {
                     fcShowDecksView();
@@ -3726,6 +3764,8 @@ themeToggle.addEventListener('click', () => {
         let adminStatsCache = null;
         let adminMessagesCache = [];
         let adminMessageManagementCache = { messages: [], users: [] };
+        let adminUsersCache = [];
+        let adminUsersSearchTerm = '';
 
         function setAdminText(id, value) {
             const el = document.getElementById(id);
@@ -3748,6 +3788,20 @@ themeToggle.addEventListener('click', () => {
 
         function setAdminMessageStatus(message, type = 'info') {
             const el = document.getElementById('adminMessageStatus');
+            if (!el) return;
+            el.textContent = message || '';
+
+            if (type === 'success') {
+                el.style.color = 'var(--color-success)';
+            } else if (type === 'error') {
+                el.style.color = 'var(--color-danger)';
+            } else {
+                el.style.color = 'var(--color-text-muted)';
+            }
+        }
+
+        function setAdminUsersStatus(message, type = 'info') {
+            const el = document.getElementById('adminUsersStatus');
             if (!el) return;
             el.textContent = message || '';
 
@@ -3856,6 +3910,78 @@ themeToggle.addEventListener('click', () => {
             }
         }
 
+        function renderAdminUsers(users) {
+            const container = document.getElementById('adminUsersList');
+            if (!container) return;
+
+            const safeUsers = Array.isArray(users) ? users : [];
+            if (!safeUsers.length) {
+                const emptyText = adminUsersSearchTerm
+                    ? 'Keine passenden Nutzer gefunden'
+                    : 'Keine Nutzer gefunden';
+                container.innerHTML = `<p class="message-empty">${escapeHtml(emptyText)}</p>`;
+                return;
+            }
+
+            const adminCount = safeUsers.filter(user => String(user.role || '').toLowerCase() === 'admin').length;
+
+            container.innerHTML = safeUsers.map(user => {
+                const username = escapeHtml(user.username || 'Unbekannt');
+                const email = escapeHtml(user.email || '-');
+                const createdAt = escapeHtml(formatAdminMessageDate(user.created_at));
+                const role = String(user.role || 'user').toLowerCase() === 'admin' ? 'admin' : 'user';
+                const isAdminRole = role === 'admin';
+                const actionRole = isAdminRole ? 'user' : 'admin';
+                const actionLabel = isAdminRole ? 'Admin entziehen' : 'Zum Admin machen';
+                const roleBadgeStyle = isAdminRole
+                    ? 'background:rgba(16,185,129,0.18);color:var(--color-success);'
+                    : 'background:rgba(148,163,184,0.2);color:var(--color-text-secondary);';
+                const disableDemoteLastAdmin = isAdminRole && adminCount <= 1;
+                const disabledAttr = disableDemoteLastAdmin ? 'disabled' : '';
+                const disabledStyle = disableDemoteLastAdmin ? 'opacity:0.55;cursor:not-allowed;' : '';
+                const hint = disableDemoteLastAdmin
+                    ? '<div style="margin-top:0.45rem;font-size:0.8rem;color:var(--color-text-muted);">Mindestens ein Admin muss bestehen bleiben.</div>'
+                    : '';
+
+                return `
+                    <div class="message-item">
+                        <div class="admin-user-row">
+                            <div class="admin-user-main">
+                                <div class="message-title admin-user-title">${username}</div>
+                                <div class="message-meta admin-user-meta">${email} · Erstellt am ${createdAt}</div>
+                                ${hint}
+                            </div>
+                            <div class="admin-user-actions">
+                                <span class="message-badge" style="${roleBadgeStyle}">${isAdminRole ? 'Admin' : 'Nutzer'}</span>
+                                <button class="btn-secondary" style="padding:0.45rem 0.8rem;${disabledStyle}" ${disabledAttr} onclick="changeAdminRole('${escapeHtml(user.id)}','${actionRole}')">${actionLabel}</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getFilteredAdminUsers() {
+            const term = String(adminUsersSearchTerm || '').trim().toLowerCase();
+            if (!term) return Array.isArray(adminUsersCache) ? adminUsersCache : [];
+
+            return (Array.isArray(adminUsersCache) ? adminUsersCache : []).filter(user => {
+                const role = String(user.role || 'user').toLowerCase() === 'admin' ? 'admin' : 'nutzer';
+                const haystack = [
+                    String(user.username || ''),
+                    String(user.email || ''),
+                    role
+                ].join(' ').toLowerCase();
+                return haystack.includes(term);
+            });
+        }
+
+        function filterAdminUsers() {
+            const input = document.getElementById('adminUsersSearch');
+            adminUsersSearchTerm = input ? String(input.value || '').trim() : '';
+            renderAdminUsers(getFilteredAdminUsers());
+        }
+
         async function loadAdminMessages() {
             const container = document.getElementById('adminMessagesList');
             if (container) {
@@ -3908,6 +4034,61 @@ themeToggle.addEventListener('click', () => {
                     container.innerHTML = `<p class="message-empty">${escapeHtml(err.message || 'Admin-Nachrichtenverwaltung konnte nicht geladen werden')}</p>`;
                 }
                 setAdminMessageStatus(err.message || 'Admin-Nachrichtenverwaltung konnte nicht geladen werden', 'error');
+            }
+        }
+
+        async function loadAdminUsers() {
+            if (!IS_ADMIN) return;
+
+            const container = document.getElementById('adminUsersList');
+            if (container) {
+                container.innerHTML = '<p class="message-empty">Lädt…</p>';
+            }
+
+            try {
+                const res = await fetch('admin/users_manage.php');
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || data.detail || 'Benutzerverwaltung konnte nicht geladen werden');
+                }
+
+                adminUsersCache = Array.isArray(data.users) ? data.users : [];
+                renderAdminUsers(getFilteredAdminUsers());
+                setAdminUsersStatus('');
+            } catch (err) {
+                console.error('Benutzerverwaltung konnte nicht geladen werden', err);
+                if (container) {
+                    container.innerHTML = `<p class="message-empty">${escapeHtml(err.message || 'Benutzerverwaltung konnte nicht geladen werden')}</p>`;
+                }
+                setAdminUsersStatus(err.message || 'Benutzerverwaltung konnte nicht geladen werden', 'error');
+            }
+        }
+
+        async function changeAdminRole(targetUserId, role) {
+            if (!IS_ADMIN || !targetUserId) return;
+            const normalizedRole = String(role || '').toLowerCase() === 'admin' ? 'admin' : 'user';
+
+            setAdminUsersStatus('Rolle wird aktualisiert…');
+
+            try {
+                const res = await fetch('admin/user_role_update.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: targetUserId,
+                        role: normalizedRole
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || data.detail || 'Rolle konnte nicht aktualisiert werden');
+                }
+
+                setAdminUsersStatus('Rolle erfolgreich aktualisiert.', 'success');
+                await Promise.all([loadAdminUsers(), loadAdminMessageManagement()]);
+            } catch (err) {
+                console.error('Rolle konnte nicht aktualisiert werden', err);
+                setAdminUsersStatus(err.message || 'Rolle konnte nicht aktualisiert werden', 'error');
             }
         }
 
@@ -4663,6 +4844,7 @@ themeToggle.addEventListener('click', () => {
         loadAdminMessages();
         if (IS_ADMIN) loadAdminPanel();
         if (IS_ADMIN) loadAdminMessageManagement();
+        if (IS_ADMIN) loadAdminUsers();
 
         const initialTabParam = new URLSearchParams(window.location.search).get('tab');
         const initialView = mapTabParamToView(initialTabParam);

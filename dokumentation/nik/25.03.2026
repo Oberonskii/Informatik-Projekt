@@ -1,0 +1,154 @@
+# Dokumentation – 25.03.2026
+
+## Uebersicht
+Heute wurde die Admin-Benutzerverwaltung end-to-end umgesetzt und anschliessend erweitert:
+- Admin-Rechte vergeben/entziehen im Admin Panel
+- Testbenutzer in die Datenbank eingefuegt
+- Layout-Korrektur gegen Ueberlagerung von Nutzername und Status
+- Suchfunktion in der Benutzerverwaltung
+
+---
+
+## Prompt 1 (User)
+im admin panel soll eine benutzerverwaltung hinzugefuegt werden, wo man den nutzern admin geben oder entnehmen kann
+
+## Ausgabe 1 (Assistant)
+Die Benutzerverwaltung im Admin-Panel wurde eingebaut. Admins koennen Nutzer laden und Admin-Rechte vergeben oder entziehen.
+
+## Aenderungen zu Prompt 1
+
+### 1) Backend erweitert
+Datei: backend.py
+
+- Neues Request-Model:
+  - `AdminRoleUpdate` mit Feld `role`
+- Neuer Endpoint zum Laden aller Nutzer fuer Admins:
+  - `GET /admin/users/{requester_id}`
+- Neuer Endpoint zum Rollenwechsel:
+  - `PUT /admin/users/{requester_id}/{target_user_id}/role`
+- Sicherheitslogik:
+  - Nur Admin darf Zugriff (`require_admin_user`)
+  - Rolle nur `admin` oder `user`
+  - Der letzte verbleibende Admin kann nicht entfernt werden
+
+### 2) PHP-Proxy-Dateien hinzugefuegt
+Dateien:
+- admin/users_manage.php
+- admin/user_role_update.php
+
+Inhalt:
+- Session-Pruefung
+- Weiterleitung an FastAPI-Backend
+- Fehlerbehandlung fuer Backend-Nichterreichbarkeit
+
+### 3) Admin-UI erweitert
+Dateien:
+- tabs/admin.php
+- current_dashboard.php
+
+Umgesetzt:
+- Neues Widget "Benutzerverwaltung"
+- Nutzerliste im Admin-Panel
+- Button pro Nutzer: Admin vergeben/entziehen
+- Statusanzeige fuer Erfolg/Fehler
+- Laden der Nutzer beim Oeffnen des Admin-Tabs
+
+---
+
+## Prompt 2 (User)
+fuege ein paar benutzer in die datenbank hinzu als test benutzer
+
+## Ausgabe 2 (Assistant)
+Drei Testbenutzer wurden erfolgreich in der SQLite-Datenbank angelegt und verifiziert.
+
+## Aenderungen zu Prompt 2
+
+### Datenbankeintraege in learnhub.db
+Eingefuegte Nutzer:
+- testuser_alpha (role=user, email=test.alpha@example.com)
+- testuser_beta (role=user, email=test.beta@example.com)
+- testadmin_gamma (role=admin, email=test.admin@example.com)
+
+Passwoerter (gehasht gespeichert):
+- Fuer testuser_alpha und testuser_beta: Test1234!
+- Fuer testadmin_gamma: Admin1234!
+
+Hinweis:
+- Datei `learnhub.db` wurde dadurch geaendert.
+
+---
+
+## Prompt 3 (User)
+achte darauf dass in der benutzerverwaltung genuegend platz ist. im moment ueberschneiden sich naemlich die namen der benutzer mit ihrem admin status
+
+## Ausgabe 3 (Assistant)
+Das Layout wurde responsive ueberarbeitet. Nutzerinformationen und Rollenaktionen sind sauber getrennt, inklusive Umbruch fuer lange Texte und Mobile-Fallback.
+
+## Aenderungen zu Prompt 3
+
+Datei: current_dashboard.php
+
+- Neue CSS-Klassen fuer die Benutzerverwaltung:
+  - `.admin-user-row`
+  - `.admin-user-main`
+  - `.admin-user-title`
+  - `.admin-user-meta`
+  - `.admin-user-actions`
+- Responsive Regel via Media Query (`max-width: 900px`)
+- Markup in `renderAdminUsers(...)` von flex auf Grid-Struktur umgestellt
+- Ueberlappungen zwischen Name und Status/Buttons behoben
+
+---
+
+## Prompt 4 (User)
+fuege noch eine suchfunktion fuer den benutzer hinzu
+
+## Ausgabe 4 (Assistant)
+Die Suchfunktion wurde eingebaut. Nutzer koennen jetzt live nach Name, E-Mail oder Rolle gefiltert werden.
+
+## Aenderungen zu Prompt 4
+
+### UI
+Datei: tabs/admin.php
+
+- Suchfeld eingefuegt:
+  - `id="adminUsersSearch"`
+  - Placeholder: "Nutzer suchen (Name, E-Mail, Rolle)"
+  - Live-Trigger: `oninput="filterAdminUsers()"`
+
+### Logik
+Datei: current_dashboard.php
+
+- Neuer Suchzustand:
+  - `adminUsersSearchTerm`
+- Neue Funktionen:
+  - `getFilteredAdminUsers()`
+  - `filterAdminUsers()`
+- `renderAdminUsers(...)` auf gefilterte Daten angepasst
+- Leermeldung differenziert:
+  - "Keine Nutzer gefunden"
+  - "Keine passenden Nutzer gefunden"
+
+---
+
+## Geaenderte Dateien gesamt (heute)
+- backend.py
+- current_dashboard.php
+- tabs/admin.php
+- admin/users_manage.php (neu)
+- admin/user_role_update.php (neu)
+- learnhub.db (Daten geaendert)
+
+---
+
+## Validierung / Checks
+Durchgefuehrte Pruefungen:
+- Fehlercheck auf geaenderte Dateien via Editor-Problemanalyse
+  - Ergebnis: keine Fehler in
+    - backend.py
+    - current_dashboard.php
+    - tabs/admin.php
+    - admin/users_manage.php
+    - admin/user_role_update.php
+- SQL-Verifikation der Testnutzer in `learnhub.db`
+  - Ergebnis: Datensaetze vorhanden
