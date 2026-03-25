@@ -485,3 +485,46 @@ Durchgefuehrte Pruefungen:
 | `auth/login.php` | Sichere Cookie-Parameter, CSRF-Token-Generierung/Prüfung, Hidden-Input im Formular |
 | `auth/register.php` | Sichere Cookie-Parameter, CSRF-Token in beiden Formularen (Registrierung + Code-Bestätigung) |
 | `requirements.txt` | `bcrypt` hinzugefügt |
+
+---
+
+## Prompt 15 (User)
+achte darauf dass das LH logo oben links auch im white mode korrekt angezeigt wird
+
+## Ausgabe 15 (Assistant)
+Das LH-Logo wird jetzt im Light Mode korrekt angezeigt. Die fehlenden CSS-Variablen wurden hinzugefügt.
+
+## Aenderungen zu Prompt 15
+
+Datei: current_dashboard.php
+
+### CSS-Variablen fuer Light Mode erweitert
+
+#### Hinzugefuegt in `:root` (Light Mode)
+- `--color-primary: #4f46e5;` — Indigo-Farbton fuer Logo und primäre UI-Elemente
+- `--color-danger: #dc2626;` — Rot fuer Delete-Buttons und Fehlerzustände
+
+### Problem
+Das LH-Logo (`.logo-icon`) nutzt `var(--color-primary)` als Gradient-Farbe und Box-Shadow. Im Light Mode waren nur `--color-primary-hover` und `--color-primary-active` definiert, nicht die Basis `--color-primary`. Die Fallback-Farben führten dazu, dass das Logo nicht korrekt sichtbar war.
+
+Die fehlende `--color-danger` Variable wurde zudem in mehreren Stellen des Frontends (Logout-Button, Delete-Buttons) verwendet, war aber auch nur im Dark Mode definiert.
+
+### Loesung
+- `--color-primary: #4f46e5` (Indigo-Blau) hinzugefügt - erzeugt einen schönen Kontrast zum weissen Hintergrund
+- `--color-danger: #dc2626` (leuchtendes Rot) hinzugefügt - sorgt für konsistente Warnung/Delete-Zustände
+
+Die Funktionalität bleibt unverändert; nur die Farbgebung ist jetzt konsistent zwischen Light und Dark Mode.
+
+---
+
+## Geaenderte Dateien (heute, Gesamtliste)
+- backend.py (Prompts 1, 5, 6, 12)
+- current_dashboard.php (Prompts 1, 3, 4, 6, 9, 10, 11, 13, 14, 15)
+- tabs/admin.php (Prompts 1, 4, 11)
+- admin/users_manage.php (Prompt 1 — neu)
+- admin/user_role_update.php (Prompt 1 — neu)
+- auth/login.php (Prompts 12, 13, 14)
+- auth/register.php (Prompts 12, 13, 14)
+- learnhub.db (Prompts 2, 8 — Daten)
+- requirements.txt (Prompt 12)
+- zahlreiche weitere Dateien (Prompt 5 — projektweite Kommentierung)
