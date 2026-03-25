@@ -5239,6 +5239,31 @@ themeToggle.addEventListener('click', () => {
             } catch { /* Server nicht erreichbar */ }
         }
 
+        function triggerFileDownload(url) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportTimetableCSV() {
+            triggerFileDownload('timetable/timetable_export_csv.php');
+        }
+
+        function exportTimetablePDF() {
+            triggerFileDownload('timetable/timetable_export_pdf.php');
+        }
+
+        function exportGradesCSV() {
+            triggerFileDownload('grades/grades_export_csv.php');
+        }
+
+        function exportGradesPDF() {
+            triggerFileDownload('grades/grades_export_pdf.php');
+        }
+
         // ========================================
         // SUBJECTS (FÄCHER)
         // ========================================

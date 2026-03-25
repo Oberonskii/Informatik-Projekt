@@ -9,6 +9,10 @@
                     <div class="widget">
                         <div class="widget-header">
                             <div class="widget-title">Note hinzufügen</div>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <button class="btn-secondary" onclick="exportGradesCSV()">⬇️ CSV</button>
+                                <button class="btn-secondary" onclick="exportGradesPDF()">🧾 PDF</button>
+                            </div>
                         </div>
                         <div class="input-group">
                             <select id="gradeSubject" data-subject-dropdown placeholder="Fach wählen...">

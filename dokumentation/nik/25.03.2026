@@ -258,6 +258,77 @@ Datei: current_dashboard.php
   - Neue Klasse `.admin-user-hint` fuer Warnmeldung
 - Tab-Datei angepasst:
   - `.admin-users-widget` mit neuer Klasse versehen
+
+---
+
+## Prompt 11 (User)
+fuege eine export funktion fuer den stundenplan und den noten tab hinzu in form einer pdf und csv
+
+## Ausgabe 11 (Assistant)
+Die Export-Funktion wurde umgesetzt: fuer Stundenplan und Noten gibt es nun je einen CSV- und PDF-Export inklusive Buttons in den jeweiligen Tabs.
+
+## Aenderungen zu Prompt 11
+
+### 1) Neue Export-Endpunkte (CSV)
+Dateien:
+- timetable/timetable_export_csv.php
+- grades/grades_export_csv.php
+
+Umgesetzt:
+- Session-Pruefung (`user_id` muss gesetzt sein)
+- Datenabruf ueber bestehende FastAPI-Endpunkte
+  - Stundenplan: `GET /timetable/{user_id}`
+  - Noten: `GET /grades/{user_id}`
+- CSV-Ausgabe mit Headern und UTF-8 BOM (Excel-kompatibel)
+- Sortierung:
+  - Stundenplan nach Wochentag und Stunde
+  - Noten nach Fachname
+
+### 2) Neue Export-Endpunkte (PDF)
+Dateien:
+- timetable/timetable_export_pdf.php
+- grades/grades_export_pdf.php
+
+Umgesetzt:
+- Session-Pruefung und Datenabruf analog zu CSV
+- Serverseitige PDF-Erzeugung als einfache Text-PDF (ohne externe Library)
+- Escape-Handling fuer Sonderzeichen in PDF-Textobjekten
+- Zusatzausgabe im Noten-PDF:
+  - gewichteter Durchschnitt in Punkten
+
+### 3) UI-Buttons in den Tabs
+Dateien:
+- tabs/timetable.php
+- tabs/grades.php
+
+Umgesetzt:
+- Stundenplan-Tab:
+  - Button `⬇️ CSV` -> `exportTimetableCSV()`
+  - Button `🧾 PDF` -> `exportTimetablePDF()`
+- Noten-Tab:
+  - Button `⬇️ CSV` -> `exportGradesCSV()`
+  - Button `🧾 PDF` -> `exportGradesPDF()`
+
+### 4) Frontend-Downloadlogik
+Datei:
+- current_dashboard.php
+
+Neue Funktionen:
+- `triggerFileDownload(url)`
+- `exportTimetableCSV()`
+- `exportTimetablePDF()`
+- `exportGradesCSV()`
+- `exportGradesPDF()`
+
+Verhalten:
+- Klick auf Export-Button startet direkt den Dateidownload ueber den jeweiligen PHP-Endpunkt.
+
+### 5) Nebenwirkung in Repository-Status
+Datei:
+- learnhub.db
+
+Hinweis:
+- Die Datenbankdatei ist weiterhin geaendert (bereits vorhandene lokale Aenderung) und wurde beim Commit mit uebernommen, da der Auftrag lautete, alle Aenderungen zu committen und zu pushen.
   - Inline-Hinweis in CSS-Klasse-gehaltener Text umgewandelt
 
 Datei: tabs/admin.php

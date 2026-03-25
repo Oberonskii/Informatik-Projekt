@@ -11,7 +11,11 @@
                     <div class="widget">
                         <div class="widget-header">
                             <div class="widget-title">📋 Wochenplan</div>
-                            <button id="timetableEditBtn" class="btn-primary" onclick="toggleTimetableEdit()">✏️ Bearbeiten</button>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <button class="btn-secondary" onclick="exportTimetableCSV()">⬇️ CSV</button>
+                                <button class="btn-secondary" onclick="exportTimetablePDF()">🧾 PDF</button>
+                                <button id="timetableEditBtn" class="btn-primary" onclick="toggleTimetableEdit()">✏️ Bearbeiten</button>
+                            </div>
                         </div>
 
                         <!-- Ansichtsmodus -->
