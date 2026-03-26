@@ -572,6 +572,29 @@ let fcCurrentCards = [];
 let fcStudyIndex = 0;
 let fcAllDecks = [];
 let fcExploreData = [];
+const FC_LAST_STUDIED_DECK_KEY = 'last_flashcard_studied_deck';
+
+function fcGetLastStudiedDeckId() {
+    if (typeof readScopedJson !== 'function') return null;
+    const stored = readScopedJson(FC_LAST_STUDIED_DECK_KEY, null, true);
+    if (stored && typeof stored === 'object') {
+        return stored.id || null;
+    }
+    return typeof stored === 'string' ? stored : null;
+}
+
+function fcRememberLastStudiedDeck(deck) {
+    if (!deck || typeof writeScopedJson !== 'function') return;
+    writeScopedJson(FC_LAST_STUDIED_DECK_KEY, {
+        id: deck.id,
+        studied_at: new Date().toISOString()
+    });
+}
+
+function fcClearLastStudiedDeck(deckId) {
+    if (!deckId || fcGetLastStudiedDeckId() !== deckId || typeof writeScopedJson !== 'function') return;
+    writeScopedJson(FC_LAST_STUDIED_DECK_KEY, null);
+}
 
 // ---- Sub-tab switching ----
 function fcShowTab(tab, btn) {
@@ -768,8 +791,12 @@ async function fcDeleteDeckById(deckId) {
     try {
         var res = await fetch('flashcards/deck_delete.php?deck_id=' + encodeURIComponent(deckId), { method: 'POST' });
         if (res.ok) {
+            fcClearLastStudiedDeck(deckId);
             fcAllDecks = fcAllDecks.filter(function(d) { return d.id !== deckId; });
             fcRenderDecks();
+            if (typeof renderOverviewFlashcards === 'function') {
+                renderOverviewFlashcards();
+            }
         } else {
             alert(I18N.deleteError);
         }
@@ -797,6 +824,7 @@ async function fcToggleDeckPublic() {
 // ---- Study Mode ----
 function fcStartStudy() {
     if (!fcCurrentCards.length) return;
+    fcRememberLastStudiedDeck(fcCurrentDeck);
     fcStudyIndex = 0;
     document.getElementById('fc-study-deck-name').textContent = fcCurrentDeck.name;
     document.getElementById('fc-study-finish').style.display = 'none';
@@ -805,6 +833,9 @@ function fcStartStudy() {
     document.getElementById('fc-study-nav').style.display = 'flex';
     fcUpdateStudyCard();
     fcShowSubview('study');
+    if (typeof renderOverviewFlashcards === 'function') {
+        renderOverviewFlashcards();
+    }
 }
 
 function fcUpdateStudyCard() {

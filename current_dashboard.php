@@ -2382,14 +2382,123 @@ themeToggle.addEventListener('click', () => {
 
 
         // Flashcard Functionality
+        const OVERVIEW_LAST_FLASHCARD_DECK_KEY = 'last_flashcard_studied_deck';
+        const OVERVIEW_FLASHCARD_LOADING = <?php echo json_encode(t('common.loading')); ?>;
+        const OVERVIEW_FLASHCARD_NO_DECKS = <?php echo json_encode(trim(strip_tags(t('flashcards.no_decks')))); ?>;
+        const OVERVIEW_FLASHCARD_NO_CARDS = <?php echo json_encode(trim(strip_tags(t('flashcards.no_cards')))); ?>;
+        const OVERVIEW_FLASHCARD_QUESTION_LABEL = <?php echo json_encode(t('overview.flashcard_question_label')); ?>;
         let currentCard = 0;
-        const flashcards = [
-            { question: 'Was ist ein Automat?', answer: 'Ein abstraktes Modell eines Rechners mit endlich vielen Zuständen' },
-            { question: 'Was ist eine reguläre Sprache?', answer: 'Eine Sprache, die von einem endlichen Automaten erkannt werden kann' },
-            { question: 'Was ist der Unterschied zwischen DFA und NFA?', answer: 'DFA ist deterministisch, NFA nicht-deterministisch' },
-            { question: 'Was ist die Chomsky-Hierarchie?', answer: 'Eine Klassifizierung formaler Sprachen in vier Typen' },
-            { question: 'Was ist ein Pumping-Lemma?', answer: 'Ein Hilfsmittel zum Beweis, dass eine Sprache nicht regulär ist' }
-        ];
+        let overviewFlashcards = [];
+
+        function getLastStudiedFlashcardDeckId() {
+            const stored = readScopedJson(OVERVIEW_LAST_FLASHCARD_DECK_KEY, null, true);
+            if (stored && typeof stored === 'object') {
+                return stored.id || null;
+            }
+            return typeof stored === 'string' ? stored : null;
+        }
+
+        function updateOverviewFlashcardDeckLabel(label) {
+            const deckNameEl = document.getElementById('overviewFlashcardDeckName');
+            if (deckNameEl) {
+                deckNameEl.textContent = label || '';
+            }
+        }
+
+        function updateOverviewFlashcardNavigation() {
+            const nav = document.getElementById('overviewFlashcardNav');
+            if (nav) {
+                nav.style.visibility = overviewFlashcards.length > 1 ? 'visible' : 'hidden';
+            }
+        }
+
+        function setOverviewFlashcardMessage(message) {
+            const flashcardElement = document.getElementById('flashcard');
+            if (!flashcardElement) return;
+
+            const front = flashcardElement.querySelector('.flashcard-front');
+            const back = flashcardElement.querySelector('.flashcard-back');
+            flashcardElement.classList.remove('flipped');
+
+            if (front) front.innerHTML = `<p>${escapeHtml(message)}</p>`;
+            if (back) back.innerHTML = `<p>${escapeHtml(message)}</p>`;
+
+            updateCardCounter();
+            updateOverviewFlashcardNavigation();
+        }
+
+        async function fetchOverviewDeckCards(deckId) {
+            try {
+                const res = await fetch(`flashcards/cards_load.php?deck_id=${encodeURIComponent(deckId)}`);
+                return res.ok ? await res.json() : [];
+            } catch {
+                return [];
+            }
+        }
+
+        async function renderOverviewFlashcards() {
+            updateOverviewFlashcardDeckLabel(OVERVIEW_FLASHCARD_LOADING);
+            setOverviewFlashcardMessage(OVERVIEW_FLASHCARD_LOADING);
+
+            let decks = [];
+            try {
+                const res = await fetch('flashcards/decks_load.php');
+                decks = res.ok ? await res.json() : [];
+            } catch {
+                decks = [];
+            }
+
+            if (!decks.length) {
+                overviewFlashcards = [];
+                updateOverviewFlashcardDeckLabel('');
+                setOverviewFlashcardMessage(OVERVIEW_FLASHCARD_NO_DECKS);
+                return;
+            }
+
+            const preferredDeckId = getLastStudiedFlashcardDeckId();
+            const preferredDeck = decks.find(deck => deck.id === preferredDeckId) || null;
+            const candidateDecks = preferredDeck
+                ? [preferredDeck].concat(decks.filter(deck => deck.id !== preferredDeck.id))
+                : decks.slice();
+
+            let selectedDeck = null;
+            let selectedCards = [];
+
+            for (const deck of candidateDecks) {
+                if (Number(deck.card_count || 0) <= 0) {
+                    continue;
+                }
+
+                const cards = await fetchOverviewDeckCards(deck.id);
+                if (cards.length) {
+                    selectedDeck = deck;
+                    selectedCards = cards;
+                    break;
+                }
+            }
+
+            if (!selectedDeck) {
+                selectedDeck = preferredDeck || decks[0];
+                selectedCards = await fetchOverviewDeckCards(selectedDeck.id);
+            }
+
+            overviewFlashcards = selectedCards.map(card => ({
+                question: card.front,
+                answer: card.back
+            }));
+            currentCard = 0;
+
+            updateOverviewFlashcardDeckLabel(selectedDeck ? selectedDeck.name : '');
+
+            if (!overviewFlashcards.length) {
+                setOverviewFlashcardMessage(OVERVIEW_FLASHCARD_NO_CARDS);
+                return;
+            }
+
+            updateFlashcard();
+            updateCardCounter();
+            updateOverviewFlashcardNavigation();
+        }
 
         function flipCard(cardId) {
             const card = document.getElementById(cardId);
@@ -2399,13 +2508,15 @@ themeToggle.addEventListener('click', () => {
         }
 
         function nextCard() {
-            currentCard = (currentCard + 1) % flashcards.length;
+            if (!overviewFlashcards.length) return;
+            currentCard = (currentCard + 1) % overviewFlashcards.length;
             updateFlashcard();
             updateCardCounter();
         }
 
         function previousCard() {
-            currentCard = (currentCard - 1 + flashcards.length) % flashcards.length;
+            if (!overviewFlashcards.length) return;
+            currentCard = (currentCard - 1 + overviewFlashcards.length) % overviewFlashcards.length;
             updateFlashcard();
             updateCardCounter();
         }
@@ -2413,12 +2524,17 @@ themeToggle.addEventListener('click', () => {
         function updateCardCounter() {
             const counter = document.getElementById('cardCounter');
             if (counter) {
-                counter.textContent = `Karte ${currentCard + 1} von ${flashcards.length}`;
+                counter.textContent = overviewFlashcards.length ? `${currentCard + 1} / ${overviewFlashcards.length}` : '';
             }
         }
 
         function updateFlashcard() {
-            const card = flashcards[currentCard];
+            if (!overviewFlashcards.length) {
+                updateOverviewFlashcardNavigation();
+                return;
+            }
+
+            const card = overviewFlashcards[currentCard];
             const flashcardElement = document.getElementById('flashcard');
             const flashcardDetail = document.getElementById('flashcardDetail');
             
@@ -2430,17 +2546,19 @@ themeToggle.addEventListener('click', () => {
             if (flashcardElement) {
                 const front = flashcardElement.querySelector('.flashcard-front');
                 const back = flashcardElement.querySelector('.flashcard-back');
-                front.innerHTML = `<p><strong>Frage:</strong> ${card.question}</p>`;
-                back.innerHTML = `<p>${card.answer}</p>`;
+                if (front) front.innerHTML = `<p><strong>${escapeHtml(OVERVIEW_FLASHCARD_QUESTION_LABEL)}</strong> ${escapeHtml(card.question)}</p>`;
+                if (back) back.innerHTML = `<p>${escapeHtml(card.answer)}</p>`;
             }
             
             // Update detail view card
             if (flashcardDetail) {
                 const frontDetail = flashcardDetail.querySelector('.flashcard-front');
                 const backDetail = flashcardDetail.querySelector('.flashcard-back');
-                frontDetail.innerHTML = `<p><strong>Frage:</strong> ${card.question}</p>`;
-                backDetail.innerHTML = `<p>${card.answer}</p>`;
+                if (frontDetail) frontDetail.innerHTML = `<p><strong>${escapeHtml(OVERVIEW_FLASHCARD_QUESTION_LABEL)}</strong> ${escapeHtml(card.question)}</p>`;
+                if (backDetail) backDetail.innerHTML = `<p>${escapeHtml(card.answer)}</p>`;
             }
+
+            updateOverviewFlashcardNavigation();
         }
 
         // Files Functionality
@@ -4860,6 +4978,7 @@ themeToggle.addEventListener('click', () => {
             renderOverviewExams();
             renderOverviewCalendar();
             renderOverviewGrades();
+            renderOverviewFlashcards();
             renderOverviewFiles();
             renderOverviewMessages();
             renderOverviewAdmin();

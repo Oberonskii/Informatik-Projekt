@@ -107,6 +107,10 @@
                                 </div>
                                 <button class="widget-action" data-view="flashcards">→</button>
                             </div>
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:0.75rem; font-size:0.82rem; color:var(--color-text-secondary);">
+                                <span id="overviewFlashcardDeckName"><?php echo htmlspecialchars(t('common.loading')); ?></span>
+                                <span id="cardCounter"></span>
+                            </div>
                             <div class="flashcard" id="flashcard" onclick="flipCard('flashcard')">
                                 <div class="flashcard-inner" id="flashcardInner">
                                     <div class="flashcard-front">
@@ -117,7 +121,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="flashcard-nav">
+                            <div class="flashcard-nav" id="overviewFlashcardNav">
                                 <button class="flashcard-btn" onclick="previousCard(); event.stopPropagation();"><?php echo htmlspecialchars(t('overview.previous')); ?></button>
                                 <button class="flashcard-btn" onclick="nextCard(); event.stopPropagation();"><?php echo htmlspecialchars(t('overview.next')); ?></button>
                             </div>
