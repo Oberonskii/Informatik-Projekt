@@ -3,21 +3,21 @@
                 <!-- Fächer Detail View -->
                 <div id="subjects" class="view-content" style="display: none;">
                     <div class="content-header">
-                        <h1>📚 Fächer</h1>
-                        <p>Verwalte deine Fächer und Farben</p>
+                        <h1>📚 <?php echo htmlspecialchars(t('subjects.title')); ?></h1>
+                        <p><?php echo htmlspecialchars(t('subjects.subtitle')); ?></p>
                     </div>
                     <div class="widget">
                         <div class="widget-header">
-                            <div class="widget-title">Neues Fach hinzufügen</div>
+                            <div class="widget-title"><?php echo htmlspecialchars(t('subjects.add_title')); ?></div>
                         </div>
                         <div class="input-group">
-                            <input type="text" id="subjectName" placeholder="Fach eingeben...">
-                            <button type="button" id="subjectColorBtn" class="btn-secondary" onclick="openColorModal()">Farbe wählen</button>
+                            <input type="text" id="subjectName" placeholder="<?php echo htmlspecialchars(t('subjects.input_placeholder')); ?>">
+                            <button type="button" id="subjectColorBtn" class="btn-secondary" onclick="openColorModal()"><?php echo htmlspecialchars(t('subjects.color_choose')); ?></button>
                             <input type="hidden" id="subjectColor" value="#1E90FF">
-                            <button class="btn-primary" onclick="addSubject()">Hinzufügen</button>
+                            <button class="btn-primary" onclick="addSubject()"><?php echo htmlspecialchars(t('common.add')); ?></button>
                         </div>
                         <div class="subjects-list" id="subjectsList" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
-                            <p style="color:var(--color-text-muted);text-align:center;padding:1rem;">Wird geladen...</p>
+                            <p style="color:var(--color-text-muted);text-align:center;padding:1rem;"><?php echo htmlspecialchars(t('common.loading_long')); ?></p>
                         </div>
                     </div>
 
@@ -25,7 +25,7 @@
                     <div id="colorModal" class="modal-overlay" style="display:none;">
                         <div class="modal-box" style="max-width:500px; max-height:80%; overflow-y:auto;">
                             <div class="modal-header" style="padding:1rem; position:relative;">
-                                <h3 style="margin:0;">Farbe auswählen</h3>
+                                <h3 style="margin:0;"><?php echo htmlspecialchars(t('subjects.color_modal_title')); ?></h3>
                                 <button class="btn-icon" onclick="closeColorModal()" style="position:absolute; top:0.65rem; right:0.65rem;">❌</button>
                             </div>
                             <div class="modal-body" style="padding:1rem;">
@@ -65,7 +65,7 @@
                     <div id="detailsModal" class="modal-overlay" style="display:none;">
                         <div class="modal-box" style="max-width:700px; max-height:80%; overflow-y:auto;">
                             <div class="modal-header" style="padding:1.5rem; border-bottom:1px solid var(--color-border); background:linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%); color:white; border-radius:12px 12px 0 0; position:relative;">
-                                <h3 id="detailsTitle" style="margin:0; font-size:1.2rem;">Fach-Details</h3>
+                                <h3 id="detailsTitle" style="margin:0; font-size:1.2rem;"><?php echo htmlspecialchars(t('subjects.details_title')); ?></h3>
                                 <button class="btn-icon" onclick="closeDetailsModal()" style="position:absolute; top:0.65rem; right:0.65rem; background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">✕</button>
                             </div>
                             <div class="modal-body" id="detailsContent" style="padding:1.5rem; line-height:1.6;">

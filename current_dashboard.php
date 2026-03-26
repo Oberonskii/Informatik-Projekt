@@ -5,6 +5,8 @@
  */
 session_start();
 
+require_once __DIR__ . '/includes/i18n.php';
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: auth/login.php");
     exit();
@@ -13,6 +15,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['role'] ?? 'user';
 $is_admin = strtolower((string)$user_role) === 'admin';
+$current_locale = learnhub_get_locale();
 
 ?>
 
@@ -20,11 +23,11 @@ $is_admin = strtolower((string)$user_role) === 'admin';
 
 
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?php echo htmlspecialchars($current_locale); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LearnHub Dashboard</title>
+    <title><?php echo htmlspecialchars(t('site.dashboard_title')); ?></title>
     <script>
 (function () {
     const savedTheme = localStorage.getItem('theme') || 'light';
@@ -1839,56 +1842,56 @@ $is_admin = strtolower((string)$user_role) === 'admin';
                     <div class="nav-section-title">Dashboard</div>
                     <a class="nav-item active" data-view="overview">
                         <span class="nav-icon">📊</span>
-                        <span>Übersicht</span>
+                        <span><?php echo htmlspecialchars(t('nav.overview')); ?></span>
                     </a>
                 </div>
 
                 <div class="nav-section">
-                    <div class="nav-section-title">Module</div>
+                    <div class="nav-section-title"><?php echo htmlspecialchars(t('nav.modules')); ?></div>
                     <a class="nav-item" data-view="timetable">
                         <span class="nav-icon">🕒</span>
-                        <span>Stundenplan</span>
+                        <span><?php echo htmlspecialchars(t('nav.timetable')); ?></span>
                     </a>
                     <a class="nav-item" data-view="homework">
                         <span class="nav-icon">✏️</span>
-                        <span>Hausaufgaben</span>
+                        <span><?php echo htmlspecialchars(t('nav.homework')); ?></span>
                     </a>
                     <a class="nav-item" data-view="subjects">
                         <span class="nav-icon">📚</span>
-                        <span>Fächer</span>
+                        <span><?php echo htmlspecialchars(t('nav.subjects')); ?></span>
                     </a>
                     <a class="nav-item" data-view="grades">
                         <span class="nav-icon">📈</span>
-                        <span>Noten</span>
+                        <span><?php echo htmlspecialchars(t('nav.grades')); ?></span>
                     </a>
                     <a class="nav-item" data-view="exams">
                         <span class="nav-icon">📝</span>
-                        <span>Klassenarbeiten</span>
+                        <span><?php echo htmlspecialchars(t('nav.exams')); ?></span>
                     </a>
                     <a class="nav-item" data-view="calendar">
                         <span class="nav-icon">📆</span>
-                        <span>Kalender</span>
+                        <span><?php echo htmlspecialchars(t('nav.calendar')); ?></span>
                     </a>
                     <a class="nav-item" data-view="todos">
                         <span class="nav-icon">✅</span>
-                        <span>To Dos</span>
+                        <span><?php echo htmlspecialchars(t('nav.todos')); ?></span>
                     </a>
                     <a class="nav-item" data-view="flashcards">
                         <span class="nav-icon">🎴</span>
-                        <span>Karteikarten</span>
+                        <span><?php echo htmlspecialchars(t('nav.flashcards')); ?></span>
                     </a>
                     <a class="nav-item" data-view="files">
                         <span class="nav-icon">📁</span>
-                        <span>Dateien</span>
+                        <span><?php echo htmlspecialchars(t('nav.files')); ?></span>
                     </a>
                     <a class="nav-item" data-view="admin-messages">
                         <span class="nav-icon">💬</span>
-                        <span>Admin Nachrichten</span>
+                        <span><?php echo htmlspecialchars(t('nav.admin_messages')); ?></span>
                     </a>
                     <?php if ($is_admin): ?>
                     <a class="nav-item" data-view="admin">
                         <span class="nav-icon">⚙️</span>
-                        <span>Admin Panel</span>
+                        <span><?php echo htmlspecialchars(t('nav.admin_panel')); ?></span>
                     </a>
                     <?php endif; ?>
                 </div>
@@ -1897,15 +1900,15 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             <div class="sidebar-footer">
                 <button class="theme-toggle" id="themeToggle">
                     <span id="themeIcon">🌙</span>
-                    <span id="themeText" style="margin-left: 0.5rem;">Dark Mode</span>
+                    <span id="themeText" style="margin-left: 0.5rem;"><?php echo htmlspecialchars(t('sidebar.dark_mode')); ?></span>
                 </button>
                 <button class="account-btn" onclick="openAccountModal()">
                     <span>👤</span>
-                    <span style="margin-left: 0.5rem;">Account</span>
+                    <span style="margin-left: 0.5rem;"><?php echo htmlspecialchars(t('sidebar.account')); ?></span>
                 </button>
                 <a class="logout-btn" href="auth/logout.php">
                     <span>🚪</span>
-                    <span style="margin-left: 0.5rem;">Logout</span>
+                    <span style="margin-left: 0.5rem;"><?php echo htmlspecialchars(t('sidebar.logout')); ?></span>
                 </a>
             </div>
         </aside>
@@ -1934,59 +1937,77 @@ $is_admin = strtolower((string)$user_role) === 'admin';
     <!-- ===== ACCOUNT SETTINGS MODAL ===== -->
     <div class="modal-overlay" id="accountModal">
         <div class="modal-box">
-            <h2>&#128100; Account-Einstellungen</h2>
+            <h2>&#128100; <?php echo htmlspecialchars(t('account.title')); ?></h2>
+
+            <div class="modal-section">
+                <h3>&#127760; <?php echo htmlspecialchars(t('account.language_title')); ?></h3>
+                <p style="font-size:0.9rem;color:var(--color-text-secondary);margin-bottom:0.75rem;">
+                    <?php echo htmlspecialchars(t('account.language_description')); ?>
+                </p>
+                <form action="auth/set_language.php" method="POST">
+                    <input type="hidden" name="redirect" value="../current_dashboard.php">
+                    <label for="localeSelect" style="display:block;font-size:0.9rem;margin-bottom:0.4rem;"><?php echo htmlspecialchars(t('account.language_label')); ?></label>
+                    <select id="localeSelect" name="locale" style="width:100%;margin-bottom:0.75rem;">
+                        <option value="de" <?php echo $current_locale === 'de' ? 'selected' : ''; ?>><?php echo htmlspecialchars(t('language.de')); ?></option>
+                        <option value="en" <?php echo $current_locale === 'en' ? 'selected' : ''; ?>><?php echo htmlspecialchars(t('language.en')); ?></option>
+                    </select>
+                    <div>
+                        <button class="modal-btn modal-btn-primary" type="submit"><?php echo htmlspecialchars(t('account.language_button')); ?></button>
+                    </div>
+                </form>
+            </div>
 
             <!-- Benutzername ändern -->
             <div class="modal-section">
-                <h3>&#9999;&#65039; Benutzername ändern</h3>
-                <input type="text" id="newUsername" placeholder="Neuer Benutzername">
+                <h3>&#9999;&#65039; <?php echo htmlspecialchars(t('account.username_title')); ?></h3>
+                <input type="text" id="newUsername" placeholder="<?php echo htmlspecialchars(t('account.username_placeholder')); ?>">
                 <div>
-                    <button class="modal-btn modal-btn-primary" onclick="changeUsername()">Speichern</button>
+                    <button class="modal-btn modal-btn-primary" onclick="changeUsername()"><?php echo htmlspecialchars(t('common.save')); ?></button>
                 </div>
                 <div class="modal-msg" id="msgUsername"></div>
             </div>
 
             <!-- Passwort ändern -->
             <div class="modal-section">
-                <h3>&#128274; Passwort ändern</h3>
-                <input type="password" id="oldPassword" placeholder="Altes Passwort">
-                <input type="password" id="newPassword" placeholder="Neues Passwort">
-                <input type="password" id="newPassword2" placeholder="Neues Passwort wiederholen">
+                <h3>&#128274; <?php echo htmlspecialchars(t('account.password_title')); ?></h3>
+                <input type="password" id="oldPassword" placeholder="<?php echo htmlspecialchars(t('account.password_old')); ?>">
+                <input type="password" id="newPassword" placeholder="<?php echo htmlspecialchars(t('account.password_new')); ?>">
+                <input type="password" id="newPassword2" placeholder="<?php echo htmlspecialchars(t('account.password_repeat')); ?>">
                 <div>
-                    <button class="modal-btn modal-btn-primary" onclick="changePassword()">Speichern</button>
+                    <button class="modal-btn modal-btn-primary" onclick="changePassword()"><?php echo htmlspecialchars(t('common.save')); ?></button>
                 </div>
                 <div class="modal-msg" id="msgPassword"></div>
             </div>
 
             <!-- E-Mail ändern -->
             <div class="modal-section">
-                <h3>&#128231; E-Mail-Adresse ändern</h3>
-                <input type="email" id="newEmail" placeholder="Neue E-Mail-Adresse">
-                <input type="text" id="emailVerificationCode" placeholder="Verifizierungscode (6-stellig)">
+                <h3>&#128231; <?php echo htmlspecialchars(t('account.email_title')); ?></h3>
+                <input type="email" id="newEmail" placeholder="<?php echo htmlspecialchars(t('account.email_new')); ?>">
+                <input type="text" id="emailVerificationCode" placeholder="<?php echo htmlspecialchars(t('account.email_code')); ?>">
                 <div>
-                    <button class="modal-btn modal-btn-primary" onclick="requestEmailChangeCode()">Code senden</button>
-                    <button class="modal-btn modal-btn-primary" onclick="confirmEmailChange()">E-Mail ändern</button>
+                    <button class="modal-btn modal-btn-primary" onclick="requestEmailChangeCode()"><?php echo htmlspecialchars(t('account.send_code')); ?></button>
+                    <button class="modal-btn modal-btn-primary" onclick="confirmEmailChange()"><?php echo htmlspecialchars(t('account.change_email')); ?></button>
                 </div>
                 <div class="modal-msg" id="msgEmail"></div>
             </div>
 
             <!-- Account löschen -->
             <div class="modal-section" style="border-color: var(--color-danger);">
-                <h3 style="color: var(--color-danger);">&#128465;&#65039; Account löschen</h3>
+                <h3 style="color: var(--color-danger);">&#128465;&#65039; <?php echo htmlspecialchars(t('account.delete_title')); ?></h3>
                 <p style="font-size:0.85rem;color:var(--color-text-secondary);margin-bottom:0.75rem;">
-                    Diese Aktion ist <strong>unwiderruflich</strong>. Alle deine Daten werden gelöscht.
+                    <?php echo htmlspecialchars(t('account.delete_warning')); ?>
                 </p>
-                <input type="password" id="deletePassword" placeholder="Passwort zur Bestätigung">
-                <input type="text" id="deleteVerificationCode" placeholder="Verifizierungscode (6-stellig)">
+                <input type="password" id="deletePassword" placeholder="<?php echo htmlspecialchars(t('account.delete_password')); ?>">
+                <input type="text" id="deleteVerificationCode" placeholder="<?php echo htmlspecialchars(t('account.email_code')); ?>">
                 <div>
-                    <button class="modal-btn modal-btn-danger" onclick="requestDeleteAccountCode()">Code senden</button>
-                    <button class="modal-btn modal-btn-danger" onclick="confirmDeleteAccount()">Account endgültig löschen</button>
+                    <button class="modal-btn modal-btn-danger" onclick="requestDeleteAccountCode()"><?php echo htmlspecialchars(t('account.send_code')); ?></button>
+                    <button class="modal-btn modal-btn-danger" onclick="confirmDeleteAccount()"><?php echo htmlspecialchars(t('account.delete_button')); ?></button>
                 </div>
                 <div class="modal-msg" id="msgDelete"></div>
             </div>
 
             <div class="modal-footer">
-                <button class="modal-btn modal-btn-close" onclick="closeAccountModal()">Schließen</button>
+                <button class="modal-btn modal-btn-close" onclick="closeAccountModal()"><?php echo htmlspecialchars(t('common.close')); ?></button>
             </div>
         </div>
     </div>
@@ -1994,20 +2015,20 @@ $is_admin = strtolower((string)$user_role) === 'admin';
     <!-- Exam Grade Modal -->
     <div class="modal-overlay" id="examGradeModal">
         <div class="modal-box">
-            <h2 id="examGradeTitle">📝 Note eintragen</h2>
+            <h2 id="examGradeTitle">📝 <?php echo htmlspecialchars(t('grades.add_title')); ?></h2>
 
             <input type="hidden" id="examGradeExamId">
             <div class="modal-section">
-                <h3>Fach</h3>
+                <h3><?php echo htmlspecialchars(t('nav.subjects')); ?></h3>
                 <input type="text" id="examGradeSubject" placeholder="" readonly style="background:var(--color-bg-hover);cursor:default;">
             </div>
             <div class="modal-section">
-                <h3>Punkte (0–15)</h3>
-                <input type="number" id="examGradeValue" placeholder="Punkte eingeben..." min="0" max="15" step="1">
+                <h3><?php echo htmlspecialchars(t('grades.value_placeholder')); ?></h3>
+                <input type="number" id="examGradeValue" placeholder="<?php echo htmlspecialchars(t('grades.value_placeholder')); ?>" min="0" max="15" step="1">
             </div>
             <div class="modal-section">
-                <h3>Gewichtung</h3>
-                <input type="number" id="examGradeWeight" placeholder="z.B. 1,5" min="0.5" step="0.5" value="1">
+                <h3><?php echo htmlspecialchars(t('grades.weight_placeholder')); ?></h3>
+                <input type="number" id="examGradeWeight" placeholder="<?php echo htmlspecialchars(t('grades.weight_placeholder')); ?>" min="0.5" step="0.5" value="1">
             </div>
             <div class="modal-section">
                 <h3>Beschreibung (optional)</h3>
@@ -2438,9 +2459,42 @@ themeToggle.addEventListener('click', () => {
         // ===== STUNDENPLAN =====
         const TT_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
         const TT_DAY_NAMES = {
-            monday: 'Montag', tuesday: 'Dienstag', wednesday: 'Mittwoch',
-            thursday: 'Donnerstag', friday: 'Freitag'
+            monday: <?php echo json_encode(t('timetable.day.monday')); ?>,
+            tuesday: <?php echo json_encode(t('timetable.day.tuesday')); ?>,
+            wednesday: <?php echo json_encode(t('timetable.day.wednesday')); ?>,
+            thursday: <?php echo json_encode(t('timetable.day.thursday')); ?>,
+            friday: <?php echo json_encode(t('timetable.day.friday')); ?>
         };
+        const HW_NONE_MSG          = <?php echo json_encode(t('homework.none')); ?>;
+        const HW_PLACEHOLDER       = <?php echo json_encode(t('homework.input_placeholder')); ?>;
+        const HW_NONE_ENTERED_MSG  = <?php echo json_encode(t('homework.none_entered')); ?>;
+        const TT_PERIOD_LABEL      = <?php echo json_encode(t('timetable.period_label')); ?>;
+        const HW_DELETE_TITLE      = <?php echo json_encode(t('js.delete')); ?>;
+
+        // ===== KALENDER-LOKALISIERUNG =====
+        const CAL_LOCALE = <?php echo json_encode($current_locale === 'en' ? 'en-GB' : 'de-DE'); ?>;
+        const CAL_MONTH_NAMES = <?php echo json_encode([
+            t('calendar.month.jan'), t('calendar.month.feb'), t('calendar.month.mar'),
+            t('calendar.month.apr'), t('calendar.month.may'), t('calendar.month.jun'),
+            t('calendar.month.jul'), t('calendar.month.aug'), t('calendar.month.sep'),
+            t('calendar.month.oct'), t('calendar.month.nov'), t('calendar.month.dec'),
+        ]); ?>;
+        const CAL_DAY_SHORT = <?php echo json_encode([
+            t('calendar.day_short.mo'), t('calendar.day_short.tu'), t('calendar.day_short.we'),
+            t('calendar.day_short.th'), t('calendar.day_short.fr'), t('calendar.day_short.sa'),
+            t('calendar.day_short.su'),
+        ]); ?>;
+        const CAL_NO_DAY_SELECTED   = <?php echo json_encode(t('calendar.no_day_selected')); ?>;
+        const CAL_SELECT_A_DAY      = <?php echo json_encode(t('calendar.select_a_day')); ?>;
+        const CAL_SELECTED_PREFIX   = <?php echo json_encode(t('calendar.selected_prefix')); ?>;
+        const CAL_NO_DAY            = <?php echo json_encode(t('calendar.no_day')); ?>;
+        const CAL_NO_EVENTS         = <?php echo json_encode(t('calendar.no_events')); ?>;
+        const CAL_DELETE_OR_SERIES  = <?php echo json_encode(t('calendar.delete_or_series')); ?>;
+        const CAL_REC_WEEKLY        = <?php echo json_encode(t('calendar.recurrence.weekly')); ?>;
+        const CAL_REC_MONTHLY       = <?php echo json_encode(t('calendar.recurrence.monthly')); ?>;
+        const CAL_REC_YEARLY        = <?php echo json_encode(t('calendar.recurrence.yearly')); ?>;
+        const CAL_REC_DELETE_CONFIRM = <?php echo json_encode(t('calendar.recurring_delete_confirm')); ?>;
+        const CAL_NO_UPCOMING       = <?php echo json_encode(t('calendar.no_upcoming')); ?>;
         const TT_DAY_INDEX = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5 };
 
         const DEFAULT_TIMES = {
@@ -3212,26 +3266,26 @@ themeToggle.addEventListener('click', () => {
                     <div class="tt-hw-day-title">${TT_DAY_NAMES[day]}</div>`;
 
                 if (!periods.length) {
-                    html += '<p style="font-size:0.82rem;color:var(--color-text-muted);">Keine Hausaufgaben</p>';
+                    html += '<p style="font-size:0.82rem;color:var(--color-text-muted);">' + HW_NONE_MSG + '</p>';
                 } else if (!editable && !hasHomework) {
-                    html += '<p style="font-size:0.82rem;color:var(--color-text-muted);">Keine Hausaufgaben</p>';
+                    html += '<p style="font-size:0.82rem;color:var(--color-text-muted);">' + HW_NONE_MSG + '</p>';
                 } else {
                     periods.forEach(period => {
                         const key = String(period);
                         const periodHomework = dayHw[key] || [];
                         html += `<div style="margin-bottom:0.65rem;">
-                            ${editable ? `<div style="font-size:0.78rem;color:var(--color-text-muted);margin-bottom:0.25rem;">${period}. Stunde</div>` : ''}`;
+                            ${editable ? `<div style="font-size:0.78rem;color:var(--color-text-muted);margin-bottom:0.25rem;">${i18nFormat(TT_PERIOD_LABEL, {period: period})}</div>` : ''}`;
 
                         periodHomework.forEach(hw => {
                             html += `<div class="tt-hw-item">
-                                <button class="tt-hw-delete" onclick="deleteHomework('${escapeHtml(hw.id)}')" title="Löschen">✕</button>
+                                <button class="tt-hw-delete" onclick="deleteHomework('${escapeHtml(hw.id)}')" title="${HW_DELETE_TITLE}">✕</button>
                                 <span>${escapeHtml(hw.title)}</span>
                             </div>`;
                         });
 
                         if (editable) {
                             html += `<div class="tt-hw-input-row">
-                                <input class="tt-hw-input" type="text" id="hwInput_${day}_${period}" placeholder="Hausaufgabe..."
+                                <input class="tt-hw-input" type="text" id="hwInput_${day}_${period}" placeholder="${HW_PLACEHOLDER}"
                                        onkeydown="if(event.key==='Enter') addHomework('${day}',${period})">
                                 <button class="tt-hw-add-btn" onclick="addHomework('${day}',${period})">+</button>
                             </div>`;
@@ -3598,9 +3652,9 @@ themeToggle.addEventListener('click', () => {
         }
 
         function getCalendarRecurrenceLabel(recurrence) {
-            if (recurrence === 'weekly') return 'wöchentlich';
-            if (recurrence === 'monthly') return 'monatlich';
-            if (recurrence === 'yearly') return 'jährlich';
+            if (recurrence === 'weekly') return CAL_REC_WEEKLY;
+            if (recurrence === 'monthly') return CAL_REC_MONTHLY;
+            if (recurrence === 'yearly') return CAL_REC_YEARLY;
             return '';
         }
 
@@ -3691,8 +3745,7 @@ themeToggle.addEventListener('click', () => {
             if (!container || !label) return;
 
             // Monat/Jahr anzeigen
-            const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-            label.textContent = monthNames[currentCalMonth] + ' ' + currentCalYear;
+            label.textContent = CAL_MONTH_NAMES[currentCalMonth] + ' ' + currentCalYear;
 
             // erster Wochentag des Monats (Montag = 0, Sonntag = 6)
             const firstDayJs = new Date(currentCalYear, currentCalMonth, 1).getDay(); // 0=Sonntag
@@ -3701,7 +3754,7 @@ themeToggle.addEventListener('click', () => {
 
             // grid aufbauen
             let html = '<tr>';
-            ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(d => html += '<th>'+d+'</th>');
+            CAL_DAY_SHORT.forEach(d => html += '<th>'+d+'</th>');
             html += '</tr>';
 
             let day = 1;
@@ -3749,26 +3802,26 @@ themeToggle.addEventListener('click', () => {
                 renderCalendar();
             }
             if (!dateStr) {
-                label.textContent = 'Kein Tag ausgewählt';
-                listEl.innerHTML = '<p style="color:var(--color-text-muted)">Bitte einen Tag wählen</p>';
-                if (selectedHint) selectedHint.textContent = 'Ausgewählt: Kein Tag';
+                label.textContent = CAL_NO_DAY_SELECTED;
+                listEl.innerHTML = '<p style="color:var(--color-text-muted)">' + CAL_SELECT_A_DAY + '</p>';
+                if (selectedHint) selectedHint.textContent = CAL_SELECTED_PREFIX + CAL_NO_DAY;
                 wrapper.style.display = 'block';
                 return;
             }
             const d = new Date(dateStr + 'T00:00:00');
-            const selectedText = d.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month:'2-digit', year:'numeric' });
+            const selectedText = d.toLocaleDateString(CAL_LOCALE, { weekday: 'long', day: '2-digit', month:'2-digit', year:'numeric' });
             label.textContent = selectedText;
-            if (selectedHint) selectedHint.textContent = `Ausgewählt: ${selectedText}`;
+            if (selectedHint) selectedHint.textContent = CAL_SELECTED_PREFIX + selectedText;
             const events = getAllCalendarItems(dateStr, dateStr).filter(ev => ev.date === dateStr);
             if (!events.length) {
-                listEl.innerHTML = '<p style="color:var(--color-text-muted)">Keine Ereignisse</p>';
+                listEl.innerHTML = '<p style="color:var(--color-text-muted)">' + CAL_NO_EVENTS + '</p>';
             } else {
                 listEl.innerHTML = events.map(ev => {
                     const icon = ev.type === 'exam' ? '📝' : ev.type === 'todo' ? '✅' : ev.type === 'holiday' ? '🎉' : '📌';
                     let deleteBtn = '';
                     if (ev.type === 'extra') {
                         if (ev.id) {
-                            deleteBtn = `<button class="btn-icon" onclick="deleteCalendarEvent('${ev.id}', '${ev.date}', '${ev.recurrence || 'none'}')" title="${ev.recurrence && ev.recurrence !== 'none' ? 'Termin oder Serie löschen' : 'Löschen'}">🗑️</button>`;
+                            deleteBtn = `<button class="btn-icon" onclick="deleteCalendarEvent('${ev.id}', '${ev.date}', '${ev.recurrence || 'none'}')" title="${ev.recurrence && ev.recurrence !== 'none' ? CAL_DELETE_OR_SERIES : HW_DELETE_TITLE}">🗑️</button>`;
                         }
                     }
                     const recurringLabel = getCalendarRecurrenceLabel(ev.recurrence);
@@ -3822,8 +3875,8 @@ themeToggle.addEventListener('click', () => {
             const recurringLabel = getCalendarRecurrenceLabel(pendingCalendarDelete.recurrence);
             if (textEl) {
                 textEl.textContent = recurringLabel
-                    ? `Dieser Termin wiederholt sich ${recurringLabel}. Soll nur dieses Vorkommen oder die komplette Serie gelöscht werden?`
-                    : 'Wie soll der Termin gelöscht werden?';
+                    ? i18nFormat(CAL_REC_DELETE_CONFIRM, { label: recurringLabel })
+                    : <?php echo json_encode(t('calendar.delete_recurring_text')); ?>;
             }
 
             modal.classList.add('open');
@@ -4476,7 +4529,7 @@ themeToggle.addEventListener('click', () => {
             });
             const upcoming = items.slice(0,3);
             if (!upcoming.length) {
-                container.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Keine Hausaufgaben eingetragen</p>';
+                container.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">' + HW_NONE_ENTERED_MSG + '</p>';
                 return;
             }
             container.innerHTML = upcoming.map(item => {
@@ -4484,7 +4537,7 @@ themeToggle.addEventListener('click', () => {
                 return `<div class="grade-item">
                     <div>
                         <div>${escapeHtml(item.title)}</div>
-                        <div style="font-size:0.8rem;color:var(--color-text-muted);">${escapeHtml(dayName)} · ${item.period}. Stunde</div>
+                        <div style="font-size:0.8rem;color:var(--color-text-muted);">${escapeHtml(dayName)} · ${i18nFormat(TT_PERIOD_LABEL, {period: item.period})}</div>
                     </div>
                 </div>`;
             }).join('');
@@ -4503,12 +4556,12 @@ themeToggle.addEventListener('click', () => {
                 .sort((a,b) => new Date(a.date) - new Date(b.date))
                 .slice(0,3);
             if (!upcoming.length) {
-                container.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Keine kommenden Termine</p>';
+                container.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">' + CAL_NO_UPCOMING + '</p>';
                 return;
             }
             container.innerHTML = upcoming.map(ev => {
                 const d = new Date(ev.date + 'T00:00:00');
-                const dateStr = d.toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+                const dateStr = d.toLocaleDateString(CAL_LOCALE, { day:'2-digit', month:'2-digit', year:'numeric' });
                 let icon = '📌';
                 if (ev.type === 'exam') icon = '📝';
                 if (ev.type === 'todo') icon = '✅';
@@ -4857,7 +4910,7 @@ themeToggle.addEventListener('click', () => {
             }
 
             const d = new Date((currentSelectedDate || selectedDate) + 'T00:00:00');
-            dateLabel.textContent = d.toLocaleDateString('de-DE', {
+            dateLabel.textContent = d.toLocaleDateString(CAL_LOCALE, {
                 weekday: 'long',
                 day: '2-digit',
                 month: '2-digit',
@@ -4958,6 +5011,76 @@ themeToggle.addEventListener('click', () => {
         const initialView = mapTabParamToView(initialTabParam);
         openViewById(initialView);
 
+        const I18N = {
+            enterUsername: <?php echo json_encode(t('js.enter_username')); ?>,
+            errorGeneric: <?php echo json_encode(t('js.error_generic')); ?>,
+            serverUnreachable: <?php echo json_encode(t('js.server_unreachable')); ?>,
+            fillAllFields: <?php echo json_encode(t('js.fill_all_fields')); ?>,
+            passwordMismatch: <?php echo json_encode(t('js.password_mismatch')); ?>,
+            passwordMinLength: <?php echo json_encode(t('js.password_min_length')); ?>,
+            enterValidEmail: <?php echo json_encode(t('js.enter_valid_email')); ?>,
+            codeSentEnterVerification: <?php echo json_encode(t('js.code_sent_enter_verification')); ?>,
+            sendCodeFirst: <?php echo json_encode(t('js.send_code_first')); ?>,
+            enterVerificationCode: <?php echo json_encode(t('js.enter_verification_code')); ?>,
+            enterPassword: <?php echo json_encode(t('js.enter_password')); ?>,
+            confirmDeleteAccount: <?php echo json_encode(t('js.confirm_delete_account')); ?>,
+            accountDeletedLogout: <?php echo json_encode(t('js.account_deleted_logout')); ?>,
+            loadGradesError: <?php echo json_encode(t('js.load_grades_error')); ?>,
+            noGrades: <?php echo json_encode(t('js.no_grades')); ?>,
+            average: <?php echo json_encode(t('js.average')); ?>,
+            deleteLabel: <?php echo json_encode(t('js.delete')); ?>,
+            saveGradesError: <?php echo json_encode(t('js.save_grades_error')); ?>,
+            serverBackendHint: <?php echo json_encode(t('js.server_backend_hint')); ?>,
+            confirmDeleteGrade: <?php echo json_encode(t('js.confirm_delete_grade')); ?>,
+            loadSubjectsError: <?php echo json_encode(t('js.load_subjects_error')); ?>,
+            noSubjects: <?php echo json_encode(t('js.no_subjects')); ?>,
+            gradeStats: <?php echo json_encode(t('js.grade_stats')); ?>,
+            confirmDeleteSubject: <?php echo json_encode(t('js.confirm_delete_subject')); ?>,
+            loadDetails: <?php echo json_encode(t('js.load_details')); ?>,
+            subjectNotFound: <?php echo json_encode(t('js.subject_not_found')); ?>,
+            subjectDetailsFor: <?php echo json_encode(t('js.subject_details_for')); ?>,
+            detailsGrades: <?php echo json_encode(t('js.details_grades')); ?>,
+            detailsNoGrades: <?php echo json_encode(t('js.details_no_grades')); ?>,
+            detailsTodos: <?php echo json_encode(t('js.details_todos')); ?>,
+            detailsNoTodos: <?php echo json_encode(t('js.details_no_todos')); ?>,
+            detailsExams: <?php echo json_encode(t('js.details_exams')); ?>,
+            detailsNoExams: <?php echo json_encode(t('js.details_no_exams')); ?>,
+            completed: <?php echo json_encode(t('js.completed')); ?>,
+            open: <?php echo json_encode(t('js.open')); ?>,
+            weight: <?php echo json_encode(t('js.weight')); ?>,
+            standard: <?php echo json_encode(t('js.standard')); ?>,
+            notGradedYet: <?php echo json_encode(t('js.not_graded_yet')); ?>,
+            loadDetailsError: <?php echo json_encode(t('js.load_details_error')); ?>,
+            subjectChoose: <?php echo json_encode(t('js.subject_choose')); ?>,
+            // Flashcards
+            fcPublic: <?php echo json_encode(t('flashcards.public')); ?>,
+            fcPrivate: <?php echo json_encode(t('flashcards.private')); ?>,
+            fcLoadingDecks: <?php echo json_encode(t('flashcards.loading_decks')); ?>,
+            fcNoDecks: <?php echo json_encode(t('flashcards.no_decks')); ?>,
+            fcNoCards: <?php echo json_encode(t('flashcards.no_cards')); ?>,
+            fcLoadingPublicDecks: <?php echo json_encode(t('flashcards.loading_public_decks')); ?>,
+            fcNoPublicDecks: <?php echo json_encode(t('flashcards.no_public_decks')); ?>,
+            fcByUser: <?php echo json_encode(t('flashcards.by_user')); ?>,
+            fcNoDescription: <?php echo json_encode(t('flashcards.no_description')); ?>,
+            fcCopy: <?php echo json_encode(t('flashcards.copy')); ?>,
+            fcCardSingular: <?php echo json_encode(t('flashcards.card_singular')); ?>,
+            fcCardsPlural: <?php echo json_encode(t('flashcards.card_plural')); ?>,
+            fcDeckSingular: <?php echo json_encode(t('flashcards.deck_singular')); ?>,
+            fcDecksPlural: <?php echo json_encode(t('flashcards.deck_plural')); ?>,
+            enterDeckName: <?php echo json_encode(t('js.enter_deck_name')); ?>,
+            createDeckError: <?php echo json_encode(t('js.create_deck_error')); ?>,
+            fcEnterFrontBack: <?php echo json_encode(t('js.enter_front_back')); ?>,
+            confirmDeleteCard: <?php echo json_encode(t('js.confirm_delete_card')); ?>,
+            confirmDeleteDeck: <?php echo json_encode(t('js.confirm_delete_deck')); ?>,
+            deleteError: <?php echo json_encode(t('js.delete_error')); ?>,
+            copySuccess: <?php echo json_encode(t('js.copy_success')); ?>,
+            copyError: <?php echo json_encode(t('js.copy_error')); ?>
+        };
+
+        function i18nFormat(template, values = {}) {
+            return String(template).replace(/\{(\w+)\}/g, (_, key) => values[key] ?? '');
+        }
+
         // ===== ACCOUNT SETTINGS MODAL =====
 
         let emailChangeVerificationId = '';
@@ -4993,7 +5116,7 @@ themeToggle.addEventListener('click', () => {
 
         async function changeUsername() {
             const val = document.getElementById('newUsername').value.trim();
-            if (!val) return setMsg('msgUsername', 'Bitte einen Benutzernamen eingeben.', 'error');
+            if (!val) return setMsg('msgUsername', I18N.enterUsername, 'error');
             try {
                 const res = await fetch(`http://localhost:8000/auth/change-username/${CURRENT_USER_ID}`, {
                     method: 'PUT',
@@ -5005,18 +5128,18 @@ themeToggle.addEventListener('click', () => {
                     setMsg('msgUsername', '✅ ' + data.message, 'success');
                     document.getElementById('newUsername').value = '';
                 } else {
-                    setMsg('msgUsername', '❌ ' + (data.detail || 'Fehler'), 'error');
+                    setMsg('msgUsername', '❌ ' + (data.detail || I18N.errorGeneric), 'error');
                 }
-            } catch { setMsg('msgUsername', '❌ Server nicht erreichbar.', 'error'); }
+            } catch { setMsg('msgUsername', '❌ ' + I18N.serverUnreachable, 'error'); }
         }
 
         async function changePassword() {
             const oldPw  = document.getElementById('oldPassword').value;
             const newPw  = document.getElementById('newPassword').value;
             const newPw2 = document.getElementById('newPassword2').value;
-            if (!oldPw || !newPw) return setMsg('msgPassword', 'Bitte alle Felder ausfüllen.', 'error');
-            if (newPw !== newPw2) return setMsg('msgPassword', '❌ Passwörter stimmen nicht überein.', 'error');
-            if (newPw.length < 6) return setMsg('msgPassword', '❌ Passwort muss mindestens 6 Zeichen haben.', 'error');
+            if (!oldPw || !newPw) return setMsg('msgPassword', I18N.fillAllFields, 'error');
+            if (newPw !== newPw2) return setMsg('msgPassword', '❌ ' + I18N.passwordMismatch, 'error');
+            if (newPw.length < 6) return setMsg('msgPassword', '❌ ' + I18N.passwordMinLength, 'error');
             try {
                 const res = await fetch(`http://localhost:8000/auth/change-password/${CURRENT_USER_ID}`, {
                     method: 'PUT',
@@ -5030,14 +5153,14 @@ themeToggle.addEventListener('click', () => {
                     document.getElementById('newPassword').value = '';
                     document.getElementById('newPassword2').value = '';
                 } else {
-                    setMsg('msgPassword', '❌ ' + (data.detail || 'Fehler'), 'error');
+                    setMsg('msgPassword', '❌ ' + (data.detail || I18N.errorGeneric), 'error');
                 }
-            } catch { setMsg('msgPassword', '❌ Server nicht erreichbar.', 'error'); }
+            } catch { setMsg('msgPassword', '❌ ' + I18N.serverUnreachable, 'error'); }
         }
 
         async function requestEmailChangeCode() {
             const val = document.getElementById('newEmail').value.trim();
-            if (!val || !val.includes('@')) return setMsg('msgEmail', 'Bitte eine gültige E-Mail eingeben.', 'error');
+            if (!val || !val.includes('@')) return setMsg('msgEmail', I18N.enterValidEmail, 'error');
             try {
                 const res = await fetch(`http://localhost:8000/auth/change-email/${CURRENT_USER_ID}`, {
                     method: 'PUT',
@@ -5047,17 +5170,17 @@ themeToggle.addEventListener('click', () => {
                 const data = await res.json();
                 if (res.ok) {
                     emailChangeVerificationId = data.verification_id || '';
-                    setMsg('msgEmail', '✅ Code gesendet. Bitte Verifizierungscode eingeben.', 'success');
+                    setMsg('msgEmail', '✅ ' + I18N.codeSentEnterVerification, 'success');
                 } else {
-                    setMsg('msgEmail', '❌ ' + (data.detail || 'Fehler'), 'error');
+                    setMsg('msgEmail', '❌ ' + (data.detail || I18N.errorGeneric), 'error');
                 }
-            } catch { setMsg('msgEmail', '❌ Server nicht erreichbar.', 'error'); }
+            } catch { setMsg('msgEmail', '❌ ' + I18N.serverUnreachable, 'error'); }
         }
 
         async function confirmEmailChange() {
             const code = document.getElementById('emailVerificationCode').value.trim();
-            if (!emailChangeVerificationId) return setMsg('msgEmail', 'Bitte zuerst einen Code senden.', 'error');
-            if (!code) return setMsg('msgEmail', 'Bitte den Verifizierungscode eingeben.', 'error');
+            if (!emailChangeVerificationId) return setMsg('msgEmail', I18N.sendCodeFirst, 'error');
+            if (!code) return setMsg('msgEmail', I18N.enterVerificationCode, 'error');
             try {
                 const res = await fetch(`http://localhost:8000/auth/change-email/confirm/${CURRENT_USER_ID}`, {
                     method: 'PUT',
@@ -5071,14 +5194,14 @@ themeToggle.addEventListener('click', () => {
                     document.getElementById('emailVerificationCode').value = '';
                     emailChangeVerificationId = '';
                 } else {
-                    setMsg('msgEmail', '❌ ' + (data.detail || 'Fehler'), 'error');
+                    setMsg('msgEmail', '❌ ' + (data.detail || I18N.errorGeneric), 'error');
                 }
-            } catch { setMsg('msgEmail', '❌ Server nicht erreichbar.', 'error'); }
+            } catch { setMsg('msgEmail', '❌ ' + I18N.serverUnreachable, 'error'); }
         }
 
         async function requestDeleteAccountCode() {
             const pw = document.getElementById('deletePassword').value;
-            if (!pw) return setMsg('msgDelete', 'Bitte dein Passwort eingeben.', 'error');
+            if (!pw) return setMsg('msgDelete', I18N.enterPassword, 'error');
             try {
                 const res = await fetch(`http://localhost:8000/auth/delete-account/request-code/${CURRENT_USER_ID}`, {
                     method: 'POST',
@@ -5088,18 +5211,18 @@ themeToggle.addEventListener('click', () => {
                 const data = await res.json();
                 if (res.ok) {
                     deleteAccountVerificationId = data.verification_id || '';
-                    setMsg('msgDelete', '✅ Code gesendet. Bitte Verifizierungscode eingeben.', 'success');
+                    setMsg('msgDelete', '✅ ' + I18N.codeSentEnterVerification, 'success');
                 } else {
-                    setMsg('msgDelete', '❌ ' + (data.detail || 'Fehler'), 'error');
+                    setMsg('msgDelete', '❌ ' + (data.detail || I18N.errorGeneric), 'error');
                 }
-            } catch { setMsg('msgDelete', '❌ Server nicht erreichbar.', 'error'); }
+            } catch { setMsg('msgDelete', '❌ ' + I18N.serverUnreachable, 'error'); }
         }
 
         async function confirmDeleteAccount() {
             const code = document.getElementById('deleteVerificationCode').value.trim();
-            if (!deleteAccountVerificationId) return setMsg('msgDelete', 'Bitte zuerst einen Code senden.', 'error');
-            if (!code) return setMsg('msgDelete', 'Bitte den Verifizierungscode eingeben.', 'error');
-            if (!confirm('Bist du sicher? Diese Aktion kann NICHT rückgängig gemacht werden!')) return;
+            if (!deleteAccountVerificationId) return setMsg('msgDelete', I18N.sendCodeFirst, 'error');
+            if (!code) return setMsg('msgDelete', I18N.enterVerificationCode, 'error');
+            if (!confirm(I18N.confirmDeleteAccount)) return;
             try {
                 const res = await fetch(`http://localhost:8000/auth/delete-account/confirm/${CURRENT_USER_ID}`, {
                     method: 'POST',
@@ -5108,12 +5231,12 @@ themeToggle.addEventListener('click', () => {
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert('Account gelöscht. Du wirst ausgeloggt.');
+                    alert(I18N.accountDeletedLogout);
                     window.location.href = 'auth/logout.php';
                 } else {
-                    setMsg('msgDelete', '❌ ' + (data.detail || 'Fehler'), 'error');
+                    setMsg('msgDelete', '❌ ' + (data.detail || I18N.errorGeneric), 'error');
                 }
-            } catch { setMsg('msgDelete', '❌ Server nicht erreichbar.', 'error'); }
+            } catch { setMsg('msgDelete', '❌ ' + I18N.serverUnreachable, 'error'); }
         }
 
         // ===== NOTEN (0-15 Punkte) API =====
@@ -5139,13 +5262,13 @@ themeToggle.addEventListener('click', () => {
                 const res = await fetch('grades/grades_load.php');
                 if (!res.ok) {
                     console.error('Fehler beim Laden der Noten, Status', res.status);
-                    list.innerHTML = '<p style="color:red;text-align:center;padding:1rem;">Fehler beim Laden der Noten</p>';
+                    list.innerHTML = `<p style="color:red;text-align:center;padding:1rem;">${escapeHtml(I18N.loadGradesError)}</p>`;
                     return;
                 }
                 const grades = await res.json();
                 gradesData = grades; // Global speichern für Dropdown-Statistiken
                 if (!grades.length) {
-                    list.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:1rem;">Noch keine Noten eingetragen</p>';
+                    list.innerHTML = `<p style="color:var(--color-text-muted);text-align:center;padding:1rem;">${escapeHtml(I18N.noGrades)}</p>`;
                     return;
                 }
 
@@ -5162,7 +5285,7 @@ themeToggle.addEventListener('click', () => {
                 const circleColor = buildCircleColor(average);
                 list.innerHTML = `
                     <div class="grade-average-card">
-                        <div class="grade-average-title">Durchschnitt</div>
+                        <div class="grade-average-title">${escapeHtml(I18N.average)}</div>
                         <div class="grade-average-circle" style="background: ${circleColor};">
                             <div class="grade-average-circle-inner">${average}</div>
                         </div>
@@ -5178,14 +5301,14 @@ themeToggle.addEventListener('click', () => {
                         <div style="display:flex;align-items:center;gap:0.5rem;">
                             <span class="grade-value ${getGradeClass(g.value)}">${g.value} P</span>
                             <small style="color:var(--color-text-muted);">x${w}</small>
-                            <button class="btn-icon" onclick="removeGrade('${g.id}')" title="Löschen">🗑️</button>
+                            <button class="btn-icon" onclick="removeGrade('${g.id}')" title="${escapeHtml(I18N.deleteLabel)}">🗑️</button>
                         </div>
                     </div>
                 `;
                 }).join('');
             } catch (err) {
                 console.error('Netzwerkfehler beim Laden der Noten', err);
-                list.innerHTML = '<p style="color:red;text-align:center;padding:1rem;">Server nicht erreichbar</p>';
+                list.innerHTML = `<p style="color:red;text-align:center;padding:1rem;">${escapeHtml(I18N.serverUnreachable)}</p>`;
             }
         }
 
@@ -5218,16 +5341,16 @@ themeToggle.addEventListener('click', () => {
                     loadGrades();
                 } else {
                     console.error('Fehler beim Speichern der Note, Status', res.status);
-                    alert('Noten konnten nicht gespeichert werden. Sieh in die Konsole.');
+                    alert(I18N.saveGradesError);
                 }
             } catch (err) {
                 console.error('Netzwerkfehler beim Speichern der Note', err);
-                alert('Server nicht erreichbar – bitte Backend starten oder CORS prüfen.');
+                alert(I18N.serverBackendHint);
             }
         }
 
         async function removeGrade(gradeId) {
-            if (!confirm('Note wirklich löschen?')) return;
+            if (!confirm(I18N.confirmDeleteGrade)) return;
             try {
                 const res = await fetch('grades/grade_delete.php?grade_id=' + encodeURIComponent(gradeId), {
                     method: 'DELETE'
@@ -5278,7 +5401,7 @@ themeToggle.addEventListener('click', () => {
                 const res = await fetch('subjects/subjects_load.php');
                 if (!res.ok) {
                     console.error('Fehler beim Laden der Fächer, Status', res.status);
-                    list.innerHTML = '<p style="color:red;text-align:center;padding:1rem;">Fehler beim Laden der Fächer</p>';
+                    list.innerHTML = `<p style="color:red;text-align:center;padding:1rem;">${escapeHtml(I18N.loadSubjectsError)}</p>`;
                     return;
                 }
                 subjectsData = await res.json();
@@ -5298,7 +5421,7 @@ themeToggle.addEventListener('click', () => {
                 }
 
                 if (!subjectsData.length) {
-                    list.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:1rem;">Noch keine Fächer erstellt</p>';
+                    list.innerHTML = `<p style="color:var(--color-text-muted);text-align:center;padding:1rem;">${escapeHtml(I18N.noSubjects)}</p>`;
                     return;
                 }
 
@@ -5322,7 +5445,7 @@ themeToggle.addEventListener('click', () => {
                     if (stats && stats.count > 0) {
                         const avg = (stats.total / stats.count).toFixed(1);
                         const gradeCount = stats.grades.length;
-                        statsHtml = `<div style="font-size:0.8rem;color:var(--color-text-muted);margin-top:0.25rem;">Ø ${avg}P aus ${gradeCount} Note${gradeCount !== 1 ? 'n' : ''}</div>`;
+                        statsHtml = `<div style="font-size:0.8rem;color:var(--color-text-muted);margin-top:0.25rem;">${escapeHtml(i18nFormat(I18N.gradeStats, { avg, count: gradeCount, suffix: gradeCount !== 1 ? 'n' : '' }))}</div>`;
                     }
                     return `
                     <div class="grade-item" id="subject-${s.id}" style="border-left: 4px solid ${escapeHtml(s.color)}; cursor:pointer;" onclick="showSubjectDetails('${s.id}')">
@@ -5332,14 +5455,14 @@ themeToggle.addEventListener('click', () => {
                             </div>
                             ${statsHtml}
                         <div style="display:flex;align-items:center;gap:0.5rem;">
-                            <button class="btn-icon" onclick="event.stopPropagation(); removeSubject('${s.id}')" title="Löschen">🗑️</button>
+                            <button class="btn-icon" onclick="event.stopPropagation(); removeSubject('${s.id}')" title="${escapeHtml(I18N.deleteLabel)}">🗑️</button>
                         </div>
                     </div>
                 `;
                 }).join('');
             } catch (err) {
                 console.error('Netzwerkfehler beim Laden der Fächer', err);
-                list.innerHTML = '<p style="color:red;text-align:center;padding:1rem;">Server nicht erreichbar</p>';
+                list.innerHTML = `<p style="color:red;text-align:center;padding:1rem;">${escapeHtml(I18N.serverUnreachable)}</p>`;
             }
         }
 
@@ -5367,16 +5490,16 @@ themeToggle.addEventListener('click', () => {
                     populateSubjectDropdowns();
                 } else {
                     console.error('Fehler beim Speichern des Fachs, Status', res.status);
-                    alert('Fach konnte nicht gespeichert werden. Sieh in die Konsole.');
+                    alert(I18N.saveGradesError);
                 }
             } catch (err) {
                 console.error('Netzwerkfehler beim Speichern des Fachs', err);
-                alert('Server nicht erreichbar – bitte Backend starten oder CORS prüfen.');
+                alert(I18N.serverBackendHint);
             }
         }
 
         async function removeSubject(subjectId) {
-            if (!confirm('Fach wirklich löschen?')) return;
+            if (!confirm(I18N.confirmDeleteSubject)) return;
             try {
                 const res = await fetch('subjects/subject_delete.php', {
                     method: 'POST',
@@ -5401,7 +5524,7 @@ themeToggle.addEventListener('click', () => {
             const content = document.getElementById('detailsContent');
             
             modal.style.display = 'flex';
-            content.innerHTML = '<p style="text-align:center;">Lade Details...</p>';
+            content.innerHTML = `<p style="text-align:center;">${escapeHtml(I18N.loadDetails)}</p>`;
             
             try {
                 // Load all data
@@ -5418,11 +5541,11 @@ themeToggle.addEventListener('click', () => {
                 // Find subject name
                 const subject = subjectsData.find(s => s.id === subjectId);
                 if (!subject) {
-                    content.innerHTML = '<p style="color:red;text-align:center;">Fach nicht gefunden</p>';
+                    content.innerHTML = `<p style="color:red;text-align:center;">${escapeHtml(I18N.subjectNotFound)}</p>`;
                     return;
                 }
                 
-                title.textContent = `Details für ${subject.name}`;
+                title.textContent = i18nFormat(I18N.subjectDetailsFor, { subject: subject.name });
                 
                 // Filter data by subject
                 const subjectGrades = grades.filter(g => g.subject === subject.name);
@@ -5433,46 +5556,46 @@ themeToggle.addEventListener('click', () => {
                 let html = '';
                 
                 // Grades
-                html += `<h4>Noten (${subjectGrades.length})</h4>`;
+                html += `<h4>${escapeHtml(i18nFormat(I18N.detailsGrades, { count: subjectGrades.length }))}</h4>`;
                 if (subjectGrades.length) {
                     html += '<ul>';
                     subjectGrades.forEach(g => {
-                        html += `<li>${g.value}P (${g.weight ? 'Gewichtung: ' + g.weight : 'Standard'}) ${g.description ? '- ' + escapeHtml(g.description) : ''}</li>`;
+                        html += `<li>${g.value}P (${g.weight ? escapeHtml(I18N.weight) + ': ' + g.weight : escapeHtml(I18N.standard)}) ${g.description ? '- ' + escapeHtml(g.description) : ''}</li>`;
                     });
                     html += '</ul>';
                 } else {
-                    html += '<p>Keine Noten vorhanden</p>';
+                    html += `<p>${escapeHtml(I18N.detailsNoGrades)}</p>`;
                 }
                 
                 // Todos
-                html += `<h4>To-Dos (${subjectTodos.length})</h4>`;
+                html += `<h4>${escapeHtml(i18nFormat(I18N.detailsTodos, { count: subjectTodos.length }))}</h4>`;
                 if (subjectTodos.length) {
                     html += '<ul>';
                     subjectTodos.forEach(t => {
-                        html += `<li>${escapeHtml(t.text)} ${t.completed ? '(Erledigt)' : '(Offen)'}</li>`;
+                        html += `<li>${escapeHtml(t.text)} ${t.completed ? '(' + escapeHtml(I18N.completed) + ')' : '(' + escapeHtml(I18N.open) + ')'}</li>`;
                     });
                     html += '</ul>';
                 } else {
-                    html += '<p>Keine To-Dos vorhanden</p>';
+                    html += `<p>${escapeHtml(I18N.detailsNoTodos)}</p>`;
                 }
                 
                 // Exams
-                html += `<h4>Klassenarbeiten (${subjectExams.length})</h4>`;
+                html += `<h4>${escapeHtml(i18nFormat(I18N.detailsExams, { count: subjectExams.length }))}</h4>`;
                 if (subjectExams.length) {
                     html += '<ul>';
                     subjectExams.forEach(e => {
-                        html += `<li>${escapeHtml(e.topic)} - ${e.date} (${e.grade ? e.grade + 'P' : 'Noch nicht benotet'})</li>`;
+                        html += `<li>${escapeHtml(e.topic)} - ${e.date} (${e.grade ? e.grade + 'P' : escapeHtml(I18N.notGradedYet)})</li>`;
                     });
                     html += '</ul>';
                 } else {
-                    html += '<p>Keine Klassenarbeiten vorhanden</p>';
+                    html += `<p>${escapeHtml(I18N.detailsNoExams)}</p>`;
                 }
                 
                 content.innerHTML = html;
                 
             } catch (err) {
                 console.error('Fehler beim Laden der Fach-Details', err);
-                content.innerHTML = '<p style="color:red;text-align:center;">Fehler beim Laden der Details</p>';
+                content.innerHTML = `<p style="color:red;text-align:center;">${escapeHtml(I18N.loadDetailsError)}</p>`;
             }
         }
 
@@ -5576,7 +5699,7 @@ themeToggle.addEventListener('click', () => {
                     });
                 }
 
-                dd.innerHTML = '<option value="">-- Fach wählen --</option>' +
+                dd.innerHTML = `<option value="">${escapeHtml(I18N.subjectChoose)}</option>` +
                     subjectsData.map(s => {
                         return `<option value="${escapeHtml(s.name)}" style="background-color: ${escapeHtml(s.color)}20; color: inherit;">${escapeHtml(s.name)}</option>`;
                     }).join('');

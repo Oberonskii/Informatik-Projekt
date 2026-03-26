@@ -21,18 +21,18 @@ if (!$files) {
                 <!-- Dateien Detail View -->
                 <div id="files" class="view-content" style="display: none;">
                     <div class="content-header">
-                        <h1>📁 Dateien</h1>
-                        <p>Alle deine Lernmaterialien</p>
+                        <h1>📁 <?php echo htmlspecialchars(t('files.title')); ?></h1>
+                        <p><?php echo htmlspecialchars(t('files.subtitle')); ?></p>
                     </div>
                     <div class="widget">
                         <div class="widget-header">
-                            <div class="widget-title">Datei hochladen</div>
+                            <div class="widget-title"><?php echo htmlspecialchars(t('files.upload_title')); ?></div>
                         </div>
                         <form action="files/upload.php" method="POST" enctype="multipart/form-data">
                         <div class="input-group">
-                            <input type="text" name="subject" placeholder="Fach eingeben..." required>
+                            <input type="text" name="subject" placeholder="<?php echo htmlspecialchars(t('files.subject_placeholder')); ?>" required>
                                 <input type="file" name="file" required>
-                            <button class="btn-primary" type="submit">Hochladen</button>
+                            <button class="btn-primary" type="submit"><?php echo htmlspecialchars(t('common.upload')); ?></button>
                                 </div>
                             </form>
                         </div>

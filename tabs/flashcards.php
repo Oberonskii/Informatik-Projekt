@@ -432,14 +432,14 @@
 
 <div id="flashcards" class="view-content" style="display: none;">
     <div class="content-header">
-        <h1>🎴 Karteikarten</h1>
-        <p>Erstelle eigene Stapel und entdecke öffentliche Karteikarten</p>
+        <h1>🎴 <?php echo htmlspecialchars(t('flashcards.title')); ?></h1>
+        <p><?php echo htmlspecialchars(t('flashcards.subtitle')); ?></p>
     </div>
 
     <!-- Sub-Navigation -->
     <div class="fc-subnav">
-        <button class="fc-subnav-btn active" onclick="fcShowTab('my-decks', this)">📚 Meine Stapel</button>
-        <button class="fc-subnav-btn" onclick="fcShowTab('explore', this)">🌐 Erkunden</button>
+        <button class="fc-subnav-btn active" onclick="fcShowTab('my-decks', this)">📚 <?php echo htmlspecialchars(t('flashcards.my_decks')); ?></button>
+        <button class="fc-subnav-btn" onclick="fcShowTab('explore', this)">🌐 <?php echo htmlspecialchars(t('flashcards.explore')); ?></button>
     </div>
 
     <!-- ================================================
@@ -448,29 +448,29 @@
     <div id="fc-view-my-decks" class="fc-subview">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
             <span id="fc-decks-count" style="font-size:0.9rem; color:var(--color-text-muted);"></span>
-            <button class="btn-primary" onclick="fcToggleNewDeckForm()">+ Neuer Stapel</button>
+            <button class="btn-primary" onclick="fcToggleNewDeckForm()">+ <?php echo htmlspecialchars(t('flashcards.new_deck')); ?></button>
         </div>
 
         <!-- New deck form -->
         <div class="fc-new-deck-form" id="fc-new-deck-form">
             <div class="fc-form-row">
-                <input class="fc-input" id="fc-new-name" placeholder="Stapelname *" />
-                <input class="fc-input" id="fc-new-subject" placeholder="Fach (z.B. Mathematik)" />
+                <input class="fc-input" id="fc-new-name" placeholder="<?php echo htmlspecialchars(t('flashcards.deck_name_placeholder')); ?>" />
+                <input class="fc-input" id="fc-new-subject" placeholder="<?php echo htmlspecialchars(t('flashcards.subject_placeholder')); ?>" />
             </div>
-            <textarea class="fc-input fc-textarea" id="fc-new-desc" placeholder="Kurze Beschreibung (optional)"></textarea>
+            <textarea class="fc-input fc-textarea" id="fc-new-desc" placeholder="<?php echo htmlspecialchars(t('flashcards.desc_placeholder')); ?>"></textarea>
             <div class="fc-form-actions">
-                <button class="btn-primary" onclick="fcCreateDeck()">Erstellen</button>
-                <button class="btn-secondary" onclick="fcToggleNewDeckForm()">Abbrechen</button>
+                <button class="btn-primary" onclick="fcCreateDeck()"><?php echo htmlspecialchars(t('flashcards.create')); ?></button>
+                <button class="btn-secondary" onclick="fcToggleNewDeckForm()"><?php echo htmlspecialchars(t('common.cancel')); ?></button>
                 <label class="fc-checkbox-label">
                     <input type="checkbox" id="fc-new-public" />
-                    Öffentlich sichtbar
+                    <?php echo htmlspecialchars(t('flashcards.public_visible')); ?>
                 </label>
             </div>
         </div>
 
         <!-- Deck Grid -->
         <div class="fc-decks-grid" id="fc-decks-grid">
-            <div class="fc-loading">⏳ Lade Stapel…</div>
+            <div class="fc-loading"><?php echo htmlspecialchars(t('flashcards.loading_decks')); ?></div>
         </div>
     </div>
 
@@ -479,35 +479,35 @@
          ================================================ -->
     <div id="fc-view-deck-detail" class="fc-subview" style="display:none;">
         <div class="fc-detail-header">
-            <button class="fc-back-btn" onclick="fcShowDecksView()">← Zurück</button>
-            <div class="fc-detail-title" id="fc-detail-title">Stapelname</div>
+            <button class="fc-back-btn" onclick="fcShowDecksView()"><?php echo htmlspecialchars(t('flashcards.back_to_decks')); ?></button>
+            <div class="fc-detail-title" id="fc-detail-title"></div>
             <span class="fc-detail-subject-badge" id="fc-detail-subject" style="display:none;"></span>
-            <button class="fc-study-btn" style="margin-left:auto;" id="fc-start-study-btn" onclick="fcStartStudy()">🎓 Lernen</button>
+            <button class="fc-study-btn" style="margin-left:auto;" id="fc-start-study-btn" onclick="fcStartStudy()"><?php echo htmlspecialchars(t('flashcards.study')); ?></button>
         </div>
 
         <!-- Deck options bar -->
         <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem; align-items:center; flex-wrap:wrap;">
-            <span id="fc-detail-visibility-badge" class="fc-badge private">🔒 Privat</span>
-            <button class="btn-secondary" style="padding:0.45rem 1rem; font-size:0.85rem;" onclick="fcToggleDeckPublic()">Sichtbarkeit ändern</button>
-            <button class="btn-secondary" style="padding:0.45rem 1rem; font-size:0.85rem; color:var(--color-danger); border-color:var(--color-danger); margin-left:auto;" onclick="fcDeleteCurrentDeck()">🗑️ Stapel löschen</button>
+            <span id="fc-detail-visibility-badge" class="fc-badge private"><?php echo htmlspecialchars(t('flashcards.private')); ?></span>
+            <button class="btn-secondary" style="padding:0.45rem 1rem; font-size:0.85rem;" onclick="fcToggleDeckPublic()"><?php echo htmlspecialchars(t('flashcards.change_visibility')); ?></button>
+            <button class="btn-secondary" style="padding:0.45rem 1rem; font-size:0.85rem; color:var(--color-danger); border-color:var(--color-danger); margin-left:auto;" onclick="fcDeleteCurrentDeck()"><?php echo htmlspecialchars(t('flashcards.delete_deck')); ?></button>
         </div>
 
         <!-- Add card form -->
         <div class="fc-add-card-form">
-            <div class="fc-add-card-title">➕ Neue Karte hinzufügen</div>
+            <div class="fc-add-card-title"><?php echo htmlspecialchars(t('flashcards.add_card_title')); ?></div>
             <div class="fc-add-card-row">
-                <textarea class="fc-input fc-textarea" style="min-height:80px;" id="fc-card-front" placeholder="Vorderseite (Frage / Begriff)"></textarea>
-                <textarea class="fc-input fc-textarea" style="min-height:80px;" id="fc-card-back" placeholder="Rückseite (Antwort / Definition)"></textarea>
-                <button class="btn-primary" style="padding:0.75rem 1.25rem; height:80px;" onclick="fcAddCard()">Karte<br>hinzufügen</button>
+                <textarea class="fc-input fc-textarea" style="min-height:80px;" id="fc-card-front" placeholder="<?php echo htmlspecialchars(t('flashcards.front_placeholder')); ?>"></textarea>
+                <textarea class="fc-input fc-textarea" style="min-height:80px;" id="fc-card-back" placeholder="<?php echo htmlspecialchars(t('flashcards.back_placeholder')); ?>"></textarea>
+                <button class="btn-primary" style="padding:0.75rem 1.25rem; height:80px;" onclick="fcAddCard()"><?php echo t('flashcards.add_card_button'); ?></button>
             </div>
         </div>
 
         <!-- Cards list -->
         <div style="font-size:0.9rem; font-weight:600; color:var(--color-text-secondary); margin-bottom:0.65rem;">
-            Karten in diesem Stapel (<span id="fc-cards-count">0</span>)
+            <?php echo htmlspecialchars(t('flashcards.cards_in_deck')); ?> (<span id="fc-cards-count">0</span>)
         </div>
         <div class="fc-cards-list" id="fc-cards-list">
-            <div class="fc-hint">Noch keine Karten. Füge Karten oben hinzu!</div>
+            <div class="fc-hint"><?php echo htmlspecialchars(t('flashcards.no_cards')); ?></div>
         </div>
     </div>
 
@@ -516,7 +516,7 @@
          ================================================ -->
     <div id="fc-view-study" class="fc-subview" style="display:none;">
         <div class="fc-study-header">
-            <button class="fc-back-btn" onclick="fcStopStudy()">← Zum Stapel</button>
+            <button class="fc-back-btn" onclick="fcStopStudy()">← <?php echo htmlspecialchars(t('flashcards.to_deck')); ?></button>
             <span id="fc-study-deck-name" style="font-size:1.1rem; font-weight:700;"></span>
             <span class="fc-study-progress" id="fc-study-progress">1 / 1</span>
         </div>
@@ -527,23 +527,23 @@
             <div class="fc-study-card-inner">
                 <div class="fc-study-face fc-study-front">
                     <span id="fc-study-front-content" style="font-size:1.15rem; font-weight:500;"></span>
-                    <span class="fc-study-hint">Tippe zum Umdrehen</span>
+                    <span class="fc-study-hint"><?php echo htmlspecialchars(t('flashcards.flip_hint')); ?></span>
                 </div>
                 <div class="fc-study-face fc-study-back" id="fc-study-back-text"></div>
             </div>
         </div>
         <div class="fc-study-nav" id="fc-study-nav">
-            <button class="fc-study-btn secondary" onclick="fcStudyPrev()">← Zurück</button>
-            <button class="fc-study-btn secondary" onclick="fcStudyFlip()">🔄 Umdrehen</button>
-            <button class="fc-study-btn" onclick="fcStudyNext()">Weiter →</button>
+            <button class="fc-study-btn secondary" onclick="fcStudyPrev()"><?php echo htmlspecialchars(t('flashcards.prev')); ?></button>
+            <button class="fc-study-btn secondary" onclick="fcStudyFlip()"><?php echo htmlspecialchars(t('flashcards.flip')); ?></button>
+            <button class="fc-study-btn" onclick="fcStudyNext()"><?php echo htmlspecialchars(t('flashcards.next')); ?></button>
         </div>
         <div id="fc-study-finish" style="display:none; text-align:center; margin-top:2rem;">
             <div style="font-size:2.5rem; margin-bottom:0.75rem;">🎉</div>
-            <div style="font-size:1.2rem; font-weight:700; margin-bottom:0.5rem;">Alle Karten durchgegangen!</div>
-            <div style="color:var(--color-text-secondary); margin-bottom:1.5rem;">Super gemacht! Möchtest du nochmal von vorne beginnen?</div>
+            <div style="font-size:1.2rem; font-weight:700; margin-bottom:0.5rem;"><?php echo htmlspecialchars(t('flashcards.finished_title')); ?></div>
+            <div style="color:var(--color-text-secondary); margin-bottom:1.5rem;"><?php echo htmlspecialchars(t('flashcards.finished_subtitle')); ?></div>
             <div style="display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
-                <button class="fc-study-btn" onclick="fcStudyRestart()">🔄 Nochmal</button>
-                <button class="fc-study-btn secondary" onclick="fcStopStudy()">Zum Stapel</button>
+                <button class="fc-study-btn" onclick="fcStudyRestart()"><?php echo htmlspecialchars(t('flashcards.restart')); ?></button>
+                <button class="fc-study-btn secondary" onclick="fcStopStudy()"><?php echo htmlspecialchars(t('flashcards.to_deck')); ?></button>
             </div>
         </div>
     </div>
@@ -553,11 +553,11 @@
          ================================================ -->
     <div id="fc-view-explore" class="fc-subview" style="display:none;">
         <div class="fc-explore-search">
-            <input class="fc-input" id="fc-explore-search" placeholder="🔍  Stapel suchen nach Name, Fach, Nutzer…" oninput="fcFilterExplore()" style="max-width:380px;" />
-            <button class="btn-secondary" onclick="fcLoadExplore()">🔄 Aktualisieren</button>
+            <input class="fc-input" id="fc-explore-search" placeholder="<?php echo htmlspecialchars(t('flashcards.search_placeholder')); ?>" oninput="fcFilterExplore()" style="max-width:380px;" />
+            <button class="btn-secondary" onclick="fcLoadExplore()">🔄 <?php echo htmlspecialchars(t('common.update')); ?></button>
         </div>
         <div class="fc-explore-grid" id="fc-explore-grid">
-            <div class="fc-loading">⏳ Lade öffentliche Stapel…</div>
+            <div class="fc-loading"><?php echo htmlspecialchars(t('flashcards.loading_public_decks')); ?></div>
         </div>
     </div>
 </div>
@@ -604,21 +604,21 @@ function fcRenderDecks() {
     const grid = document.getElementById('fc-decks-grid');
     const countEl = document.getElementById('fc-decks-count');
     if (!grid) return;
-    countEl.textContent = fcAllDecks.length + ' Stapel';
+    countEl.textContent = fcAllDecks.length + ' ' + (fcAllDecks.length !== 1 ? I18N.fcDecksPlural : I18N.fcDeckSingular);
     if (!fcAllDecks.length) {
-        grid.innerHTML = '<div class="fc-hint" style="grid-column:1/-1;">Noch keine Stapel vorhanden.<br>Erstelle deinen ersten Stapel!</div>';
+        grid.innerHTML = '<div class="fc-hint" style="grid-column:1/-1;">' + I18N.fcNoDecks + '</div>';
         return;
     }
     grid.innerHTML = fcAllDecks.map(function(d) {
         return '<div class="fc-deck-card" onclick="fcOpenDeck(\'' + fcEsc(d.id) + '\')">' +
             '<div class="fc-deck-actions" onclick="event.stopPropagation()">' +
-                '<button class="fc-deck-action-btn danger" onclick="fcDeleteDeckById(\'' + fcEsc(d.id) + '\')" title="Löschen">🗑️</button>' +
+                    '<button class="fc-deck-action-btn danger" onclick="fcDeleteDeckById(\'' + fcEsc(d.id) + '\')" title="' + I18N.deleteLabel + '">🗑️</button>' +
             '</div>' +
             '<div class="fc-deck-name">' + fcEsc(d.name) + '</div>' +
             (d.subject ? '<div class="fc-deck-subject">' + fcEsc(d.subject) + '</div>' : '') +
             '<div class="fc-deck-meta">' +
-                '<span>📑 ' + d.card_count + ' Karte' + (d.card_count !== 1 ? 'n' : '') + '</span>' +
-                '<span class="fc-badge ' + (d.public ? '' : 'private') + '">' + (d.public ? '🌐 Öffentlich' : '🔒 Privat') + '</span>' +
+                '<span>📑 ' + d.card_count + ' ' + (d.card_count !== 1 ? I18N.fcCardsPlural : I18N.fcCardSingular) + '</span>' +
+                '<span class="fc-badge ' + (d.public ? '' : 'private') + '">' + (d.public ? I18N.fcPublic : I18N.fcPrivate) + '</span>' +
             '</div>' +
         '</div>';
     }).join('');
@@ -643,7 +643,7 @@ async function fcCreateDeck() {
     var subject = document.getElementById('fc-new-subject').value.trim();
     var description = document.getElementById('fc-new-desc').value.trim();
     var isPublic = document.getElementById('fc-new-public').checked;
-    if (!name) { alert('Bitte einen Namen eingeben.'); return; }
+    if (!name) { alert(I18N.enterDeckName); return; }
     try {
         var res = await fetch('flashcards/deck_create.php', {
             method: 'POST',
@@ -659,9 +659,9 @@ async function fcCreateDeck() {
             await fcLoadDecks();
         } else {
             var err = await res.json();
-            alert(err.detail || 'Fehler beim Erstellen');
+            alert(err.detail || I18N.createDeckError);
         }
-    } catch(e) { alert('Server nicht erreichbar.'); }
+    } catch(e) { alert(I18N.serverUnreachable); }
 }
 
 // ---- Open a Deck ----
@@ -685,10 +685,10 @@ async function fcOpenDeck(deckId) {
 function fcUpdateVisibilityBadge(isPublic) {
     var badge = document.getElementById('fc-detail-visibility-badge');
     if (isPublic) {
-        badge.textContent = '🌐 Öffentlich';
+        badge.textContent = I18N.fcPublic;
         badge.classList.remove('private');
     } else {
-        badge.textContent = '🔒 Privat';
+        badge.textContent = I18N.fcPrivate;
         badge.classList.add('private');
     }
 }
@@ -712,14 +712,14 @@ function fcRenderCards() {
     if (studyBtn) studyBtn.disabled = fcCurrentCards.length === 0;
 
     if (!fcCurrentCards.length) {
-        list.innerHTML = '<div class="fc-hint">Noch keine Karten. Füge Karten oben hinzu!</div>';
+        list.innerHTML = '<div class="fc-hint">' + I18N.fcNoCards + '</div>';
         return;
     }
     list.innerHTML = fcCurrentCards.map(function(c) {
         return '<div class="fc-card-item" id="fccard-' + fcEsc(c.id) + '">' +
             '<div class="fc-card-front">' + fcEsc(c.front) + '</div>' +
             '<div class="fc-card-back">' + fcEsc(c.back) + '</div>' +
-            '<button class="fc-card-del" onclick="fcDeleteCard(\'' + fcEsc(c.id) + '\')" title="Löschen">✕</button>' +
+            '<button class="fc-card-del" onclick="fcDeleteCard(\'' + fcEsc(c.id) + '\')" title="' + I18N.deleteLabel + '">✕</button>' +
         '</div>';
     }).join('');
 }
@@ -727,7 +727,7 @@ function fcRenderCards() {
 async function fcAddCard() {
     var front = document.getElementById('fc-card-front').value.trim();
     var back = document.getElementById('fc-card-back').value.trim();
-    if (!front || !back) { alert('Bitte Vorder- und Rückseite ausfüllen.'); return; }
+    if (!front || !back) { alert(I18N.fcEnterFrontBack); return; }
     if (!fcCurrentDeck) return;
     try {
         var res = await fetch('flashcards/card_add.php?deck_id=' + encodeURIComponent(fcCurrentDeck.id), {
@@ -741,25 +741,25 @@ async function fcAddCard() {
             await fcLoadCards();
         } else {
             var err = await res.json();
-            alert(err.detail || 'Fehler');
+            alert(err.detail || I18N.errorGeneric);
         }
-    } catch(e) { alert('Server nicht erreichbar.'); }
+    } catch(e) { alert(I18N.serverUnreachable); }
 }
 
 async function fcDeleteCard(cardId) {
-    if (!confirm('Karte löschen?')) return;
+    if (!confirm(I18N.confirmDeleteCard)) return;
     try {
         var res = await fetch('flashcards/card_delete.php?card_id=' + encodeURIComponent(cardId), { method: 'POST' });
         if (res.ok) {
             fcCurrentCards = fcCurrentCards.filter(function(c) { return c.id !== cardId; });
             fcRenderCards();
         }
-    } catch(e) { alert('Server nicht erreichbar.'); }
+    } catch(e) { alert(I18N.serverUnreachable); }
 }
 
 async function fcDeleteCurrentDeck() {
     if (!fcCurrentDeck) return;
-    if (!confirm('Stapel "' + fcCurrentDeck.name + '" wirklich löschen? Alle Karten werden gelöscht.')) return;
+    if (!confirm(i18nFormat(I18N.confirmDeleteDeck, {name: fcCurrentDeck.name}))) return;
     await fcDeleteDeckById(fcCurrentDeck.id);
     fcShowDecksView();
 }
@@ -771,9 +771,9 @@ async function fcDeleteDeckById(deckId) {
             fcAllDecks = fcAllDecks.filter(function(d) { return d.id !== deckId; });
             fcRenderDecks();
         } else {
-            alert('Fehler beim Löschen.');
+            alert(I18N.deleteError);
         }
-    } catch(e) { alert('Server nicht erreichbar.'); }
+    } catch(e) { alert(I18N.serverUnreachable); }
 }
 
 async function fcToggleDeckPublic() {
@@ -791,7 +791,7 @@ async function fcToggleDeckPublic() {
             var deckInList = fcAllDecks.find(function(d) { return d.id === fcCurrentDeck.id; });
             if (deckInList) deckInList.public = newPublic;
         }
-    } catch(e) { alert('Server nicht erreichbar.'); }
+    } catch(e) { alert(I18N.serverUnreachable); }
 }
 
 // ---- Study Mode ----
@@ -857,7 +857,7 @@ function fcStopStudy() {
 // ---- Explore ----
 async function fcLoadExplore() {
     var grid = document.getElementById('fc-explore-grid');
-    if (grid) grid.innerHTML = '<div class="fc-loading">⏳ Lade öffentliche Stapel…</div>';
+    if (grid) grid.innerHTML = '<div class="fc-loading">' + I18N.fcLoadingPublicDecks + '</div>';
     try {
         var res = await fetch('flashcards/explore_load.php');
         fcExploreData = res.ok ? await res.json() : [];
@@ -869,20 +869,20 @@ function fcRenderExplore(decks) {
     var grid = document.getElementById('fc-explore-grid');
     if (!grid) return;
     if (!decks.length) {
-        grid.innerHTML = '<div class="fc-hint" style="grid-column:1/-1;">Noch keine öffentlichen Stapel vorhanden.</div>';
+        grid.innerHTML = '<div class="fc-hint" style="grid-column:1/-1;">' + I18N.fcNoPublicDecks + '</div>';
         return;
     }
     grid.innerHTML = decks.map(function(d) {
         return '<div class="fc-explore-card">' +
             '<div>' +
                 '<div class="fc-explore-name">' + fcEsc(d.name) + '</div>' +
-                '<div class="fc-explore-author">von ' + fcEsc(d.username) + '</div>' +
+                '<div class="fc-explore-author">' + i18nFormat(I18N.fcByUser, {user: fcEsc(d.username)}) + '</div>' +
                 (d.subject ? '<span style="font-size:0.78rem;color:var(--color-primary);font-weight:600;">' + fcEsc(d.subject) + '</span>' : '') +
             '</div>' +
-            '<div class="fc-explore-desc">' + (d.description ? fcEsc(d.description) : '<span style="font-style:italic;color:var(--color-text-muted);">Keine Beschreibung</span>') + '</div>' +
+            '<div class="fc-explore-desc">' + (d.description ? fcEsc(d.description) : '<span style="font-style:italic;color:var(--color-text-muted);">' + I18N.fcNoDescription + '</span>') + '</div>' +
             '<div class="fc-explore-footer">' +
-                '<span class="fc-explore-count">📑 ' + d.card_count + ' Karte' + (d.card_count !== 1 ? 'n' : '') + '</span>' +
-                '<button class="btn-primary" style="padding:0.4rem 0.9rem; font-size:0.82rem;" onclick="fcCopyDeck(\'' + fcEsc(d.id) + '\', \'' + fcEsc(d.name) + '\')">Übernehmen</button>' +
+                '<span class="fc-explore-count">📑 ' + d.card_count + ' ' + (d.card_count !== 1 ? I18N.fcCardsPlural : I18N.fcCardSingular) + '</span>' +
+                '<button class="btn-primary" style="padding:0.4rem 0.9rem; font-size:0.82rem;" onclick="fcCopyDeck(\'' + fcEsc(d.id) + '\', \'' + fcEsc(d.name) + '\')"> ' + I18N.fcCopy + '</button>' +
             '</div>' +
         '</div>';
     }).join('');
@@ -904,13 +904,13 @@ async function fcCopyDeck(deckId, deckName) {
     try {
         var res = await fetch('flashcards/deck_copy.php?deck_id=' + encodeURIComponent(deckId), { method: 'POST' });
         if (res.ok) {
-            alert('Stapel "' + deckName + '" wurde zu deinen Stapeln hinzugefügt!');
+            alert(i18nFormat(I18N.copySuccess, {name: deckName}));
             await fcLoadDecks();
         } else {
             var err = await res.json();
-            alert(err.detail || 'Fehler beim Übernehmen');
+            alert(err.detail || I18N.copyError);
         }
-    } catch(e) { alert('Server nicht erreichbar.'); }
+    } catch(e) { alert(I18N.serverUnreachable); }
 }
 
 // ---- HTML escaping ----

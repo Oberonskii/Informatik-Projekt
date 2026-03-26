@@ -13,6 +13,13 @@ session_set_cookie_params([
     'samesite' => 'Strict',
 ]);
 session_start();
+require_once __DIR__ . '/../includes/i18n.php';
+
+if (isset($_GET['lang'])) {
+    learnhub_set_locale($_GET['lang']);
+}
+
+$current_locale = learnhub_get_locale();
 if (isset($_SESSION['user_id'])) {
     header("Location: ../current_dashboard.php");
     exit();
@@ -30,7 +37,7 @@ $error_message = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // CSRF-Token prüfen
     if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
-        $error_message = 'Ungültige Anfrage. Bitte Seite neu laden und erneut versuchen.';
+        $error_message = t('auth.invalid_request');
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     } else {
     $username = $_POST['username'];
@@ -55,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
     if ($response === false) {
-        $error_message = "Server nicht erreichbar.";
+        $error_message = t('auth.server_unreachable');
     } else {
         $responseData = json_decode($response, true);
 
@@ -70,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if (isset($responseData['detail'])) {
                 $error_message = $responseData['detail'];
             } else {
-                $error_message = "Anmeldung fehlgeschlagen.";
+                $error_message = t('auth.login_failed');
             }
         }
     }
@@ -82,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?php echo htmlspecialchars($current_locale); ?>">
 <head>
 <script>
 (function () {
@@ -95,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LearnHub Login</title>
+    <title><?php echo htmlspecialchars(t('site.login_title')); ?></title>
     <style>
         :root {
             --color-bg-primary:    #f0f4f8;

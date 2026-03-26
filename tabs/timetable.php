@@ -3,18 +3,18 @@
                 <!-- Stundenplan Detail View -->
                 <div id="timetable" class="view-content" style="display: none;">
                     <div class="content-header">
-                        <h1>📅 Stundenplan</h1>
-                        <p>Deine Wochenübersicht – heutiger Tag ist hervorgehoben</p>
+                        <h1>📅 <?php echo htmlspecialchars(t('timetable.title')); ?></h1>
+                        <p><?php echo htmlspecialchars(t('timetable.subtitle')); ?></p>
                     </div>
 
                     <!-- Stundenplan Widget -->
                     <div class="widget">
                         <div class="widget-header">
-                            <div class="widget-title">📋 Wochenplan</div>
+                            <div class="widget-title">📋 <?php echo htmlspecialchars(t('timetable.week_plan')); ?></div>
                             <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
                                 <button class="btn-secondary" onclick="exportTimetableCSV()">⬇️ CSV</button>
                                 <button class="btn-secondary" onclick="exportTimetablePDF()">🧾 PDF</button>
-                                <button id="timetableEditBtn" class="btn-primary" onclick="toggleTimetableEdit()">✏️ Bearbeiten</button>
+                                <button id="timetableEditBtn" class="btn-primary" onclick="toggleTimetableEdit()">✏️ <?php echo htmlspecialchars(t('timetable.edit')); ?></button>
                             </div>
                         </div>
 
@@ -26,16 +26,16 @@
                         <!-- Bearbeitungsmodus -->
                         <div id="timetableEditMode" style="display:none;">
                             <div class="tt-edit-section">
-                                <div class="tt-edit-section-title">⏰ Stundenbeginn konfigurieren</div>
+                                <div class="tt-edit-section-title">⏰ <?php echo htmlspecialchars(t('timetable.period_config')); ?></div>
                                 <div id="periodTimesEditor"></div>
                             </div>
                             <div class="tt-edit-section" style="margin-top:2rem;">
-                                <div class="tt-edit-section-title">📝 Fächer & Räume eintragen</div>
+                                <div class="tt-edit-section-title">📝 <?php echo htmlspecialchars(t('timetable.subject_room')); ?></div>
                                 <div id="timetableEditor" style="overflow-x:auto;"></div>
                             </div>
                             <div style="margin-top:1.5rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
-                                <button class="btn-primary" onclick="saveTimetable()">💾 Speichern</button>
-                                <button class="btn-secondary" onclick="cancelTimetableEdit()">Abbrechen</button>
+                                <button class="btn-primary" onclick="saveTimetable()">💾 <?php echo htmlspecialchars(t('common.save')); ?></button>
+                                <button class="btn-secondary" onclick="cancelTimetableEdit()"><?php echo htmlspecialchars(t('common.cancel')); ?></button>
                             </div>
                         </div>
                     </div>
@@ -43,7 +43,7 @@
                     <!-- Hausaufgaben Zusammenfassung -->
                     <div class="widget" style="margin-top:1.5rem;">
                         <div class="widget-header">
-                            <div class="widget-title">📚 Hausaufgaben</div>
+                            <div class="widget-title">📚 <?php echo htmlspecialchars(t('homework.title')); ?></div>
                         </div>
                         <div id="homeworkGridTimetable"></div>
                     </div>

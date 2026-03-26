@@ -5,10 +5,10 @@
                     <div class="content-header">
                         <div class="content-header-toolbar">
                             <div>
-                                <h1>Willkommen zurück! 👋</h1>
-                                <p>Hier ist deine Lernübersicht für heute</p>
+                                <h1><?php echo htmlspecialchars(t('overview.welcome')); ?></h1>
+                                <p><?php echo htmlspecialchars(t('overview.subtitle')); ?></p>
                             </div>
-                            <button class="btn-secondary overview-customize-btn" id="overviewCustomizeToggle" type="button">Dashbord anpassen</button>
+                            <button class="btn-secondary overview-customize-btn" id="overviewCustomizeToggle" type="button"><?php echo htmlspecialchars(t('overview.customize')); ?></button>
                         </div>
                     </div>
 
@@ -18,12 +18,12 @@
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">📅</span>
-                                    Heute im Stundenplan
+                                    <?php echo htmlspecialchars(t('overview.timetable_today')); ?>
                                 </div>
                                 <button class="widget-action" data-view="timetable">→</button>
                             </div>
                             <div class="timetable" id="overviewTimetable">
-                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;"><?php echo htmlspecialchars(t('common.loading')); ?></p>
                             </div>
                         </div>
 
@@ -32,12 +32,12 @@
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">📝</span>
-                                    Aktuelle Noten
+                                    <?php echo htmlspecialchars(t('overview.current_grades')); ?>
                                 </div>
                                 <button class="widget-action" data-view="grades">→</button>
                             </div>
                             <div class="grades-list" id="overviewGrades">
-                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;"><?php echo htmlspecialchars(t('common.loading')); ?></p>
                             </div>
                         </div>
 
@@ -46,12 +46,12 @@
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">✅</span>
-                                    Offene Aufgaben
+                                    <?php echo htmlspecialchars(t('overview.open_tasks')); ?>
                                 </div>
                                 <button class="widget-action" data-view="todos">→</button>
                             </div>
                             <div class="todo-list" id="overviewTodos">
-                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;"><?php echo htmlspecialchars(t('common.loading')); ?></p>
                             </div>
                         </div>
 
@@ -60,12 +60,12 @@
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">📚</span>
-                                    Hausaufgaben
+                                    <?php echo htmlspecialchars(t('overview.homework')); ?>
                                 </div>
                                 <button class="widget-action" data-view="homework">→</button>
                             </div>
                             <div class="todo-list" id="overviewHomeworks">
-                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;"><?php echo htmlspecialchars(t('common.loading')); ?></p>
                             </div>
                         </div>
 
@@ -74,12 +74,12 @@
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">📝</span>
-                                    Klassenarbeiten
+                                    <?php echo htmlspecialchars(t('overview.exams')); ?>
                                 </div>
                                 <button class="widget-action" data-view="exams">→</button>
                             </div>
                             <div class="grades-list" id="overviewExams">
-                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;"><?php echo htmlspecialchars(t('common.loading')); ?></p>
                             </div>
                         </div>
 
@@ -88,12 +88,12 @@
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">📆</span>
-                                    Kommende Termine
+                                    <?php echo htmlspecialchars(t('overview.events')); ?>
                                 </div>
                                 <button class="widget-action" data-view="calendar">→</button>
                             </div>
                             <div class="grades-list" id="overviewCalendar">
-                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;"><?php echo htmlspecialchars(t('common.loading')); ?></p>
                             </div>
                         </div>
 
@@ -103,23 +103,23 @@
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">🎴</span>
-                                    Karteikarten lernen
+                                    <?php echo htmlspecialchars(t('overview.flashcards')); ?>
                                 </div>
                                 <button class="widget-action" data-view="flashcards">→</button>
                             </div>
                             <div class="flashcard" id="flashcard" onclick="flipCard('flashcard')">
                                 <div class="flashcard-inner" id="flashcardInner">
                                     <div class="flashcard-front">
-                                        <p><strong>Frage:</strong> Was ist ein Automat?</p>
+                                        <p><strong><?php echo htmlspecialchars(t('overview.flashcard_question_label')); ?></strong> <?php echo htmlspecialchars(t('overview.flashcard_question_1')); ?></p>
                                     </div>
                                     <div class="flashcard-back">
-                                        <p>Ein abstraktes Modell eines Rechners mit endlich vielen Zuständen</p>
+                                        <p><?php echo htmlspecialchars(t('overview.flashcard_answer_1')); ?></p>
                                     </div>
                                 </div>
                             </div>
                             <div class="flashcard-nav">
-                                <button class="flashcard-btn" onclick="previousCard(); event.stopPropagation();">← Zurück</button>
-                                <button class="flashcard-btn" onclick="nextCard(); event.stopPropagation();">Weiter →</button>
+                                <button class="flashcard-btn" onclick="previousCard(); event.stopPropagation();"><?php echo htmlspecialchars(t('overview.previous')); ?></button>
+                                <button class="flashcard-btn" onclick="nextCard(); event.stopPropagation();"><?php echo htmlspecialchars(t('overview.next')); ?></button>
                             </div>
                         </div>
 
@@ -128,12 +128,12 @@
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">📁</span>
-                                    Letzte Dateien
+                                    <?php echo htmlspecialchars(t('overview.files')); ?>
                                 </div>
                                 <button class="widget-action" data-view="files">→</button>
                             </div>
                             <div class="files-list" id="overviewFiles">
-                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;"><?php echo htmlspecialchars(t('common.loading')); ?></p>
                             </div>
                         </div>
 
@@ -142,13 +142,13 @@
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">💬</span>
-                                    <span>Admin Nachrichten</span>
+                                    <span><?php echo htmlspecialchars(t('overview.admin_messages')); ?></span>
                                 </div>
                                 <button class="widget-action" data-view="admin-messages">→</button>
                             </div>
                             <div class="widget-body">
                                 <div class="messages-list" id="overviewMessages">
-                                    <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
+                                    <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;"><?php echo htmlspecialchars(t('common.loading')); ?></p>
                                 </div>
                             </div>
                         </div>
@@ -159,7 +159,7 @@
                             <div class="widget-header">
                                 <div class="widget-title">
                                     <span class="widget-icon">⚙️</span>
-                                    Admin Statistiken
+                                    <?php echo htmlspecialchars(t('overview.admin_stats')); ?>
                                 </div>
                                 <button class="widget-action" data-view="admin">→</button>
                             </div>
@@ -170,15 +170,15 @@
                                 </div>
                                 <div class="stat-card">
                                     <div class="stat-value" id="overviewAdminUsers">-</div>
-                                    <div class="stat-label">Nutzer gesamt</div>
+                                    <div class="stat-label"><?php echo htmlspecialchars(t('overview.stat_users')); ?></div>
                                 </div>
                                 <div class="stat-card">
                                     <div class="stat-value" id="overviewAdminTodos">-</div>
-                                    <div class="stat-label">To-Do Quote</div>
+                                    <div class="stat-label"><?php echo htmlspecialchars(t('overview.stat_todo_rate')); ?></div>
                                 </div>
                                 <div class="stat-card">
                                     <div class="stat-value" id="overviewAdminFailures">-</div>
-                                    <div class="stat-label">Fehl-Logins (7d)</div>
+                                    <div class="stat-label"><?php echo htmlspecialchars(t('overview.stat_failed_logins')); ?></div>
                                 </div>
                             </div>
                         </div>

@@ -13,6 +13,13 @@ session_set_cookie_params([
     'samesite' => 'Strict',
 ]);
 session_start();
+require_once __DIR__ . '/../includes/i18n.php';
+
+if (isset($_GET['lang'])) {
+    learnhub_set_locale($_GET['lang']);
+}
+
+$current_locale = learnhub_get_locale();
 
 // CSRF-Token generieren
 if (empty($_SESSION['csrf_token'])) {
@@ -32,7 +39,7 @@ $is_confirm_step = false;
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // CSRF-Token prüfen
     if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
-        $error_message = 'Ungültige Anfrage. Bitte Seite neu laden und erneut versuchen.';
+        $error_message = t('auth.invalid_request');
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     } else {
     $action = $_POST['action'] ?? 'request_code';
@@ -65,9 +72,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         if ($http_code == 200) {
             $verification_id = $json['verification_id'] ?? '';
-            $success_message = 'Verifizierungscode wurde gesendet. Bitte Code eingeben, um die Registrierung abzuschließen.';
+            $success_message = t('auth.register.verification_sent');
         } else {
-            $error_message = $json['detail'] ?? 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.';
+            $error_message = $json['detail'] ?? t('auth.register.failed');
         }
     } else {
         $verification_id = trim($_POST['verification_id'] ?? '');
@@ -91,12 +98,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $json = json_decode($response, true);
 
         if ($http_code == 200) {
-            $success_message = 'Registrierung erfolgreich! Du kannst dich jetzt einloggen.';
+            $success_message = t('auth.register.success');
             $verification_id = '';
             $username_value = '';
             $email_value = '';
         } else {
-            $error_message = $json['detail'] ?? 'Verifizierung fehlgeschlagen. Bitte erneut versuchen.';
+            $error_message = $json['detail'] ?? t('auth.register.confirm_failed');
         }
     }
     } // Ende CSRF-else
@@ -106,11 +113,11 @@ $is_confirm_step = !empty($verification_id);
 ?>
 
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?php echo htmlspecialchars($current_locale); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LearnHub Registrierung</title>
+    <title><?php echo htmlspecialchars(t('site.register_title')); ?></title>
     <script>
     (function () {
         const t = localStorage.getItem('theme');
