@@ -1076,6 +1076,43 @@ $current_locale = learnhub_get_locale();
             transition: border-color var(--transition-base), box-shadow var(--transition-base);
         }
 
+        .input-group input[type="file"] {
+            flex: 1.2;
+            min-height: 42px;
+            padding: 0.35rem;
+            border: 1px dashed color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
+            border-radius: var(--radius-sm);
+            background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 4%, var(--color-bg-primary)), var(--color-bg-primary));
+            color: var(--color-text-secondary);
+            cursor: pointer;
+        }
+
+        .input-group input[type="file"]:hover {
+            border-color: color-mix(in srgb, var(--color-primary) 60%, var(--color-border));
+            background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-primary)), var(--color-bg-primary));
+        }
+
+        .input-group input[type="file"]::file-selector-button {
+            padding: 0.5rem 0.9rem;
+            margin-right: 0.7rem;
+            border: 1px solid transparent;
+            border-radius: calc(var(--radius-sm) - 2px);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+            color: #ffffff;
+            font-family: var(--font-family-base);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform var(--transition-base), box-shadow var(--transition-base), opacity var(--transition-base);
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+        }
+
+        .input-group input[type="file"]::file-selector-button:hover {
+            transform: translateY(-1px);
+            opacity: 0.94;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
         textarea {
             resize: vertical;
             min-height: 120px;
@@ -1112,6 +1149,12 @@ $current_locale = learnhub_get_locale();
             opacity: 0.9;
             transform: translateY(-1px);
             box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+        }
+
+        .btn-upload-action {
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+            box-shadow: 0 3px 10px rgba(79, 70, 229, 0.28);
         }
 
         .btn-icon {
@@ -1489,6 +1532,32 @@ $current_locale = learnhub_get_locale();
             color: var(--color-text-primary);
             font-size: 0.85rem;
             width: 100%;
+        }
+
+        input[type="date"] {
+            min-height: 42px;
+            padding-right: 0.5rem;
+            border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
+            background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 5%, var(--color-bg-primary)), var(--color-bg-primary));
+            cursor: pointer;
+        }
+
+        input[type="date"]:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            padding: 0.2rem;
+            border-radius: 6px;
+            background-color: color-mix(in srgb, var(--color-primary) 14%, transparent);
+            cursor: pointer;
+            transition: background-color var(--transition-base), transform var(--transition-base);
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            background-color: color-mix(in srgb, var(--color-primary) 24%, transparent);
+            transform: scale(1.05);
         }
 
         .tt-time-item input[type="time"]:focus { outline: none; border-color: var(--color-primary); }

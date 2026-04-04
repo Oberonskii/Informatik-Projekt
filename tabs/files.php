@@ -32,7 +32,7 @@ if (!$files) {
                         <div class="input-group">
                             <input type="text" name="subject" placeholder="<?php echo htmlspecialchars(t('files.subject_placeholder')); ?>" required>
                                 <input type="file" name="file" required>
-                            <button class="btn-primary" type="submit"><?php echo htmlspecialchars(t('common.upload')); ?></button>
+                            <button class="btn-primary btn-upload-action" type="submit">⬆ <?php echo htmlspecialchars(t('common.upload')); ?></button>
                                 </div>
                             </form>
                         </div>
